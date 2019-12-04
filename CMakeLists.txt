@@ -23,6 +23,17 @@ file(WRITE ${PROJECT_BINARY_DIR}/repo_version.h
     "#define REPO_VERSION \"${GIT_REPO_VERSION}\"\n#define REPO_DATE \"${GIT_REPO_DATE}\"\n#define REPO_HASH \"${GIT_REPO_HASH}\"\n"
 )
 
-include_directories(${PROJECT_BINARY_DIR})
+include_directories(${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/include
+    ${PROJECT_SOURCE_DIR}/common
+)
+
+link_directories(
+    ${PROJECT_BINARY_DIR}/lib
+)
+
 
 include(3rdparty.cmake)
+
+add_subdirectory(common)
+add_subdirectory(servers)
