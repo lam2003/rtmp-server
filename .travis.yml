@@ -1,5 +1,5 @@
-language: c++
-sudo: required
+language: cpp
+os: linux
 before_install: sudo apt-get install cmake
 script:
 - mkdir build && cd build
