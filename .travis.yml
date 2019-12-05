@@ -1,0 +1,7 @@
+language: cxx
+sudo: required
+bufore_install: sudo apt-get install cmake
+script:
+- mkdir build && cd build
+- cmake ../
+- make
