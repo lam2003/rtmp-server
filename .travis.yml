@@ -1,6 +1,6 @@
-language: cxx
+language: c++
 sudo: required
-bufore_install: sudo apt-get install cmake
+before_install: sudo apt-get install cmake
 script:
 - mkdir build && cd build
 - cmake ../
