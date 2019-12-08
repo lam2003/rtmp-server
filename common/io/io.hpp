@@ -1,31 +1,9 @@
 #ifndef RS_IO_HPP
 #define RS_IO_HPP
 
-#include <core.hpp>
+#include <common/core.hpp>
 
-/**
-+---------------+     +--------------------+      +---------------+
-| IBufferReader |     |    IStatistic      |      | IBufferWriter |
-+---------------+     +--------------------+      +---------------+
-| + read()      |     | + get_recv_bytes() |      | + write()     |
-+------+--------+     | + get_recv_bytes() |      | + writev()    |
-      / \             +---+--------------+-+      +-------+-------+
-       |                 / \            / \              / \
-       |                  |              |                |
-+------+------------------+-+      +-----+----------------+--+
-| IProtocolReader           |      | IProtocolWriter         |
-+---------------------------+      +-------------------------+
-| + readfully()             |      | + set_send_timeout()    |
-| + set_recv_timeout()      |      +-------+-----------------+
-+------------+--------------+             / \     
-            / \                            |   
-             |                             | 
-          +--+-----------------------------+-+
-          |       IProtocolReaderWriter      |
-          +----------------------------------+
-          | + is_never_timeout()             |
-          +----------------------------------+
-*/
+#include <sys/uio.h>
 
 class IBufferReader
 {
@@ -34,7 +12,7 @@ public:
     virtual ~IBufferReader();
 
 public:
-    virtual void read(void *buf, size_t size, ssize_t *nread) = 0;
+    virtual int Read(void *buf, size_t size, ssize_t *nread) = 0;
 };
 
 class IBufferWriter
@@ -44,8 +22,8 @@ public:
     virtual ~IBufferWriter();
 
 public:
-    virtual int write(void *buf, size_t size, ssize_t *nwrite) = 0;
-    virtual int writev(const iovec *iov, int iov_size, ssize_t *nwrite) = 0;
+    virtual int Write(void *buf, size_t size, ssize_t *nwrite) = 0;
+    virtual int WriteEv(const iovec *iov, int iov_size, ssize_t *nwrite) = 0;
 };
 
 class IStatistic
@@ -55,8 +33,8 @@ public:
     virtual ~IStatistic();
 
 public:
-    virtual int64_t get_recv_bytes() = 0;
-    virtual int64_t get_write_bytes() = 0;
+    virtual int64_t GetRecvBytes() = 0;
+    virtual int64_t GetSendBytes() = 0;
 };
 
 class IProtocolReader : public virtual IBufferReader, public virtual IStatistic
@@ -66,11 +44,11 @@ public:
     virtual ~IProtocolReader();
 
 public:
-    virtual void set_recv_timeout(int64_t timeout_us) = 0;
-    virtual int64_t get_recv_timeout() = 0;
+    virtual void SetRecvTimeout(int64_t timeout_us) = 0;
+    virtual int64_t GetRecvTimeout() = 0;
 
 public:
-    virtual int read_fully(void *buf, size_t size, ssize_t *nread) = 0;
+    virtual int ReadFully(void *buf, size_t size, ssize_t *nread) = 0;
 };
 
 class IProtocolWriter : public virtual IBufferWriter, public virtual IStatistic
@@ -80,8 +58,8 @@ public:
     virtual ~IProtocolWriter();
 
 public:
-    virtual void set_send_timeout(int64_t timeout_us) = 0;
-    virtual int64_t get_send_timeout() = 0;
+    virtual void SetSendTimeout(int64_t timeout_us) = 0;
+    virtual int64_t GetSendTimeout() = 0;
 };
 
 class IProtocolReaderWriter : public virtual IProtocolReader, public virtual IProtocolWriter
@@ -91,6 +69,6 @@ public:
     virtual ~IProtocolReaderWriter();
 
 public:
-    virtual bool is_never_timeout(int64_t timeout_us) = 0;
+    virtual bool IsNeverTimeout(int64_t timeout_us) = 0;
 };
 #endif

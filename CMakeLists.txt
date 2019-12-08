@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project(rtmp-server)
 
+set(CMAKE_CXX_STANDARD 11)
+
 find_package(Git)
 
 execute_process(COMMAND ${GIT_EXECUTABLE} describe --abbrev=6 --dirty --always --tags
@@ -25,7 +27,7 @@ file(WRITE ${PROJECT_BINARY_DIR}/repo_version.h
 
 include_directories(${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/include
-    ${PROJECT_SOURCE_DIR}/common
+    ${PROJECT_SOURCE_DIR}
 )
 
 link_directories(

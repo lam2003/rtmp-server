@@ -3,12 +3,25 @@
 
 #include <inttypes.h>
 #include <stddef.h>
-
 #include <sys/types.h>
-#include <sys/uio.h>
+#include <assert.h>
 
+#define rs_assert(expression) assert(expression)
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#endif 
+#define rs_freep(p)  \
+    if (p)           \
+    {                \
+        delete p;    \
+        p = nullptr; \
+    }                \
+    (void)0
+
+#define rs_freepa(pa) \
+    if (pa)           \
+    {                 \
+        delete[] pa;  \
+        pa = nullptr; \
+    }                 \
+    (void)0
+
+#endif
