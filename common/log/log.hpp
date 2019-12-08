@@ -44,6 +44,7 @@ public:
     virtual int GenerateID();
     virtual int GetID();
     virtual int SetID(int v);
+    virtual void ClearID();
 };
 
 extern ILog *_log;
