@@ -52,3 +52,7 @@ int IThreadContext::SetID(int)
 {
     return 0;
 }
+
+void IThreadContext::ClearID()
+{
+}

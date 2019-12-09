@@ -30,7 +30,7 @@ public:
     virtual int OnReloadLogFile() override;
 
 protected:
-    virtual bool GenerateHeader(bool error, const char *tag, int context_id, const char *level_name, int header_size);
+    virtual bool GenerateHeader(bool error, const char *tag, int context_id, const char *level_name, int *header_size);
     virtual void WriteLog(int &fd, char *str_log, int size, int level);
     virtual void OpenLogFile();
 
