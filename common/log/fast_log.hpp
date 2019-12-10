@@ -38,10 +38,10 @@ protected:
     int level_;
 
 private:
-    char *log_data;
-    int fd;
-    bool log_to_file_tank;
-    bool utc;
+    char *log_data_;
+    int fd_;
+    bool log_to_file_tank_;
+    bool utc_;
 };
 
 class ThreadContext : public IThreadContext

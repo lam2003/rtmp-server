@@ -51,23 +51,23 @@ extern ILog *_log;
 extern IThreadContext *_context;
 
 #if 1
-#define rs_verbose(msg, ...) _log->verbose(NULL, _context->get_id(), msg, ##__VA_ARGS__)
-#define rs_info(msg, ...) _log->info(NULL, _context->get_id(), msg, ##__VA_ARGS__)
-#define rs_trace(msg, ...) _log->trace(NULL, _context->get_id(), msg, ##__VA_ARGS__)
-#define rs_warn(msg, ...) _log->warn(NULL, _context->get_id(), msg, ##__VA_ARGS__)
-#define rs_error(msg, ...) _log->error(NULL, _context->get_id(), msg, ##__VA_ARGS__)
+#define rs_verbose(msg, ...) _log->Verbose(NULL, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_info(msg, ...) _log->Info(NULL, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_trace(msg, ...) _log->Trace(NULL, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_warn(msg, ...) _log->Warn(NULL, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_error(msg, ...) _log->Error(NULL, _context->GetID(), msg, ##__VA_ARGS__)
 #elif 0
-#define srs_verbose(msg, ...) _log->verbose(__FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
-#define srs_info(msg, ...) _log->info(__FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
-#define srs_trace(msg, ...) _log->trace(__FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
-#define srs_warn(msg, ...) _log->warn(__FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
-#define srs_error(msg, ...) _log->error(__FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
+#define srs_verbose(msg, ...) _log->Verbose(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define srs_info(msg, ...) _log->Info(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define srs_trace(msg, ...) _log->Trace(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define srs_warn(msg, ...) _log->Warn(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define srs_error(msg, ...) _log->Error(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
 #else
-#define srs_verbose(msg, ...) _log->verbose(__PRETTY_FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
-#define srs_info(msg, ...) _log->info(__PRETTY_FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
-#define srs_trace(msg, ...) _log->trace(__PRETTY_FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
-#define srs_warn(msg, ...) _log->warn(__PRETTY_FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
-#define srs_error(msg, ...) _log->error(__PRETTY_FUNCTION__, _context->get_id(), msg, ##__VA_ARGS__)
+#define srs_verbose(msg, ...) _log->Verbose(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define srs_info(msg, ...) _log->Info(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define srs_trace(msg, ...) _log->Trace(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define srs_warn(msg, ...) _log->Warn(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define srs_error(msg, ...) _log->Error(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
 #endif
 
 #endif
