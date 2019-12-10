@@ -57,17 +57,17 @@ extern IThreadContext *_context;
 #define rs_warn(msg, ...) _log->Warn(NULL, _context->GetID(), msg, ##__VA_ARGS__)
 #define rs_error(msg, ...) _log->Error(NULL, _context->GetID(), msg, ##__VA_ARGS__)
 #elif 0
-#define srs_verbose(msg, ...) _log->Verbose(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define srs_info(msg, ...) _log->Info(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define srs_trace(msg, ...) _log->Trace(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define srs_warn(msg, ...) _log->Warn(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define srs_error(msg, ...) _log->Error(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_verbose(msg, ...) _log->Verbose(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_info(msg, ...) _log->Info(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_trace(msg, ...) _log->Trace(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_warn(msg, ...) _log->Warn(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_error(msg, ...) _log->Error(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
 #else
-#define srs_verbose(msg, ...) _log->Verbose(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define srs_info(msg, ...) _log->Info(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define srs_trace(msg, ...) _log->Trace(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define srs_warn(msg, ...) _log->Warn(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define srs_error(msg, ...) _log->Error(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_verbose(msg, ...) _log->Verbose(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_info(msg, ...) _log->Info(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_trace(msg, ...) _log->Trace(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_warn(msg, ...) _log->Warn(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_error(msg, ...) _log->Error(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
 #endif
 
 #endif
