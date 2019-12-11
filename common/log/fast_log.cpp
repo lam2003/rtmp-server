@@ -90,7 +90,7 @@ void FastLog::Error(const char *tag, int context_id, const char *fmt, ...)
     va_start(ap, fmt);
     size += vsnprintf(log_data_ + size, LOG_MAX_SIZE - size, fmt, ap);
     va_end(ap);
-    if (errno != 0)
+    if (errno != 0 && size < LOG_MAX_SIZE)
         size += snprintf(log_data_ + size, LOG_MAX_SIZE - size, "(%s)", strerror(errno));
     WriteLog(fd_, log_data_, size, LogLevel::ERROR);
 }
