@@ -6,6 +6,7 @@
 #include <st.h>
 
 extern int StInit();
+
 extern void StCloseFd(st_netfd_t &stfd);
 
 #endif
