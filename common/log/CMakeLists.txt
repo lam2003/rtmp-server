@@ -5,10 +5,8 @@ add_library(log
 
 add_dependencies(log
     st
-    config
 )
 
 target_link_libraries(log
     libst.a
-    config
 )

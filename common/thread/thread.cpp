@@ -2,7 +2,6 @@
 
 #include <common/log/log.hpp>
 #include <common/error.hpp>
-#include <common/utils.hpp>
 
 namespace internal
 {
@@ -47,15 +46,11 @@ Thread::Thread(const char *name,
                                 st_(nullptr),
                                 loop_(false),
                                 really_terminated_(false),
-                                dispose_(false),
+                                disposed_(false),
                                 can_run_(false),
                                 cid_(-1)
 
 {
-    if (!name_)
-    {
-        name_ = "";
-    }
 }
 
 Thread::~Thread()
@@ -66,9 +61,10 @@ Thread::~Thread()
 void *Thread::Function(void *arg)
 {
     Thread *obj = (Thread *)arg;
-    rs_assert(obj);
 
     obj->Dispatch();
+
+    st_thread_exit(nullptr);
 }
 
 void Thread::Dispatch()
@@ -77,14 +73,18 @@ void Thread::Dispatch()
 
     _context->GenerateID();
 
-    rs_info("thread %s dispatch start", name_);
+    rs_info("thread %s start", name_);
 
     cid_ = _context->GetID();
 
-    rs_assert(handler_);
     handler_->OnThreadStart();
 
     really_terminated_ = false;
+
+    while (!can_run_ && loop_)
+    {
+        st_usleep(10 * 1000);
+    }
 
     while (loop_)
     {
@@ -95,10 +95,112 @@ void Thread::Dispatch()
         }
 
         rs_info("thread %s OnBeforeCycle success", name_);
+
+        if ((ret = handler_->Cycle()) != ERROR_SUCCESS)
+        {
+            rs_warn("thread %s Cycle failed,ignore and retry,ret=%d", name_, ret);
+            goto failed;
+        }
+
+        rs_info("thread %s Cycle success", name_);
+
+        if ((ret = handler_->OnEndCycle()) != ERROR_SUCCESS)
+        {
+            rs_warn("thread %s OnEndCycle failed,ignore and retry,ret=%d", name_, ret);
+            goto failed;
+        }
+
+        rs_info("thread %s OnEndCycle success", name_);
     failed:
-        if(!loop_)
+        if (!loop_)
+        {
             break;
+        }
+        if (interval_us_ != 0)
+        {
+            st_usleep(interval_us_);
+        }
     }
+
+    really_terminated_ = true;
+    handler_->OnThreadStop();
+    rs_info("thread %s quit", name_);
+    _context->ClearID();
 }
 
+int Thread::Start()
+{
+    int ret = ERROR_SUCCESS;
+    if (st_)
+    {
+        rs_warn("thread %s already running", name_);
+        return ret;
+    }
+
+    if ((st_ = st_thread_create(Thread::Function, this, (joinable_ ? 1 : 0), 0)) == nullptr)
+    {
+        ret = ERROR_ST_CREATE_CYCLE_THREAD;
+        rs_error("thread %s,st_thread_create failed,ret=%d", name_, ret);
+        return ret;
+    }
+
+    disposed_ = false;
+    loop_ = true;
+
+    while (cid_ == 0)
+    {
+        st_usleep(10 * 1000);
+    }
+
+    can_run_ = true;
+    return ret;
+}
+
+void Thread::Dispose()
+{
+    if (disposed_)
+    {
+        return;
+    }
+
+    st_thread_interrupt(st_);
+
+    if (joinable_)
+    {
+        st_thread_join(st_, nullptr);
+    }
+
+    while (!really_terminated_)
+    {
+        st_usleep(10 * 1000);
+    }
+
+    disposed_ = true;
+}
+
+void Thread::Stop()
+{
+    if (!st_)
+    {
+        return;
+    }
+
+    loop_ = false;
+
+    Dispose();
+
+    cid_ = -1;
+    can_run_ = false;
+    st_ = nullptr;
+}
+
+bool Thread::CanLoop()
+{
+    return loop_;
+}
+
+void Thread::StopLoop()
+{
+    loop_ = false;
+}
 } // namespace internal
