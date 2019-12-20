@@ -1,6 +1,6 @@
 
-#include <servers/listener.hpp>
-#include <common/utils.hpp>
+#include <app/listener.hpp>
+#include <common/utils/utils.hpp>
 #include <common/io/st.hpp>
 #include <common/error.hpp>
 #include <common/log/log.hpp>
@@ -8,6 +8,14 @@
 #include <arpa/inet.h>
 
 #define RS_SERVER_LISTEN_BACKLOG 512
+
+ITCPClientHandler::ITCPClientHandler()
+{
+}
+
+ITCPClientHandler::~ITCPClientHandler()
+{
+}
 
 TCPListener::TCPListener(ITCPClientHandler *client_handler,
                          const std::string &ip,
@@ -122,6 +130,13 @@ int TCPListener::Cycle()
         return ret;
     }
 
-    rs_verbose("[%s:%d] accept client,fd=%d", ip_.c_str(), port_, st_netfd_fileno(stfd_));
-    return 0;
+    rs_verbose("get a client,ep=[%s:%d],ret=%d", ip_.c_str(), port_, ret);
+
+    if ((ret = client_handler_->OnTCPClient(client_stfd)) != ERROR_SUCCESS)
+    {
+        rs_error("handle new client failed,ep=[%s:%d]", ip_.c_str(), port_);
+        return ret;
+    }
+
+    return ret;
 }

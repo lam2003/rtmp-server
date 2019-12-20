@@ -2,14 +2,14 @@
 #include <repo_version.h>
 #include <common/log/fast_log.hpp>
 #include <common/thread/thread.hpp>
-#include <servers/rtmp_server.hpp>
+#include <app/server.hpp>
 #include <common/error.hpp>
 
-#include <servers/listener.hpp>
+#include <app/listener.hpp>
 
 ILog *_log = new FastLog;
 IThreadContext *_context = new ThreadContext;
-RTMPServer *_server = new RTMPServer;
+Server *_server = new Server;
 
 int RunMaster()
 {
@@ -24,9 +24,12 @@ int main(int argc, char *argv[])
 {
    RunMaster();
 
-   TCPListener lis(nullptr, "0.0.0.0", 80);
-   lis.Listen();
+
+   RTMPStreamListener listener(_server, ListenerType::RTMP_STEAM);
+
+   listener.Listen("0.0.0.0", 80);
 
    // while(1)
    st_usleep(1000000);
+
 }

@@ -38,4 +38,4 @@ link_directories(
 include(3rdparty.cmake)
 
 add_subdirectory(common)
-add_subdirectory(servers)
+add_subdirectory(app)

@@ -2,7 +2,6 @@
 #define RS_FILE_READER_H
 
 #include <common/core.hpp>
-
 #include <common/io/reader.hpp>
 
 #include <string>
