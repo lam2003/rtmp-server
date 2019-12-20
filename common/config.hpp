@@ -1,7 +1,7 @@
 #ifndef RS_CONFIG_HPP
 #define RS_CONFIG_HPP
 
-#include <common/config/reload.hpp>
+#include <common/reload.hpp>
 
 class IConfig
 {

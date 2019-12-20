@@ -1,6 +1,6 @@
-#include <common/thread/thread.hpp>
+#include <common/thread.hpp>
 
-#include <common/log/log.hpp>
+#include <common/log.hpp>
 #include <common/error.hpp>
 
 namespace internal

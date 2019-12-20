@@ -1,4 +1,4 @@
-#include <common/io/socket.hpp>
+#include <common/socket.hpp>
 #include <common/error.hpp>
 
 StSocket::StSocket(st_netfd_t stfd) : stfd_(stfd),

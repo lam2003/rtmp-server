@@ -1,4 +1,4 @@
-#include <common/config/reload.hpp>
+#include <common/reload.hpp>
 #include <common/error.hpp>
 
 IReloadHandler::IReloadHandler()

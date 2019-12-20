@@ -1,4 +1,4 @@
-#include <common/io/reader.hpp>
+#include <common/reader.hpp>
 #include <common/error.hpp>
 
 Reader::Reader()

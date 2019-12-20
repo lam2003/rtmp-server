@@ -1,8 +1,8 @@
 #include <app/server.hpp>
-#include <common/utils/utils.hpp>
-#include <common/log/log.hpp>
+#include <common/utils.hpp>
+#include <common/log.hpp>
 #include <common/error.hpp>
-#include <common/io/st.hpp>
+#include <common/st.hpp>
 
 #include <unistd.h>
 #include <fcntl.h>

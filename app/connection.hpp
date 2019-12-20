@@ -2,7 +2,7 @@
 #define RS_CONNECTION_HPP
 
 #include <common/core.hpp>
-#include <common/thread/thread.hpp>
+#include <common/thread.hpp>
 #include <protocol/statistics.hpp>
 
 #include <string>

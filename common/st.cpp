@@ -1,7 +1,7 @@
-#include <common/io/st.hpp>
+#include <common/st.hpp>
 #include <common/error.hpp>
-#include <common/log/log.hpp>
-#include <common/utils/utils.hpp>
+#include <common/log.hpp>
+#include <common/utils.hpp>
 
 int STInit()
 {

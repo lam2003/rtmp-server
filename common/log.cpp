@@ -1,4 +1,4 @@
-#include <common/log/log.hpp>
+#include <common/log.hpp>
 #include <common/error.hpp>
 
 ILog::ILog()

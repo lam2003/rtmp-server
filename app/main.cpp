@@ -1,7 +1,7 @@
 
 #include <repo_version.h>
-#include <common/log/fast_log.hpp>
-#include <common/thread/thread.hpp>
+#include <common/fast_log.hpp>
+#include <common/thread.hpp>
 #include <app/server.hpp>
 #include <common/error.hpp>
 

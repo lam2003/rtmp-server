@@ -2,7 +2,7 @@
 #define RS_SOCKET_HPP
 
 #include <common/core.hpp>
-#include <common/io/io.hpp>
+#include <common/io.hpp>
 
 #include <st.h>
 

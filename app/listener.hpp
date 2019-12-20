@@ -2,7 +2,7 @@
 #define RS_LISTENER_HPP
 
 #include <common/core.hpp>
-#include <common/thread/thread.hpp>
+#include <common/thread.hpp>
 
 #include <string>
 

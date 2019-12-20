@@ -1,5 +1,5 @@
-#include <common/log/fast_log.hpp>
-#include <common/utils/utils.hpp>
+#include <common/fast_log.hpp>
+#include <common/utils.hpp>
 
 #include <stdarg.h>
 #include <time.h>
