@@ -211,7 +211,7 @@ ThreadContext::~ThreadContext()
 
 int ThreadContext::GenerateID()
 {
-    static int id = 10000;
+    static int id = 100;
 
     int cid = id++;
     cache_[st_thread_self()] = cid;
@@ -219,7 +219,10 @@ int ThreadContext::GenerateID()
 }
 int ThreadContext::GetID()
 {
-    return cache_[st_thread_self()];
+    st_thread_t st = st_thread_self();
+    if (st == nullptr)
+        return -1;
+    return cache_[st];
 }
 int ThreadContext::SetID(int v)
 {

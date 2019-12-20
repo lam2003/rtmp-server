@@ -5,8 +5,8 @@
 
 #include <st.h>
 
-extern int StInit();
+extern int STInit();
 
-extern void StCloseFd(st_netfd_t &stfd);
+extern void STCloseFd(st_netfd_t &stfd);
 
 #endif

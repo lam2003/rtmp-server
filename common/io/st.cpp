@@ -4,7 +4,7 @@
 #include <common/log/log.hpp>
 #include <common/utils.hpp>
 
-int StInit()
+int STInit()
 {
     int ret = ERROR_SUCCESS;
     if (st_set_eventsys(ST_EVENTSYS_ALT) == -1)
@@ -14,8 +14,6 @@ int StInit()
         return ret;
     }
 
-    rs_trace("st_set_eventsys use %s", st_get_eventsys_name());
-
     if (st_init() != 0)
     {
         ret = ERROR_ST_INITIALIZE;
@@ -23,12 +21,10 @@ int StInit()
         return ret;
     }
 
-    rs_trace("st_init success");
-
     return ret;
 }
 
-void StCloseFd(st_netfd_t &stfd)
+void STCloseFd(st_netfd_t &stfd)
 {
     if (stfd)
     {

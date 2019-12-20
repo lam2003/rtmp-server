@@ -1,5 +1,7 @@
 add_executable(rtmp_server EXCLUDE_FROM_ALL
     main.cpp
+    rtmp_server.cpp
+    listener.cpp
 )
 
 add_dependencies(rtmp_server
