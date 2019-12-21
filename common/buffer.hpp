@@ -11,14 +11,13 @@ public:
     virtual ~Buffer();
 
 public:
-    virtual int32_t Initialize(char *b, int32_t nb);
-
+    virtual int Initialize(char *b, int32_t nb);
     virtual char *Data();
     virtual int32_t Size();
     virtual int32_t Pos();
-    virtual bool Empty();
     virtual bool Require(int32_t required_size);
     virtual void Skip(int32_t size);
+    virtual bool Empty();
 
     //read
     virtual int8_t Read1Bytes();
@@ -39,9 +38,9 @@ public:
     virtual void WriteBytes(char *data, int32_t size);
 
 private:
-    char *p_;
-    char *size_;
-    int32_t capacity_;
+    char *bytes_;
+    char *pos_;
+    int32_t nb_bytes_;
 };
 
 #endif
