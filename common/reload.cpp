@@ -9,22 +9,22 @@ IReloadHandler::~IReloadHandler()
 {
 }
 
-int IReloadHandler::OnReloadUTCTime()
+int32_t IReloadHandler::OnReloadUTCTime()
 {
     return ERROR_SUCCESS;
 }
 
-int IReloadHandler::OnReloadLogTank()
+int32_t IReloadHandler::OnReloadLogTank()
 {
     return ERROR_SUCCESS;
 }
 
-int IReloadHandler::OnReloadLogLevel()
+int32_t IReloadHandler::OnReloadLogLevel()
 {
     return ERROR_SUCCESS;
 }
 
-int IReloadHandler::OnReloadLogFile()
+int32_t IReloadHandler::OnReloadLogFile()
 {
     return ERROR_SUCCESS;
 }

@@ -1,5 +1,5 @@
-#ifndef RS_STATISTIC_H
-#define RS_STATISTIC_H
+#ifndef RS_KBPS_H
+#define RS_KBPS_H
 
 #include <common/core.hpp>
 

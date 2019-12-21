@@ -21,11 +21,11 @@ public:
     virtual int64_t GetSendBytes() override;
     virtual int64_t GetRecvBytes() override;
 
-public:
-    virtual int Read(void *buf, size_t size, ssize_t *nread) override;
-    virtual int ReadFully(void *buf, size_t size, ssize_t *nread) override;
-    virtual int Write(void *buf, size_t size, ssize_t *nread) override;
-    virtual int WriteEv(const iovec *iov, int iov_size, ssize_t *nwrite) override;
+    //IProtocolReaderWriter
+    virtual int32_t Read(void *buf, size_t size, ssize_t *nread) override;
+    virtual int32_t ReadFully(void *buf, size_t size, ssize_t *nread) override;
+    virtual int32_t Write(void *buf, size_t size, ssize_t *nread) override;
+    virtual int32_t WriteEv(const iovec *iov, int32_t iov_size, ssize_t *nwrite) override;
 
 private:
     st_netfd_t stfd_;

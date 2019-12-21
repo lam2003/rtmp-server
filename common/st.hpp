@@ -5,7 +5,7 @@
 
 #include <st.h>
 
-extern int STInit();
+extern int32_t STInit();
 
 extern void STCloseFd(st_netfd_t &stfd);
 

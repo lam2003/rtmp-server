@@ -12,7 +12,7 @@ public:
     virtual ~IBufferReader();
 
 public:
-    virtual int Read(void *buf, size_t size, ssize_t *nread) = 0;
+    virtual int32_t Read(void *buf, size_t size, ssize_t *nread) = 0;
 };
 
 class IBufferWriter
@@ -22,8 +22,8 @@ public:
     virtual ~IBufferWriter();
 
 public:
-    virtual int Write(void *buf, size_t size, ssize_t *nwrite) = 0;
-    virtual int WriteEv(const iovec *iov, int iov_size, ssize_t *nwrite) = 0;
+    virtual int32_t Write(void *buf, size_t size, ssize_t *nwrite) = 0;
+    virtual int32_t WriteEv(const iovec *iov, int32_t iov_size, ssize_t *nwrite) = 0;
 };
 
 class IStatistic
@@ -48,7 +48,7 @@ public:
     virtual int64_t GetRecvTimeout() = 0;
 
 public:
-    virtual int ReadFully(void *buf, size_t size, ssize_t *nread) = 0;
+    virtual int32_t ReadFully(void *buf, size_t size, ssize_t *nread) = 0;
 };
 
 class IProtocolWriter : public virtual IBufferWriter, public virtual IStatistic

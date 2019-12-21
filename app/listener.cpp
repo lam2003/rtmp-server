@@ -19,7 +19,7 @@ ITCPClientHandler::~ITCPClientHandler()
 
 TCPListener::TCPListener(ITCPClientHandler *client_handler,
                          const std::string &ip,
-                         int port) : client_handler_(client_handler),
+                         int32_t port) : client_handler_(client_handler),
                                      ip_(ip),
                                      port_(port),
                                      fd_(-1),
@@ -35,7 +35,7 @@ TCPListener::~TCPListener()
     STCloseFd(stfd_);
 }
 
-int TCPListener::GetFd()
+int32_t TCPListener::GetFd()
 {
     return fd_;
 }
@@ -45,9 +45,9 @@ st_netfd_t TCPListener::GetSTFd()
     return stfd_;
 }
 
-int TCPListener::Listen()
+int32_t TCPListener::Listen()
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
 
     if ((fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
@@ -58,8 +58,8 @@ int TCPListener::Listen()
 
     rs_verbose("create socket success,ep=[%s:%d]", ip_.c_str(), port_);
 
-    int reuse_socket = 1;
-    if (::setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &reuse_socket, sizeof(int)) == -1)
+    int32_t reuse_socket = 1;
+    if (::setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &reuse_socket, sizeof(int32_t)) == -1)
     {
         rs_error("set socket reuse address failed,ep=[%s:%d],ret=%d", ip_.c_str(), port_, ret);
         return ret;
@@ -67,8 +67,8 @@ int TCPListener::Listen()
 
     rs_verbose("set socket reuse address success,ep=[%s:%d]", ip_.c_str(), port_);
 
-    int tcp_keepalive = 1;
-    if (::setsockopt(fd_, SOL_SOCKET, SO_KEEPALIVE, &tcp_keepalive, sizeof(int)) == -1)
+    int32_t tcp_keepalive = 1;
+    if (::setsockopt(fd_, SOL_SOCKET, SO_KEEPALIVE, &tcp_keepalive, sizeof(int32_t)) == -1)
     {
         rs_error("set socket keep alive failed,ep=[%s:%d],ret=%d", ip_.c_str(), port_, ret);
         return ret;
@@ -116,9 +116,9 @@ int TCPListener::Listen()
     return ret;
 }
 
-int TCPListener::Cycle()
+int32_t TCPListener::Cycle()
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
 
     st_netfd_t client_stfd = st_accept(stfd_, nullptr, nullptr, ST_UTIME_NO_TIMEOUT);
     if (client_stfd == nullptr)

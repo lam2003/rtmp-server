@@ -29,6 +29,6 @@ int64_t Reader::FileSize()
 {
 }
 
-int Reader::Read(void *buf, size_t size, ssize_t *nread)
+int32_t Reader::Read(void *buf, size_t size, ssize_t *nread)
 {
 }

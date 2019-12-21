@@ -9,12 +9,12 @@
 
 struct LogLevel
 {
-    static const int VERBOSE = 0x01;
-    static const int INFO = 0x02;
-    static const int TRACE = 0x03;
-    static const int WARN = 0x04;
-    static const int ERROR = 0x05;
-    static const int DISABLE = 0x06;
+    static const int32_t VERBOSE = 0x01;
+    static const int32_t INFO = 0x02;
+    static const int32_t TRACE = 0x03;
+    static const int32_t WARN = 0x04;
+    static const int32_t ERROR = 0x05;
+    static const int32_t DISABLE = 0x06;
 };
 
 class ILog
@@ -24,14 +24,14 @@ public:
     virtual ~ILog();
 
 public:
-    int Initialize();
+    int32_t Initialize();
 
 public:
-    virtual void Verbose(const char *tag, int context_id, const char *fmt, ...);
-    virtual void Info(const char *tag, int context_id, const char *fmt, ...);
-    virtual void Trace(const char *tag, int context_id, const char *fmt, ...);
-    virtual void Warn(const char *tag, int context_id, const char *fmt, ...);
-    virtual void Error(const char *tag, int context_id, const char *fmt, ...);
+    virtual void Verbose(const char *tag, int32_t context_id, const char *fmt, ...);
+    virtual void Info(const char *tag, int32_t context_id, const char *fmt, ...);
+    virtual void Trace(const char *tag, int32_t context_id, const char *fmt, ...);
+    virtual void Warn(const char *tag, int32_t context_id, const char *fmt, ...);
+    virtual void Error(const char *tag, int32_t context_id, const char *fmt, ...);
 };
 
 class IThreadContext
@@ -41,9 +41,9 @@ public:
     virtual ~IThreadContext();
 
 public:
-    virtual int GenerateID();
-    virtual int GetID();
-    virtual int SetID(int v);
+    virtual int32_t GenerateID();
+    virtual int32_t GetID();
+    virtual int32_t SetID(int32_t v);
     virtual void ClearID();
 };
 

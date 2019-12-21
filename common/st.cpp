@@ -3,9 +3,9 @@
 #include <common/log.hpp>
 #include <common/utils.hpp>
 
-int STInit()
+int32_t STInit()
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
     if (st_set_eventsys(ST_EVENTSYS_ALT) == -1)
     {
         ret = ERROR_ST_SET_EPOLL;
@@ -27,7 +27,7 @@ void STCloseFd(st_netfd_t &stfd)
 {
     if (stfd)
     {
-        int err = st_netfd_close(stfd);
+        int32_t err = st_netfd_close(stfd);
         rs_assert(err != -1);
         stfd = nullptr;
     }

@@ -11,16 +11,16 @@ ILog *_log = new FastLog;
 IThreadContext *_context = new ThreadContext;
 Server *_server = new Server;
 
-int RunMaster()
+int32_t RunMaster()
 {
-   int ret = ERROR_SUCCESS;
+   int32_t ret = ERROR_SUCCESS;
    if ((ret = _server->InitializeST()) != ERROR_SUCCESS)
    {
       return ret;
    }
 }
 
-int main(int argc, char *argv[])
+int32_t main(int32_t argc, char *argv[])
 {
    RunMaster();
 

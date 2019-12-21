@@ -12,9 +12,9 @@ public:
     virtual ~IReloadHandler();
 
 public:
-    virtual int OnReloadUTCTime();
-    virtual int OnReloadLogTank();
-    virtual int OnReloadLogLevel();
-    virtual int OnReloadLogFile();
+    virtual int32_t OnReloadUTCTime();
+    virtual int32_t OnReloadLogTank();
+    virtual int32_t OnReloadLogLevel();
+    virtual int32_t OnReloadLogFile();
 };
 #endif

@@ -33,9 +33,9 @@ RTMPStreamListener::~RTMPStreamListener()
     rs_freep(listener_);
 }
 
-int RTMPStreamListener::Listen(const std::string &ip, int port)
+int32_t RTMPStreamListener::Listen(const std::string &ip, int32_t port)
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
 
     ip_ = ip;
     port_ = port;
@@ -54,7 +54,7 @@ int RTMPStreamListener::Listen(const std::string &ip, int port)
     return ret;
 }
 
-int RTMPStreamListener::OnTCPClient(st_netfd_t stfd)
+int32_t RTMPStreamListener::OnTCPClient(st_netfd_t stfd)
 {
     STCloseFd(stfd);
     return 0;
@@ -68,9 +68,9 @@ Server::~Server()
 {
 }
 
-int Server::InitializeST()
+int32_t Server::InitializeST()
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
 
     if ((ret = STInit()) != ERROR_SUCCESS)
     {
@@ -85,18 +85,18 @@ int Server::InitializeST()
     return ret;
 }
 
-int Server::Initilaize()
+int32_t Server::Initilaize()
 {
     return 0;
 }
 
-int Server::AcceptClient(ListenerType type, st_netfd_t stfd)
+int32_t Server::AcceptClient(ListenerType type, st_netfd_t stfd)
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
 
-    int fd = st_netfd_fileno(stfd);
+    int32_t fd = st_netfd_fileno(stfd);
 
-    int val;
+    int32_t val;
     if ((val = fcntl(fd, F_GETFD, 0)) < 0)
     {
         ret = ERROR_SYSTEM_PID_GET_FILE_INFO;
@@ -112,4 +112,8 @@ int Server::AcceptClient(ListenerType type, st_netfd_t stfd)
     }
 
     return ret;
+}
+
+void Server::OnRemove(Connection *conn)
+{
 }

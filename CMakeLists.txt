@@ -38,4 +38,5 @@ link_directories(
 include(3rdparty.cmake)
 
 add_subdirectory(common)
+add_subdirectory(protocol)
 add_subdirectory(app)

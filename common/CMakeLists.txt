@@ -10,6 +10,8 @@ add_library(common
     thread.cpp
     log.cpp
     fast_log.cpp
+    error.cpp
+    buffer.cpp
 )
 
 add_dependencies(common

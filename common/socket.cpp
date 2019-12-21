@@ -43,7 +43,7 @@ int64_t StSocket::GetRecvBytes()
     return recv_bytes_;
 }
 
-int StSocket::Read(void *buf, size_t size, ssize_t *nread)
+int32_t StSocket::Read(void *buf, size_t size, ssize_t *nread)
 {
     ssize_t nb_read = st_read(stfd_, buf, size, recv_timeout_);
     *nread = nb_read;
@@ -65,7 +65,7 @@ int StSocket::Read(void *buf, size_t size, ssize_t *nread)
     return ERROR_SUCCESS;
 }
 
-int StSocket::ReadFully(void *buf, size_t size, ssize_t *nread)
+int32_t StSocket::ReadFully(void *buf, size_t size, ssize_t *nread)
 {
     ssize_t nb_read = st_read_fully(stfd_, buf, size, recv_timeout_);
     *nread = nb_read;
@@ -86,7 +86,7 @@ int StSocket::ReadFully(void *buf, size_t size, ssize_t *nread)
     return ERROR_SUCCESS;
 }
 
-int StSocket::Write(void *buf, size_t size, ssize_t *nwrite)
+int32_t StSocket::Write(void *buf, size_t size, ssize_t *nwrite)
 {
     ssize_t nb_write = st_write(stfd_, buf, size, send_timeout_);
     *nwrite = nb_write;
@@ -105,7 +105,7 @@ int StSocket::Write(void *buf, size_t size, ssize_t *nwrite)
     return ERROR_SUCCESS;
 }
 
-int StSocket::WriteEv(const iovec *iov, int iov_size, ssize_t *nwrite)
+int32_t StSocket::WriteEv(const iovec *iov, int32_t iov_size, ssize_t *nwrite)
 {
     ssize_t nb_write = st_writev(stfd_, iov, iov_size, send_timeout_);
     *nwrite = nb_write;
