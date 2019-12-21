@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 project(rtmp-server)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
 
 find_package(Git)
 

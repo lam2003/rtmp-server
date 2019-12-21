@@ -27,7 +27,7 @@ class Thread
 {
 public:
     Thread(const std::string &name, IThreadHandler *thread_handler, int64_t interval_us, bool joinable);
-    ~Thread();
+    virtual ~Thread();
 
 public:
     virtual int32_t Start();

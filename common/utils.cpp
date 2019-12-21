@@ -27,7 +27,7 @@ std::string Utils::GetPeerIP(int32_t fd)
     return ip;
 }
 
-static void RandomGenerate(char *bytes, int32_t size)
+void Utils::RandomGenerate(char *bytes, int32_t size)
 {
     static bool rand_initialized = false;
     if (!rand_initialized)

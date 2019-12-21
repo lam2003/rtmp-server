@@ -49,6 +49,8 @@ int32_t RecvThread::Cycle()
             continue;
         }
     }
+
+    return ret;
 }
 
 void RecvThread::OnThreadStop()

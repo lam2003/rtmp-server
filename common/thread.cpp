@@ -64,6 +64,8 @@ void *Thread::Function(void *arg)
     obj->Dispatch();
 
     st_thread_exit(nullptr);
+
+    return nullptr;
 }
 
 void Thread::Dispatch()
@@ -203,7 +205,8 @@ void Thread::StopLoop()
     loop_ = false;
 }
 
-int32_t Thread::GetID(){
+int32_t Thread::GetID()
+{
     return cid_;
 }
 } // namespace internal

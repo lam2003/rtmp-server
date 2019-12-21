@@ -18,6 +18,8 @@ int32_t RunMaster()
    {
       return ret;
    }
+
+   return ret;
 }
 
 int32_t main(int32_t argc, char *argv[])
@@ -31,5 +33,7 @@ int32_t main(int32_t argc, char *argv[])
 
    // while(1)
    st_usleep(1000000);
+
+   return 0;
 
 }

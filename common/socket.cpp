@@ -70,7 +70,7 @@ int32_t StSocket::ReadFully(void *buf, size_t size, ssize_t *nread)
     ssize_t nb_read = st_read_fully(stfd_, buf, size, recv_timeout_);
     *nread = nb_read;
 
-    if (nb_read != size)
+    if (nb_read != (ssize_t)size)
     {
         if (nb_read < 0 && errno == ETIME)
         {

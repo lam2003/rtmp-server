@@ -96,15 +96,19 @@ void FastLog::Error(const char *tag, int32_t context_id, const char *fmt, ...)
 
 int32_t FastLog::OnReloadUTCTime()
 {
+    return 0;
 }
 int32_t FastLog::OnReloadLogTank()
 {
+    return 0;
 }
 int32_t FastLog::OnReloadLogLevel()
 {
+    return 0;
 }
 int32_t FastLog::OnReloadLogFile()
 {
+    return 0;
 }
 
 bool FastLog::GenerateHeader(bool error, const char *tag, int32_t context_id, const char *level_name, int32_t *header_size)
