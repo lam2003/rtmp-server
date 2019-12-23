@@ -2,10 +2,9 @@
 #include <repo_version.h>
 #include <common/fast_log.hpp>
 #include <common/thread.hpp>
-#include <app/server.hpp>
+#include <common/listener.hpp>
 #include <common/error.hpp>
-
-#include <app/listener.hpp>
+#include <app/server.hpp>
 
 ILog *_log = new FastLog;
 IThreadContext *_context = new ThreadContext;

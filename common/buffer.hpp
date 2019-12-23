@@ -2,6 +2,8 @@
 #define RS_BUFFER_HPP
 
 #include <common/core.hpp>
+#include <common/io.hpp>
+
 #include <string>
 
 class Buffer
@@ -43,4 +45,28 @@ private:
     int32_t nb_bytes_;
 };
 
+class FastBuffer
+{
+public:
+    FastBuffer();
+    virtual ~FastBuffer();
+
+public:
+    virtual int Size();
+    virtual char *Bytes();
+    virtual void SetBuffer(int buffer_size);
+    virtual char Read1Bytes();
+    virtual char *ReadSlice(int size);
+    virtual void Skip(int size);
+    virtual int Grow(IBufferReader *r, int required_size);
+    virtual void SetMergeReadHandler(bool enable, IMergeReadHandler *mr_handler);
+
+private:
+    bool merged_read_;
+    IMergeReadHandler *mr_handler_;
+    int32_t capacity_;
+    char *buf_;
+    char *start_;
+    char *end_;
+};
 #endif

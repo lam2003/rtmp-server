@@ -71,4 +71,14 @@ public:
 public:
     virtual bool IsNeverTimeout(int64_t timeout_us) = 0;
 };
+
+class IMergeReadHandler
+{
+public:
+    IMergeReadHandler();
+    virtual ~IMergeReadHandler();
+
+public:
+    virtual void OnRead(ssize_t nread) = 0;
+};
 #endif

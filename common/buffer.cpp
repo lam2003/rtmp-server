@@ -3,6 +3,11 @@
 #include <common/log.hpp>
 #include <common/utils.hpp>
 
+//default recv buffer size 128KB
+#define RS_DEFAULT_RECV_BUFFER_SIZE 131072
+//socket max buffer size 256KB
+#define RS_MAX_SOCKER_BUFFER_SIZE 262144
+
 Buffer::Buffer() : bytes_(nullptr),
                    pos_(nullptr),
                    nb_bytes_(0)
@@ -207,4 +212,145 @@ void Buffer::WriteBytes(char *data, int32_t size)
     rs_assert(Require(size));
     memcpy(pos_, data, size);
     pos_ += size;
+}
+
+FastBuffer::FastBuffer() : merged_read_(false),
+                           mr_handler_(nullptr)
+{
+    capacity_ = RS_DEFAULT_RECV_BUFFER_SIZE;
+    buf_ = (char *)malloc(capacity_);
+    start_ = end_ = buf_;
+}
+
+FastBuffer::~FastBuffer()
+{
+    free(buf_);
+    buf_ = nullptr;
+}
+
+int32_t FastBuffer::Size()
+{
+    return (int32_t)(end_ - start_);
+}
+
+char *FastBuffer::Bytes()
+{
+    return start_;
+}
+
+void FastBuffer::SetBuffer(int buffer_size)
+{
+    if (buffer_size > RS_MAX_SOCKER_BUFFER_SIZE)
+    {
+        rs_warn("limit user space buffer from %d to %d", buffer_size, RS_MAX_SOCKER_BUFFER_SIZE);
+    }
+
+    buffer_size = rs_min(RS_MAX_SOCKER_BUFFER_SIZE, buffer_size);
+
+    if (buffer_size < capacity_)
+    {
+        rs_warn("only realloc when buffer changed bigger");
+        return;
+    }
+
+    int start_pos = start_ - buf_;
+    int size = Size();
+
+    buf_ = (char *)realloc(buf_, buffer_size);
+    start_ = buf_ + start_pos;
+    end_ = start_ + size;
+}
+
+char FastBuffer::Read1Bytes()
+{
+    rs_assert(Size() >= 1);
+    return *start_++;
+}
+
+char *FastBuffer::ReadSlice(int size)
+{
+    rs_assert(size >= 0);
+    rs_assert(Size() >= size);
+    //avoid start_+size overflow
+    rs_assert(start_ + size >= buf_);
+
+    char *ptr = start_;
+    start_ += size;
+    return ptr;
+}
+
+int FastBuffer::Grow(IBufferReader *r, int required_size)
+{
+    rs_assert(required_size > 0);
+
+    int ret = ERROR_SUCCESS;
+
+    if (Size() >= required_size)
+    {
+        return ret;
+    }
+
+    int free_space = (int)(buf_ + capacity_ - end_);
+    int used_space = (int)(end_ - start_);
+
+    if (free_space < required_size - used_space)
+    {
+        rs_verbose("move fast buffer %d bytes", used_space);
+        if (!used_space)
+        {
+            start_ = end_ = buf_;
+            rs_verbose("all consumed,reset fast buffer");
+        }
+        else if (used_space < capacity_ && start_ > buf_)
+        {
+            buf_ = (char *)memmove(buf_, start_, used_space);
+            start_ = buf_;
+            end_ = start_ + used_space;
+        }
+
+        free_space = (int)(buf_ + capacity_ - end_);
+
+        //avoid buffer overflow,which cause function never return
+        if (free_space < required_size - used_space)
+        {
+            ret = ERROR_READER_BUFFER_OVERFLOW;
+            rs_error("buffer overflow,required=%d,max=%d,left=%d,ret=%d",
+                     required_size, capacity_, free_space, ret);
+            return ret;
+        }
+    }
+
+    while (end_ - start_ < required_size)
+    {
+        ssize_t nread;
+        if ((ret = r->Read(end_, free_space, &nread)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        if (merged_read_ && mr_handler_)
+        {
+            mr_handler_->OnRead(nread);
+        }
+
+        rs_assert(int(nread) > 0);
+        end_ += nread;
+        free_space -= nread;
+    }
+
+    return ret;
+}
+
+void FastBuffer::SetMergeReadHandler(bool enable, IMergeReadHandler *mr_handler)
+{
+    merged_read_ = enable;
+    mr_handler_ = mr_handler;
+}
+
+void FastBuffer::Skip(int size)
+{
+    rs_assert(Size() >= size);
+    rs_assert(start_ + size >= buf_);
+
+    start_ += size;
 }

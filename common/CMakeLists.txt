@@ -12,6 +12,7 @@ add_library(common
     fast_log.cpp
     error.cpp
     buffer.cpp
+    listener.cpp
 )
 
 add_dependencies(common
