@@ -6,11 +6,11 @@
 
 #include <string>
 
-class BufferReader
+class BufferManager
 {
 public:
-    BufferReader();
-    virtual ~BufferReader();
+    BufferManager();
+    virtual ~BufferManager();
 
 public:
     virtual int Initialize(char *b, int32_t nb);

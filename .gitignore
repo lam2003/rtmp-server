@@ -1,2 +1,4 @@
+# Build Dir
 build/
+# VsCode
 .vscode/

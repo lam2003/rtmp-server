@@ -8,17 +8,17 @@
 //socket max buffer size 256KB
 #define RS_MAX_SOCKER_BUFFER_SIZE 262144
 
-BufferReader::BufferReader() : buf_(nullptr),
+BufferManager::BufferManager() : buf_(nullptr),
                    ptr_(nullptr),
                    size_(0)
 {
 }
 
-BufferReader::~BufferReader()
+BufferManager::~BufferManager()
 {
 }
 
-int BufferReader::Initialize(char *b, int32_t nb)
+int BufferManager::Initialize(char *b, int32_t nb)
 {
     int ret = ERROR_SUCCESS;
     if (!b)
@@ -40,45 +40,45 @@ int BufferReader::Initialize(char *b, int32_t nb)
     return ret;
 }
 
-char *BufferReader::Data()
+char *BufferManager::Data()
 {
     return buf_;
 }
 
-int32_t BufferReader::Size()
+int32_t BufferManager::Size()
 {
     return size_;
 }
 
-int32_t BufferReader::Pos()
+int32_t BufferManager::Pos()
 {
     return int32_t(ptr_ - buf_);
 }
 
-bool BufferReader::Empty()
+bool BufferManager::Empty()
 {
     return !buf_ || (ptr_ >= buf_ + size_);
 }
 
-bool BufferReader::Require(int32_t required_size)
+bool BufferManager::Require(int32_t required_size)
 {
     rs_assert(required_size >= 0);
     return required_size <= size_ - (ptr_ - buf_);
 }
 
-void BufferReader::Skip(int32_t size)
+void BufferManager::Skip(int32_t size)
 {
     rs_assert(ptr_);
     ptr_ += size;
 }
 
-int8_t BufferReader::Read1Bytes()
+int8_t BufferManager::Read1Bytes()
 {
     rs_assert(Require(1));
     return (int8_t)*ptr_++;
 }
 
-int16_t BufferReader::Read2Bytes()
+int16_t BufferManager::Read2Bytes()
 {
     rs_assert(Require(2));
     int16_t value;
@@ -90,7 +90,7 @@ int16_t BufferReader::Read2Bytes()
     return value;
 }
 
-int32_t BufferReader::Read3Bytes()
+int32_t BufferManager::Read3Bytes()
 {
     rs_assert(Require(3));
     int32_t value = 0;
@@ -103,7 +103,7 @@ int32_t BufferReader::Read3Bytes()
     return value;
 }
 
-int32_t BufferReader::Read4Bytes()
+int32_t BufferManager::Read4Bytes()
 {
     rs_assert(Require(4));
     int32_t value;
@@ -117,7 +117,7 @@ int32_t BufferReader::Read4Bytes()
     return value;
 }
 
-int64_t BufferReader::Read8Bytes()
+int64_t BufferManager::Read8Bytes()
 {
     rs_assert(Require(8));
     int64_t value;
@@ -135,7 +135,7 @@ int64_t BufferReader::Read8Bytes()
     return value;
 }
 
-std::string BufferReader::ReadString(int32_t len)
+std::string BufferManager::ReadString(int32_t len)
 {
     rs_assert(Require(len));
     std::string value;
@@ -146,20 +146,20 @@ std::string BufferReader::ReadString(int32_t len)
     return value;
 }
 
-void BufferReader::ReadBytes(char *data, int32_t size)
+void BufferManager::ReadBytes(char *data, int32_t size)
 {
     rs_assert(Require(size));
     memcpy(data, ptr_, size);
     ptr_ += size;
 }
 
-void BufferReader::Write1Bytes(int8_t value)
+void BufferManager::Write1Bytes(int8_t value)
 {
     rs_assert(Require(1));
     *ptr_++ = value;
 }
 
-void BufferReader::Write2Bytes(int16_t value)
+void BufferManager::Write2Bytes(int16_t value)
 {
     rs_assert(Require(2));
     char *pp = (char *)&value;
@@ -167,7 +167,7 @@ void BufferReader::Write2Bytes(int16_t value)
     *ptr_++ = pp[0];
 }
 
-void BufferReader::Write3Bytes(int32_t value)
+void BufferManager::Write3Bytes(int32_t value)
 {
     rs_assert(Require(3));
     char *pp = (char *)&value;
@@ -176,7 +176,7 @@ void BufferReader::Write3Bytes(int32_t value)
     *ptr_++ = pp[0];
 }
 
-void BufferReader::Write4Bytes(int32_t value)
+void BufferManager::Write4Bytes(int32_t value)
 {
     rs_assert(Require(4));
     char *pp = (char *)&value;
@@ -186,7 +186,7 @@ void BufferReader::Write4Bytes(int32_t value)
     *ptr_++ = pp[0];
 }
 
-void BufferReader::Write8Bytes(int64_t value)
+void BufferManager::Write8Bytes(int64_t value)
 {
     rs_assert(Require(8));
     char *pp = (char *)&value;
@@ -200,14 +200,14 @@ void BufferReader::Write8Bytes(int64_t value)
     *ptr_++ = pp[0];
 }
 
-void BufferReader::WriteString(const std::string &value)
+void BufferManager::WriteString(const std::string &value)
 {
     rs_assert(Require(value.length()));
     memcpy(ptr_, value.data(), value.length());
     ptr_ += value.length();
 }
 
-void BufferReader::WriteBytes(char *data, int32_t size)
+void BufferManager::WriteBytes(char *data, int32_t size)
 {
     rs_assert(Require(size));
     memcpy(ptr_, data, size);

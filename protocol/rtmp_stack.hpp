@@ -3,6 +3,8 @@
 
 #include <common/core.hpp>
 #include <common/io.hpp>
+#include <common/buffer.hpp>
+#include <protocol/rtmp_message.hpp>
 
 class HandshakeBytes
 {
@@ -45,9 +47,14 @@ public:
 public:
     virtual void SetSendTimeout(int64_t timeout_us);
     virtual void SetRecvTimeout(int64_t timeout_us);
+    virtual int ReadInterlacedMessage(RTMPCommonMessage **pmsg);
+
+protected:
+    virtual int ReadBasicHeader(char &fmt, int &cid);
 
 private:
     IProtocolReaderWriter *rw_;
+    FastBuffer *in_buffer_;
 };
 
 class RTMPServer
@@ -60,6 +67,7 @@ public:
     virtual int32_t Handshake();
     virtual void SetSendTimeout(int64_t timeout_us);
     virtual void SetRecvTimeout(int64_t timeout_us);
+    virtual int32_t RecvMessage(RTMPCommonMessage **pmsg);
 
 private:
     IProtocolReaderWriter *rw_;
