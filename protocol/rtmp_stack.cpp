@@ -110,7 +110,7 @@ int32_t HandshakeBytes::CreateC0C1()
 
 int32_t HandshakeBytes::CreateS0S1S2(const char *c1)
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
 
     if (s0s1s2)
     {
@@ -147,7 +147,7 @@ int32_t HandshakeBytes::CreateS0S1S2(const char *c1)
 
 int32_t HandshakeBytes::CreateC2()
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
 
     if (c2)
     {
@@ -168,6 +168,82 @@ int32_t HandshakeBytes::CreateC2()
     {
         buffer.WriteBytes(s0s1s2 + 1, 4);
     }
+
+    return ret;
+}
+
+SimpleHandshake::SimpleHandshake()
+{
+}
+
+SimpleHandshake::~SimpleHandshake()
+{
+}
+
+int32_t SimpleHandshake::HandshakeWithClient(HandshakeBytes *handshake_bytes, IProtocolReaderWriter *rw)
+{
+    int32_t ret = ERROR_SUCCESS;
+
+    ssize_t nwrite;
+
+    if ((ret = handshake_bytes->ReadC0C1(rw)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (handshake_bytes->c0c1[0] != 0x03)
+    {
+        ret = ERROR_RTMP_PLAIN_REQUIRED;
+        rs_error("check c0 failed,only support rtmp plain text,ret=%d", ret);
+        return ret;
+    }
+
+    rs_verbose("check c0 success");
+
+    if ((ret = handshake_bytes->CreateS0S1S2(handshake_bytes->c0c1 + 1)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if ((ret = rw->Write(handshake_bytes->s0s1s2, 3073, &nwrite)) != ERROR_SUCCESS)
+    {
+        rs_error("simple handshake send s0s1s2 failed,ret=%d", ret);
+        return ret;
+    }
+
+    rs_verbose("simple handshake send s0s1s2 success");
+
+    if ((ret = handshake_bytes->ReadC2(rw)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    rs_verbose("simple handshake success");
+    return ret;
+}
+
+RTMPServer::RTMPServer(IProtocolReaderWriter *rw) : rw_(rw)
+{
+    handshake_bytes_ = new HandshakeBytes;
+}
+
+RTMPServer::~RTMPServer()
+{
+
+    rs_freep(handshake_bytes_);
+}
+
+int32_t RTMPServer::Handshake()
+{
+    int ret = ERROR_SUCCESS;
+
+    SimpleHandshake simple_handshake;
+    if ((ret = simple_handshake.HandshakeWithClient(handshake_bytes_, rw_)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    rs_freep(handshake_bytes_);
 
     return ret;
 }

@@ -54,10 +54,13 @@ public:
 public:
     virtual int32_t Initilaize();
     virtual int32_t InitializeST();
-
+    virtual int32_t Listen();
     virtual int32_t AcceptClient(ListenerType type, st_netfd_t stfd);
-
+    //IConnectionManager
     virtual void OnRemove(Connection *conn) override;
+
+protected:
+    virtual int32_t ListenRTMP();
 };
 
 #endif

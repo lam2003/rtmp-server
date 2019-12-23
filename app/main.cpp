@@ -29,10 +29,10 @@ int32_t main(int32_t argc, char *argv[])
 
    RTMPStreamListener listener(_server, ListenerType::RTMP_STEAM);
 
-   listener.Listen("0.0.0.0", 80);
+   listener.Listen("0.0.0.0", 1935);
 
    // while(1)
-   st_usleep(1000000);
+   st_usleep(100000000);
 
    return 0;
 

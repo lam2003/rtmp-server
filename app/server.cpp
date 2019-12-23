@@ -1,4 +1,5 @@
 #include <app/server.hpp>
+#include <app/rtmp_connection.hpp>
 #include <common/utils.hpp>
 #include <common/log.hpp>
 #include <common/error.hpp>
@@ -56,8 +57,13 @@ int32_t RTMPStreamListener::Listen(const std::string &ip, int32_t port)
 
 int32_t RTMPStreamListener::OnTCPClient(st_netfd_t stfd)
 {
-    STCloseFd(stfd);
-    return 0;
+    int ret = ERROR_SUCCESS;
+    if ((ret = server_->AcceptClient(ListenerType::RTMP_STEAM, stfd)) != ERROR_SUCCESS)
+    {
+        rs_error("accpet client failed,ret=%d", ret);
+        return ret;
+    }
+    return ret;
 }
 
 Server::Server()
@@ -111,6 +117,35 @@ int32_t Server::AcceptClient(ListenerType type, st_netfd_t stfd)
         return ret;
     }
 
+    Connection *conn = nullptr;
+    if (type == ListenerType::RTMP_STEAM)
+    {
+        conn = new RTMPConnection(this, stfd);
+    }
+
+    if ((ret = conn->Start()) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    return ret;
+}
+
+int32_t Server::Listen()
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = ListenRTMP()) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    return ret;
+}
+
+int32_t Server::ListenRTMP()
+{
+    int ret = ERROR_SUCCESS;
     return ret;
 }
 

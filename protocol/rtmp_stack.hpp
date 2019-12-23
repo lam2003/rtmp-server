@@ -30,14 +30,28 @@ public:
     char *c2;
 };
 
+class SimpleHandshake
+{
+public:
+    SimpleHandshake();
+    virtual ~SimpleHandshake();
+
+public:
+    virtual int32_t HandshakeWithClient(HandshakeBytes *handshake_bytes, IProtocolReaderWriter *rw);
+};
+
 class RTMPServer
 {
 public:
     RTMPServer(IProtocolReaderWriter *rw);
     virtual ~RTMPServer();
 
+public:
+    int32_t Handshake();
+
 private:
     IProtocolReaderWriter *rw_;
+    HandshakeBytes *handshake_bytes_;
 };
 
 #endif
