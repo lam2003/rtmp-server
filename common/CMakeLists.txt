@@ -9,7 +9,6 @@ add_library(common
     file_reader.cpp
     thread.cpp
     log.cpp
-    fast_log.cpp
     error.cpp
     buffer.cpp
     listener.cpp

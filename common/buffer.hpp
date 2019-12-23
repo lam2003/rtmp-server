@@ -6,11 +6,11 @@
 
 #include <string>
 
-class Buffer
+class BufferReader
 {
 public:
-    Buffer();
-    virtual ~Buffer();
+    BufferReader();
+    virtual ~BufferReader();
 
 public:
     virtual int Initialize(char *b, int32_t nb);
@@ -40,9 +40,9 @@ public:
     virtual void WriteBytes(char *data, int32_t size);
 
 private:
-    char *bytes_;
-    char *pos_;
-    int32_t nb_bytes_;
+    char *buf_;
+    char *ptr_;
+    int32_t size_;
 };
 
 class FastBuffer

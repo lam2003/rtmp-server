@@ -1,6 +1,6 @@
 
 #include <repo_version.h>
-#include <common/fast_log.hpp>
+#include <common/log.hpp>
 #include <common/thread.hpp>
 #include <common/listener.hpp>
 #include <common/error.hpp>

@@ -93,7 +93,7 @@ int32_t HandshakeBytes::CreateC0C1()
     c0c1 = new char[1537];
     Utils::RandomGenerate(c0c1, 1537);
 
-    Buffer buffer;
+    BufferReader buffer;
     if ((ret = buffer.Initialize(c0c1, 9)) != ERROR_SUCCESS)
     {
         return ret;
@@ -120,7 +120,7 @@ int32_t HandshakeBytes::CreateS0S1S2(const char *c1)
     s0s1s2 = new char[3073];
     Utils::RandomGenerate(s0s1s2, 3073);
 
-    Buffer buffer;
+    BufferReader buffer;
     if ((ret = buffer.Initialize(s0s1s2, 9)) != ERROR_SUCCESS)
     {
         return ret;
@@ -157,7 +157,7 @@ int32_t HandshakeBytes::CreateC2()
     c2 = new char[1536];
     Utils::RandomGenerate(c2, 1536);
 
-    Buffer buffer;
+    BufferReader buffer;
     if ((ret = buffer.Initialize(c2, 8)) != ERROR_SUCCESS)
     {
         return ret;
