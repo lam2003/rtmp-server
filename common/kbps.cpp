@@ -1,4 +1,4 @@
-#include <protocol/kbps.hpp>
+#include <common/kbps.hpp>
 
 IKbpsDelta::IKbpsDelta()
 {

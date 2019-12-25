@@ -2,7 +2,7 @@
 #include <common/utils.hpp>
 #include <common/error.hpp>
 
-RecvThread::RecvThread(IMessageHandler *message_handler,
+RecvThread::RecvThread(rtmp::IMessageHandler *message_handler,
                        Server *server,
                        int32_t timeout) : message_handler_(message_handler),
                                           server_(server),

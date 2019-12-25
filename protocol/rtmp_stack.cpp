@@ -1,8 +1,115 @@
 #include <protocol/rtmp_stack.hpp>
 #include <common/utils.hpp>
 #include <common/error.hpp>
-
 #include <common/log.hpp>
+#include <core/consts.hpp>
+
+namespace rtmp
+{
+IMessageHandler::IMessageHandler()
+{
+}
+
+IMessageHandler::~IMessageHandler()
+{
+}
+
+MessageHeader::MessageHeader() : timestamp_delta(0),
+                                 payload_length(0),
+                                 message_type(0),
+                                 stream_id(0),
+                                 timestamp(0),
+                                 perfer_cid(0)
+{
+}
+
+MessageHeader::~MessageHeader()
+{
+}
+
+bool MessageHeader::IsAudio()
+{
+    return true;
+}
+bool MessageHeader::IsVideo()
+{
+    return true;
+}
+bool MessageHeader::IsAMF0Command()
+{
+    return true;
+}
+bool MessageHeader::IsAMF0Data()
+{
+    return true;
+}
+bool MessageHeader::IsAMF3Command()
+{
+    return true;
+}
+bool MessageHeader::IsAMF3Data()
+{
+    return true;
+}
+bool MessageHeader::IsWindowAckledgementSize()
+{
+    return true;
+}
+
+bool MessageHeader::IsAckLedgement()
+{
+    return true;
+}
+bool MessageHeader::IsSetChunkSize()
+{
+    return true;
+}
+bool MessageHeader::IsUserControlMessage()
+{
+    return true;
+}
+bool MessageHeader::IsSetPeerBandWidth()
+{
+    return true;
+}
+bool MessageHeader::IsAggregate()
+{
+    return true;
+}
+void MessageHeader::InitializeAMF0Script(int32_t size, int32_t stream)
+{
+}
+void MessageHeader::InitializeVideo(int32_t size, uint32_t timestamp, int32_t stream)
+{
+}
+void MessageHeader::InitializeAudio(int32_t size, uint32_t timestamp, int32_t stream)
+{
+}
+
+CommonMessage::CommonMessage()
+{
+}
+
+CommonMessage::~CommonMessage()
+{
+}
+
+void CommonMessage::CreatePayload(int32_t size)
+{
+}
+
+ChunkStream::ChunkStream(int cid) : cid(cid),
+                                    fmt(0),
+                                    msg(nullptr),
+                                    extended_timestamp(false),
+                                    msg_count(0)
+
+{
+}
+
+ChunkStream::~ChunkStream()
+{
+}
 
 HandshakeBytes::HandshakeBytes() : c0c1(nullptr),
                                    s0s1s2(nullptr),
@@ -222,27 +329,41 @@ int32_t SimpleHandshake::HandshakeWithClient(HandshakeBytes *handshake_bytes, IP
     return ret;
 }
 
-RTMPProtocol::RTMPProtocol(IProtocolReaderWriter *rw) : rw_(rw)
+Protocol::Protocol(IProtocolReaderWriter *rw) : rw_(rw)
 {
     in_buffer_ = new FastBuffer;
+    cs_cache_ = new ChunkStream *[RS_CONSTS_CHUNK_STREAM_CHCAHE];
+    for (int cid = 0; cid < RS_CONSTS_CHUNK_STREAM_CHCAHE; cid++)
+    {
+        ChunkStream *cs = new ChunkStream(cid);
+        cs->header.perfer_cid = cid;
+        cs_cache_[cid] = cs;
+    }
 }
 
-RTMPProtocol::~RTMPProtocol()
+Protocol::~Protocol()
 {
     rs_freep(in_buffer_);
+
+    for (int cid = 0; cid < RS_CONSTS_CHUNK_STREAM_CHCAHE; cid++)
+    {
+        ChunkStream *cs = cs_cache_[cid];
+        rs_freep(cs);
+    }
+    rs_freepa(cs_cache_);
 }
 
-void RTMPProtocol::SetSendTimeout(int64_t timeout_us)
+void Protocol::SetSendTimeout(int64_t timeout_us)
 {
     rw_->SetSendTimeout(timeout_us);
 }
 
-void RTMPProtocol::SetRecvTimeout(int64_t timeout_us)
+void Protocol::SetRecvTimeout(int64_t timeout_us)
 {
     rw_->SetRecvTimeout(timeout_us);
 }
 
-int RTMPProtocol::ReadBasicHeader(char &fmt, int &cid)
+int Protocol::ReadBasicHeader(char &fmt, int &cid)
 {
     int ret = ERROR_SUCCESS;
 
@@ -319,7 +440,14 @@ int RTMPProtocol::ReadBasicHeader(char &fmt, int &cid)
     return ret;
 }
 
-int RTMPProtocol::ReadInterlacedMessage(RTMPCommonMessage **pmsg)
+int Protocol::ReadRTMPMsgHeader(ChunkStream *cs, char fmt)
+{
+    int ret = ERROR_SUCCESS;
+
+    return ret;
+}
+
+int Protocol::ReadInterlacedMessage(CommonMessage **pmsg)
 {
     int ret = ERROR_SUCCESS;
     char fmt = 0;
@@ -332,50 +460,39 @@ int RTMPProtocol::ReadInterlacedMessage(RTMPCommonMessage **pmsg)
         }
         return ret;
     }
+
     rs_verbose("read basic header success,fmt=%d,cid=%d", fmt, cid);
-    
 
-    return ret;
-}
-
-RTMPServer::RTMPServer(IProtocolReaderWriter *rw) : rw_(rw)
-{
-    handshake_bytes_ = new HandshakeBytes;
-    protocol_ = new RTMPProtocol(rw);
-}
-
-RTMPServer::~RTMPServer()
-{
-    rs_freep(handshake_bytes_);
-    rs_freep(protocol_);
-}
-
-int32_t RTMPServer::Handshake()
-{
-    int ret = ERROR_SUCCESS;
-
-    SimpleHandshake simple_handshake;
-    if ((ret = simple_handshake.HandshakeWithClient(handshake_bytes_, rw_)) != ERROR_SUCCESS)
+    ChunkStream *cs = nullptr;
+    if (cid < RS_CONSTS_CHUNK_STREAM_CHCAHE)
     {
-        return ret;
+        rs_verbose("cs-cache hint,cid=%d", cid);
+        cs = cs_cache_[cid];
+        rs_verbose("cache chunk stream:fmt=%d,cid=%d,size=%d,msg(type=%d,size=%d,time=%lld,sid=%d)",
+                   fmt, cid, (cs->msg ? cs->msg->size : 0),
+                   cs->header.message_type, cs->header.payload_length,
+                   cs->header.timestamp, cs->header.stream_id);
+    }
+    else
+    {
+        if (chunk_streams_.find(cid) == chunk_streams_.end())
+        {
+            cs = new ChunkStream(cid);
+            cs->header.perfer_cid = cid;
+            chunk_streams_[cid] = cs;
+            rs_verbose("cache new chunk stream:fmt=%d,cid=%d", fmt, cid);
+        }
+        else
+        {
+            cs = chunk_streams_[cid];
+            rs_verbose("cache chunk stream:fmt=%d,cid=%d,size=%d,msg(type=%d,size=%d,time=%lld,sid=%d)",
+                       fmt, cid, (cs->msg ? cs->msg->size : 0),
+                       cs->header.message_type, cs->header.payload_length,
+                       cs->header.timestamp, cs->header.stream_id);
+        }
     }
 
-    rs_freep(handshake_bytes_);
-
     return ret;
 }
 
-void RTMPServer::SetSendTimeout(int64_t timeout_us)
-{
-    protocol_->SetSendTimeout(timeout_us);
-}
-
-void RTMPServer::SetRecvTimeout(int64_t timeout_us)
-{
-    protocol_->SetRecvTimeout(timeout_us);
-}
-
-int32_t RTMPServer::RecvMessage(RTMPCommonMessage **pmsg)
-{
-    protocol_->ReadInterlacedMessage(pmsg);
-}
+} // namespace rtmp

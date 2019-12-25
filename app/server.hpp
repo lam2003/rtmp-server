@@ -3,7 +3,7 @@
 
 #include <common/core.hpp>
 #include <common/listener.hpp>
-#include <app/connection.hpp>
+#include <common/connection.hpp>
 
 #include <string>
 

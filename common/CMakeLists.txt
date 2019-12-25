@@ -12,6 +12,8 @@ add_library(common
     error.cpp
     buffer.cpp
     listener.cpp
+    kbps.cpp
+    connection.cpp
 )
 
 add_dependencies(common

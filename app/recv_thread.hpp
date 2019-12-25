@@ -3,14 +3,14 @@
 
 #include <common/core.hpp>
 #include <common/thread.hpp>
-#include <protocol/rtmp_message.hpp>
+#include <protocol/rtmp_stack.hpp>
 // #include <protocol/buffer.hpp>
 #include <app/server.hpp>
 
 class RecvThread : virtual public internal::IThreadHandler
 {
 public:
-    RecvThread(IMessageHandler *messgae_handler, Server *server, int32_t timeout);
+    RecvThread(rtmp::IMessageHandler *messgae_handler, Server *server, int32_t timeout);
     virtual ~RecvThread();
 
 public:
@@ -25,13 +25,13 @@ public:
     virtual void OnThreadStop() override;
 
 private:
-    IMessageHandler *message_handler_;
+    rtmp::IMessageHandler *message_handler_;
     Server *server_;
     int32_t timeout_;
     internal::Thread *thread_;
 };
 
-class PublishRecvThread : virtual public IMessageHandler
+class PublishRecvThread : virtual public rtmp::IMessageHandler
 {
 public:
     PublishRecvThread();

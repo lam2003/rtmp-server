@@ -3,7 +3,7 @@
 
 #include <common/core.hpp>
 #include <common/thread.hpp>
-#include <protocol/kbps.hpp>
+#include <common/kbps.hpp>
 
 #include <string>
 

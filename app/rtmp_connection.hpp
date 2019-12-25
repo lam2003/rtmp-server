@@ -3,8 +3,8 @@
 
 #include <common/core.hpp>
 #include <common/socket.hpp>
-#include <protocol/rtmp_stack.hpp>
-#include <app/connection.hpp>
+#include <common/connection.hpp>
+#include <app/rtmp_server.hpp>
 #include <app/server.hpp>
 
 class RTMPConnection : virtual public Connection
