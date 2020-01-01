@@ -68,9 +68,9 @@ public:
     virtual void CreatePayload(int32_t size);
 
 public:
-    MessageHeader header;
     int32_t size;
     char *payload;
+    MessageHeader header;
 };
 
 class ChunkStream
@@ -133,7 +133,8 @@ public:
 
 protected:
     virtual int ReadBasicHeader(char &fmt, int &cid);
-    virtual int ReadRTMPMsgHeader(ChunkStream *cs, char fmt);
+    virtual int ReadMessageHeader(ChunkStream *cs, char fmt);
+    virtual int ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg);
 
 private:
     IProtocolReaderWriter *rw_;
@@ -143,6 +144,5 @@ private:
 };
 
 } // namespace rtmp
-
 
 #endif

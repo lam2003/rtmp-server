@@ -86,16 +86,21 @@ void MessageHeader::InitializeAudio(int32_t size, uint32_t timestamp, int32_t st
 {
 }
 
-CommonMessage::CommonMessage()
+CommonMessage::CommonMessage() : size(0),
+                                 payload(nullptr)
 {
 }
 
 CommonMessage::~CommonMessage()
 {
+    rs_freep(payload);
 }
 
 void CommonMessage::CreatePayload(int32_t size)
 {
+    rs_freep(payload);
+    payload = new char[size];
+    rs_verbose("create payload for rtmp message,size=%d", size);
 }
 
 ChunkStream::ChunkStream(int cid) : cid(cid),
@@ -440,10 +445,221 @@ int Protocol::ReadBasicHeader(char &fmt, int &cid)
     return ret;
 }
 
-int Protocol::ReadRTMPMsgHeader(ChunkStream *cs, char fmt)
+/**
+ * when fmt = 0,message header contain [timestamp delta][payload length][message type][stream id],11 bytes
+ * when fmt = 1,message header contain [timestamp delta][payload length][message type],7 bytes
+ * when fmt = 2,message header contain [timestamp delta],3 bytes 
+ * when fmt = 3,message header is null,0 bytes
+ */
+int Protocol::ReadMessageHeader(ChunkStream *cs, char fmt)
 {
     int ret = ERROR_SUCCESS;
 
+    bool is_first_msg_of_chunk = !cs->msg;
+    if (cs->msg_count == 0 && fmt != RTMP_FMT_TYPE0)
+    {
+        //for librtmp,if ping,it will send a fresh stream with fmt 1
+        // 0x42             where: fmt=1, cid=2, protocol contorl user-control message
+        // 0x00 0x00 0x00   where: timestamp=0
+        // 0x00 0x00 0x06   where: payload_length=6
+        // 0x04             where: message_type=4(protocol control user-control message)
+        // 0x00 0x06            where: event Ping(0x06)
+        // 0x00 0x00 0x0d 0x0f  where: event data 4bytes ping timestamp.
+        if (cs->cid == RTMP_CID_PROTOCOL_CONTROL && fmt == RTMP_FMT_TYPE1)
+        {
+            rs_warn("accept cid=2,fmt=1 to make librtmp work");
+        }
+        else
+        {
+            ret = ERROR_RTMP_CHUNK_START;
+            rs_error("chunk stream is fresh,fmt mush be %d,actual is %d,cid=%d,ret=%d", RTMP_FMT_TYPE0, fmt, cs->cid, ret);
+            return ret;
+        }
+    }
+
+    if (cs->msg && fmt == RTMP_FMT_TYPE0)
+    {
+        ret = ERROR_RTMP_CHUNK_START;
+        rs_error("chunk stream exists,fmt could not be %d,actual is %d,cid=%d,ret=%d", RTMP_FMT_TYPE0, fmt, cs->cid, ret);
+        return ret;
+    }
+
+    if (!cs->msg)
+    {
+        cs->msg = new CommonMessage;
+        rs_verbose("create message for new chunk,fmt=%d,cid=%d", fmt, cs->cid);
+    }
+
+    static const char mh_sizes[] = {11, 7, 3, 0};
+    int mh_size = mh_sizes[(int)fmt];
+    rs_verbose("calc chunk message header size,fmt=%d,mh_size=%d", fmt, mh_size);
+
+    if (mh_size > 0 && (ret = in_buffer_->Grow(rw_, mh_size)) != ERROR_SUCCESS)
+    {
+        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        {
+            rs_error("read %d bytes message header failed,ret=%d", mh_size, ret);
+        }
+        return ret;
+    }
+
+    char *ptr = in_buffer_->ReadSlice(mh_size);
+    BufferManager manager;
+    manager.Initialize(ptr, mh_size);
+
+    if (fmt <= RTMP_FMT_TYPE2)
+    {
+        cs->header.timestamp_delta = manager.Read3Bytes();
+        cs->extended_timestamp = (cs->header.timestamp_delta >= RTMP_EXTENDED_TIMESTAMP);
+
+        if (!cs->extended_timestamp)
+        {
+            if (fmt == RTMP_FMT_TYPE0)
+            {
+                cs->header.timestamp = cs->header.timestamp_delta;
+            }
+            else
+            {
+                cs->header.timestamp += cs->header.timestamp_delta;
+            }
+        }
+        rs_verbose("chunk message timestamp=%lld", cs->header.timestamp);
+
+        if (fmt <= RTMP_FMT_TYPE1)
+        {
+            int32_t payload_length = manager.Read3Bytes();
+
+            if (!is_first_msg_of_chunk && cs->header.payload_length != payload_length)
+            {
+                ret = ERROR_RTMP_CHUNK_START;
+                rs_error("msg exists in chunk cache,size=%d,could not change to %d,ret=%d", cs->header.payload_length, payload_length, ret);
+                return ret;
+            }
+
+            cs->header.payload_length = payload_length;
+            cs->header.message_type = manager.Read1Bytes();
+            if (fmt <= RTMP_FMT_TYPE0)
+            {
+                cs->header.message_type = manager.Read4Bytes();
+                rs_verbose("header read completed,fmt=%d,mh_size=%d,ext_time=%d,time=%lld,payload=%d,type=%d,sid=%d",
+                           fmt, mh_size, cs->extended_timestamp, cs->header.timestamp, cs->header.payload_length,
+                           cs->header.message_type, cs->header.stream_id);
+            }
+            else
+            {
+                rs_verbose("header read completed,fmt=%d,mh_size=%d,ext_time=%d,time=%lld,payload=%d,type=%d",
+                           fmt, mh_size, cs->extended_timestamp, cs->header.timestamp, cs->header.payload_length,
+                           cs->header.message_type);
+            }
+        }
+        else
+        {
+            rs_verbose("header read completed,fmt=%d,mh_size=%d,ext_time=%d,time=%lld",
+                       fmt, mh_size, cs->extended_timestamp, cs->header.timestamp);
+        }
+    }
+    else
+    {
+        if (is_first_msg_of_chunk && !cs->extended_timestamp)
+        {
+            cs->header.timestamp += cs->header.timestamp_delta;
+        }
+
+        rs_verbose("header read completed,fmt=%d,size=%d,ext_time=%d", fmt, mh_size, cs->extended_timestamp);
+    }
+
+    if (cs->extended_timestamp)
+    {
+        mh_size += 4;
+        rs_verbose("read header ext time,fmt=%d,ext_time=%d,mh_size=%d", fmt, cs->extended_timestamp, mh_size);
+        if ((ret = in_buffer_->Grow(rw_, 4)) != ERROR_SUCCESS)
+        {
+            if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            {
+                rs_error("read %d bytes message header failed,required_size=%d,ret=%d", mh_size, 4, ret);
+            }
+            return ret;
+        }
+
+        ptr = in_buffer_->ReadSlice(4);
+        manager.Initialize(ptr, 4);
+
+        uint32_t timestamp = manager.Read4Bytes();
+        timestamp &= 0x7fffffff;
+
+        uint32_t chunk_timestamp = (uint32_t)cs->header.timestamp;
+
+        /**
+        * example 1:
+        * (first_packet,without extended ts,ts = 0) --> (second_packet,with extended ts,exts=40) is ok
+        * example 2:
+        * (first_packet,without extended ts,ts = 0) --> (second_packet,without extended ts,ts=40) --> (third_packet,with extended ts,exts=40)
+        */
+        if (!is_first_msg_of_chunk && chunk_timestamp > 0 && chunk_timestamp != timestamp)
+        {
+            mh_size -= 4;
+            in_buffer_->Skip(-4);
+            rs_warn("no 4 bytes extended timestamp in the continue chunk");
+        }
+        else
+        {
+            cs->header.timestamp = timestamp;
+        }
+        rs_verbose("header read extended timestamp completed,time=%lld", cs->header.timestamp);
+    }
+
+    cs->header.timestamp &= 0x7ffffff;
+    cs->msg->header = cs->header;
+    cs->msg_count++;
+
+    return ret;
+}
+
+int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (cs->header.payload_length <= 0)
+    {
+        rs_warn("get an empty rtmp messge(type=%d,size=%d,time=%lld,sid=%d)", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id);
+        *pmsg = cs->msg;
+        cs->msg = nullptr;
+        return ret;
+    }
+
+    int payload_size = cs->header.payload_length - cs->msg->size;
+    payload_size = rs_min(cs->header.payload_length, SRS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE);
+
+    rs_verbose("chunk payload size is %d,message_size=%d,recveived_size=%d,in_chunk_size=%d", payload_size, cs->header.payload_length, cs->msg->size, SRS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE);
+
+    if (!cs->msg->payload)
+    {
+
+        cs->msg->CreatePayload(payload_size);
+    }
+
+    if ((ret = in_buffer_->Grow(rw_, payload_size)) != ERROR_SUCCESS)
+    {
+        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        {
+            rs_error("read payload failed,required_size=%d,ret=%d", payload_size, ret);
+        }
+        return ret;
+    }
+
+    memcpy(cs->msg->payload + cs->msg->size, in_buffer_->ReadSlice(payload_size), payload_size);
+    cs->msg->size += payload_size;
+
+    rs_verbose("chunk payload read completed,payload size=%d", payload_size);
+    if (cs->header.payload_length == cs->msg->size)
+    {
+        //got entire rtmp message
+        *pmsg = cs->msg;
+        cs->msg = nullptr;
+        rs_verbose("got entire rtmp message(type=%d,size=%d,time=%lld,sid=%d)", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id);
+        return ret;
+    }
+    rs_verbose("got part of rtmp message(type=%d,size=%d,time=%lld,size=%d),partial size=%d", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id, cs->msg->size);
     return ret;
 }
 
@@ -456,7 +672,7 @@ int Protocol::ReadInterlacedMessage(CommonMessage **pmsg)
     {
         if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
         {
-            rs_error("read basic header failed. ret=%d", ret);
+            rs_error("read basic header failed,ret=%d", ret);
         }
         return ret;
     }
@@ -492,6 +708,37 @@ int Protocol::ReadInterlacedMessage(CommonMessage **pmsg)
         }
     }
 
+    if ((ret = ReadMessageHeader(cs, fmt)) != ERROR_SUCCESS)
+    {
+        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        {
+            rs_error("read message header failed,ret=%d", ret);
+        }
+        return ret;
+    }
+
+    rs_verbose("read message header success,fmt=%d.ext_time=%d,size=%d,message(type=%d,size=%d,time=%lld,sid=%d)",
+               fmt, cs->extended_timestamp, (cs->msg ? cs->msg->size : 0), cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id);
+
+    CommonMessage *msg = nullptr;
+    if ((ret = ReadMessagePayload(cs, &msg)) != ERROR_SUCCESS)
+    {
+        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        {
+            rs_error("read message payload failed,ret=%d", ret);
+        }
+        return ret;
+    }
+
+    if (!msg)
+    {
+        rs_verbose("got part of message success,size=%d,message(type=%d,size=%d,time=%lld,size=%d)", cs->header.payload_length, cs->header.message_type, cs->msg->size, cs->header.timestamp, cs->header.stream_id);
+        return ret;
+    }
+
+    *pmsg = msg;
+    rs_verbose("get entire message success,size=%d,message(type=%d,size=%d,time=%lld,size=%d)", cs->header.payload_length, cs->header.message_type, cs->msg->size, cs->msg->header.timestamp, cs->header.stream_id);
+    
     return ret;
 }
 
