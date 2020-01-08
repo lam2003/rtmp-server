@@ -29,61 +29,104 @@ MessageHeader::~MessageHeader()
 
 bool MessageHeader::IsAudio()
 {
-    return true;
+    if (message_type == RTMP_MSG_AUDIO_MESSAGE)
+        return true;
+    return false;
 }
 bool MessageHeader::IsVideo()
 {
-    return true;
+
+    if (message_type == RTMP_MSG_VIDEO_MESSAGE)
+        return true;
+    return false;
 }
 bool MessageHeader::IsAMF0Command()
 {
-    return true;
+    if (message_type == RTMP_MSG_AMF0_COMMAND)
+        return true;
+    return false;
 }
 bool MessageHeader::IsAMF0Data()
 {
-    return true;
+    if (message_type == RTMP_MSG_AMF0_DATA)
+        return true;
+    return false;
 }
 bool MessageHeader::IsAMF3Command()
 {
-    return true;
+    if (message_type == RTMP_MSG_AMF3_COMMAND)
+        return true;
+    return false;
 }
 bool MessageHeader::IsAMF3Data()
 {
-    return true;
+    if (message_type == RTMP_MSG_AMF3_DATA)
+        return true;
+    return false;
 }
 bool MessageHeader::IsWindowAckledgementSize()
 {
-    return true;
+    if (message_type == RTMP_MSG_WINDOW_ACK_SIZE)
+        return true;
+    return false;
 }
 
-bool MessageHeader::IsAckLedgement()
+bool MessageHeader::IsAckledgement()
 {
-    return true;
+    if (message_type == RTMP_MSG_ACK)
+        return true;
+    return false;
 }
 bool MessageHeader::IsSetChunkSize()
 {
-    return true;
+    if (message_type == RTMP_MSG_SET_CHUNK_SIZE)
+        return true;
+    return false;
 }
 bool MessageHeader::IsUserControlMessage()
 {
-    return true;
+    if (message_type == RTMP_MSG_USER_CONTROL_MESSAGE)
+        return true;
+    return false;
 }
 bool MessageHeader::IsSetPeerBandWidth()
 {
-    return true;
+    if (message_type == RTMP_MSG_SET_PEER_BANDWIDTH)
+        return true;
+    return false;
 }
 bool MessageHeader::IsAggregate()
 {
-    return true;
+    if (message_type == RTMP_MSG_AGGREGATE)
+        return true;
+    return false;
 }
 void MessageHeader::InitializeAMF0Script(int32_t size, int32_t stream)
 {
+    message_type = RTMP_MSG_AMF0_DATA;
+    payload_length = size;
+    timestamp_delta = 0;
+    timestamp = 0;
+    stream_id = stream;
+    perfer_cid = RTMP_CID_OVER_CONNECTION2;
 }
-void MessageHeader::InitializeVideo(int32_t size, uint32_t timestamp, int32_t stream)
+void MessageHeader::InitializeVideo(int32_t size, uint32_t time, int32_t stream)
 {
+    message_type = RTMP_MSG_VIDEO_MESSAGE;
+    payload_length = size;
+    timestamp_delta = time;
+    timestamp = time;
+    stream_id = stream;
+    perfer_cid = RTMP_CID_VIDEO;
 }
-void MessageHeader::InitializeAudio(int32_t size, uint32_t timestamp, int32_t stream)
+void MessageHeader::InitializeAudio(int32_t size, uint32_t time, int32_t stream)
 {
+    message_type = RTMP_MSG_AUDIO_MESSAGE;
+    payload_length = size;
+    timestamp_delta = time;
+    timestamp = time;
+    stream_id = stream;
+    perfer_cid = RTMP_CID_AUDIO;
 }
 
 CommonMessage::CommonMessage() : size(0),
@@ -334,7 +377,138 @@ int32_t SimpleHandshake::HandshakeWithClient(HandshakeBytes *handshake_bytes, IP
     return ret;
 }
 
-Protocol::Protocol(IProtocolReaderWriter *rw) : rw_(rw)
+Packet::Packet()
+{
+}
+
+Packet::~Packet()
+{
+}
+
+int Packet::GetPreferCID()
+{
+    return 0;
+}
+
+int Packet::GetMessageType()
+{
+    return 0;
+}
+
+int Packet::GetSize()
+{
+    return 0;
+}
+
+int Packet::Encode(int &psize, char *&ppayload)
+{
+    int ret = ERROR_SUCCESS;
+
+    int size = GetSize();
+    char *payload = nullptr;
+
+    BufferManager manager;
+    if (size > 0)
+    {
+        payload = new char[size];
+
+        if ((ret = manager.Initialize(payload, size)) != ERROR_SUCCESS)
+        {
+            rs_error("initialize buffer manager failed,ret=%d", ret);
+            rs_freepa(payload);
+            return ret;
+        }
+    }
+
+    if ((ret = EncodePacket(&manager)) != ERROR_SUCCESS)
+    {
+        rs_error("encode the packet failed,ret=%d", ret);
+        rs_freep(payload);
+        return ret;
+    }
+
+    psize = size;
+    ppayload = payload;
+    rs_verbose("encode the packet success,size=%d", size);
+    return ret;
+}
+
+int Packet::Decode(BufferManager *manager)
+{
+    return ERROR_SUCCESS;
+}
+
+int Packet::EncodePacket(BufferManager *manager)
+{
+    return ERROR_SUCCESS;
+}
+
+SetChunkSizePacket::SetChunkSizePacket() : chunk_size(RS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE)
+{
+}
+
+SetChunkSizePacket::~SetChunkSizePacket()
+{
+}
+
+int SetChunkSizePacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!manager->Require(4))
+    {
+        ret = ERROR_RTMP_MESSAGE_DECODE;
+        rs_error("decode chunk size failed,ret=%d", ret);
+        return ret;
+    }
+
+    chunk_size = manager->Read4Bytes();
+    rs_verbose("decode chunk size success,chunk_size=%d", chunk_size);
+    return ret;
+}
+
+int SetChunkSizePacket::GetPreferCID()
+{
+    return RTMP_CID_PROTOCOL_CONTROL;
+}
+
+int SetChunkSizePacket::GetMessageType()
+{
+    return RTMP_MSG_SET_CHUNK_SIZE;
+}
+
+int SetChunkSizePacket::GetSize()
+{
+    return 4;
+}
+
+int SetChunkSizePacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    if (!manager->Require(4))
+    {
+        ret = ERROR_RTMP_MESSAGE_ENCODE;
+        rs_error("encode setchunk packet failed,ret=%d", ret);
+        return ret;
+    }
+    manager->Write4Bytes(chunk_size);
+    rs_verbose("encode setchunk packet success,chunk_size=%d", chunk_size);
+    return ret;
+}
+
+AckWindowSize::AckWindowSize() : window(0),
+                                 sequence_number(0),
+                                 recv_bytes(0)
+{
+}
+
+AckWindowSize::~AckWindowSize()
+{
+}
+
+Protocol::Protocol(IProtocolReaderWriter *rw) : rw_(rw),
+                                                in_chunk_size_(RS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE),
+                                                out_chunk_size_(RS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE)
 {
     in_buffer_ = new FastBuffer;
     cs_cache_ = new ChunkStream *[RS_CONSTS_CHUNK_STREAM_CHCAHE];
@@ -505,7 +679,11 @@ int Protocol::ReadMessageHeader(ChunkStream *cs, char fmt)
 
     char *ptr = in_buffer_->ReadSlice(mh_size);
     BufferManager manager;
-    manager.Initialize(ptr, mh_size);
+    if ((ret = manager.Initialize(ptr, mh_size)) != ERROR_SUCCESS)
+    {
+        rs_error("initialize buffer manager failed,ret=%d", ret);
+        return ret;
+    }
 
     if (fmt <= RTMP_FMT_TYPE2)
     {
@@ -540,8 +718,8 @@ int Protocol::ReadMessageHeader(ChunkStream *cs, char fmt)
             cs->header.message_type = manager.Read1Bytes();
             if (fmt <= RTMP_FMT_TYPE0)
             {
-                cs->header.message_type = manager.Read4Bytes();
-                rs_verbose("header read completed,fmt=%d,mh_size=%d,ext_time=%d,time=%lld,payload=%d,type=%d,sid=%d",
+                cs->header.stream_id = manager.Read4Bytes();
+                rs_verbose("header read completed,fmt=%d,mh_size=%d,ext_time=%d,time=%lld,payload=%d,####type=%d,sid=%d",
                            fmt, mh_size, cs->extended_timestamp, cs->header.timestamp, cs->header.payload_length,
                            cs->header.message_type, cs->header.stream_id);
             }
@@ -628,9 +806,9 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
     }
 
     int payload_size = cs->header.payload_length - cs->msg->size;
-    payload_size = rs_min(cs->header.payload_length, SRS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE);
+    payload_size = rs_min(cs->header.payload_length, in_chunk_size_);
 
-    rs_verbose("chunk payload size is %d,message_size=%d,recveived_size=%d,in_chunk_size=%d", payload_size, cs->header.payload_length, cs->msg->size, SRS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE);
+    rs_verbose("chunk payload size is %d,message_size=%d,recveived_size=%d,in_chunk_size=%d", payload_size, cs->header.payload_length, cs->msg->size, in_chunk_size_);
 
     if (!cs->msg->payload)
     {
@@ -663,7 +841,7 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
     return ret;
 }
 
-int Protocol::ReadInterlacedMessage(CommonMessage **pmsg)
+int Protocol::RecvInterlacedMessage(CommonMessage **pmsg)
 {
     int ret = ERROR_SUCCESS;
     char fmt = 0;
@@ -732,13 +910,167 @@ int Protocol::ReadInterlacedMessage(CommonMessage **pmsg)
 
     if (!msg)
     {
-        rs_verbose("got part of message success,size=%d,message(type=%d,size=%d,time=%lld,size=%d)", cs->header.payload_length, cs->header.message_type, cs->msg->size, cs->header.timestamp, cs->header.stream_id);
         return ret;
     }
 
     *pmsg = msg;
-    rs_verbose("get entire message success,size=%d,message(type=%d,size=%d,time=%lld,size=%d)", cs->header.payload_length, cs->header.message_type, cs->msg->size, cs->msg->header.timestamp, cs->header.stream_id);
-    
+    return ret;
+}
+
+int Protocol::RecvMessage(CommonMessage **pmsg)
+{
+    int ret = ERROR_SUCCESS;
+    *pmsg = nullptr;
+
+    while (true)
+    {
+        CommonMessage *msg = nullptr;
+        if ((ret = RecvInterlacedMessage(&msg)) != ERROR_SUCCESS)
+        {
+            if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            {
+                rs_error("recv interlaced message failed,ret=%d", ret);
+            }
+            rs_freep(msg);
+            return ret;
+        }
+
+        if (!msg)
+        {
+            continue;
+        }
+
+        rs_verbose("entire message receviced");
+
+        if (msg->size <= 0 || msg->header.payload_length <= 0)
+        {
+            //empty mesage
+            rs_warn("got empty message");
+            rs_freep(msg);
+            continue;
+        }
+
+        if ((ret = OnRecvMessage(msg)) != ERROR_SUCCESS)
+        {
+            rs_error("hook the received message failed,ret=%d", ret);
+            rs_freep(msg);
+            continue;
+        }
+        rs_verbose("got a message,cid=%d,type=%d,size=%d,time=%lld",
+                   msg->header.perfer_cid,
+                   msg->header.message_type,
+                   msg->header.payload_length,
+                   msg->header.timestamp);
+        *pmsg = msg;
+        break;
+    }
+
+    return ret;
+}
+
+int Protocol::ResponseAckMessage()
+{
+    int ret = ERROR_SUCCESS;
+    if (in_ack_size_.window <= 0)
+    {
+        return ret;
+    }
+
+    return ret;
+}
+
+int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Packet **ppacket)
+{
+    int ret = ERROR_SUCCESS;
+
+    Packet *packet = nullptr;
+    if (header.IsAMF0Command() || header.IsAMF3Command() || header.IsAMF0Data() || header.IsAMF3Data())
+    {
+    }
+    else if (header.IsSetChunkSize())
+    {
+        rs_verbose("start to decode set chunk size message");
+        *ppacket = packet = new SetChunkSizePacket;
+        return packet->Decode(manager);
+    }
+
+    return ret;
+}
+
+int Protocol::DecodeMessage(CommonMessage *msg, Packet **ppacket)
+{
+    int ret = ERROR_SUCCESS;
+    *ppacket = nullptr;
+
+    BufferManager manager;
+    if ((ret = manager.Initialize(msg->payload, msg->size)) != ERROR_SUCCESS)
+    {
+        rs_error("initialize buffer manager failed,ret=%d", ret);
+        return ret;
+    }
+
+    Packet *packet = nullptr;
+    if ((ret = DoDecodeMessage(msg->header, &manager, &packet)) != ERROR_SUCCESS)
+    {
+        rs_error("do decode message failed,ret=%d", ret);
+        return ret;
+    }
+
+    *ppacket = packet;
+
+    return ret;
+}
+
+int Protocol::OnRecvMessage(CommonMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = ResponseAckMessage()) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    Packet *packet = nullptr;
+    switch (msg->header.message_type)
+    {
+    case RTMP_MSG_SET_CHUNK_SIZE:
+    case RTMP_MSG_USER_CONTROL_MESSAGE:
+    case RTMP_MSG_WINDOW_ACK_SIZE:
+        if ((ret = DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
+        {
+            rs_error("decode packet from message payload failed,ret=%d", ret);
+            return ret;
+        }
+        rs_verbose("decode packet from message payload success");
+        break;
+    default:
+        break;
+    }
+
+    rs_auto_free(Packet, packet);
+
+    switch (msg->header.message_type)
+    {
+    case RTMP_MSG_SET_CHUNK_SIZE:
+    {
+        SetChunkSizePacket *pkt = dynamic_cast<SetChunkSizePacket *>(packet);
+        if (pkt->chunk_size < RS_CONSTS_RTMP_MIN_CHUNK_SIZE || pkt->chunk_size > RS_CONSTS_RTMP_MAX_CHUNK_SIZE)
+        {
+            rs_warn("accept chunk size:%d", pkt->chunk_size);
+            if (pkt->chunk_size < RS_CONSTS_RTMP_MIN_CHUNK_SIZE)
+            {
+                ret = ERROR_RTMP_CHUNK_START;
+                rs_error("chunk size should be %d+,value=%d,ret=%d", RS_CONSTS_RTMP_MIN_CHUNK_SIZE, pkt->chunk_size, ret);
+                return ret;
+            }
+        }
+
+        in_chunk_size_ = pkt->chunk_size;
+        rs_verbose("in_chunk_size=%d", pkt->chunk_size);
+        break;
+    }
+    }
+
     return ret;
 }
 

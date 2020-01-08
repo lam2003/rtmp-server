@@ -32,4 +32,33 @@ public:
     static std::string GetPeerIP(int32_t fd);
     static void RandomGenerate(char *bytes, int32_t size);
 };
+
+#define rs_auto_free(class_name, instance) __impl_AutoFree<class_name> __auto_free_##instance(&instance, false)
+#define rs_auto_freea(class_name, instance) __impl_Auto_Free<class_name> __auto_free_##instance(&instance, true)
+
+template <typename T>
+class __impl_AutoFree
+{
+public:
+    __impl_AutoFree(T **p, bool is_array) : p_(p), is_array_(is_array)
+    {
+    }
+
+    ~__impl_AutoFree()
+    {
+        if (is_array_)
+        {
+            delete[] *p_;
+        }
+        else
+        {
+            delete *p_;
+        }
+        *p_ = nullptr;
+    }
+
+private:
+    T **p_;
+    bool is_array_;
+};
 #endif

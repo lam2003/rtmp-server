@@ -1,4 +1,6 @@
 #include <app/rtmp_connection.hpp>
+#include <protocol/rtmp_stack.hpp>
+
 
 RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd) : Connection(server, stfd)
 {
@@ -12,8 +14,9 @@ RTMPConnection::~RTMPConnection()
 
 int32_t RTMPConnection::DoCycle()
 {
+    rtmp::CommonMessage *msg;
     rtmp_->Handshake();
-    rtmp_->RecvMessage(nullptr);
+    rtmp_->RecvMessage(&msg);
 }
 
 void RTMPConnection::Resample()

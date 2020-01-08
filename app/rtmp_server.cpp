@@ -41,5 +41,5 @@ void RTMPServer::SetRecvTimeout(int64_t timeout_us)
 
 int32_t RTMPServer::RecvMessage(rtmp::CommonMessage **pmsg)
 {
-    protocol_->ReadInterlacedMessage(pmsg);
+    protocol_->RecvMessage(pmsg);
 }

@@ -39,14 +39,14 @@ public:
     bool IsAMF3Command();
     bool IsAMF3Data();
     bool IsWindowAckledgementSize();
-    bool IsAckLedgement();
+    bool IsAckledgement();
     bool IsSetChunkSize();
     bool IsUserControlMessage();
     bool IsSetPeerBandWidth();
     bool IsAggregate();
     void InitializeAMF0Script(int32_t size, int32_t stream);
-    void InitializeVideo(int32_t size, uint32_t timestamp, int32_t stream);
-    void InitializeAudio(int32_t size, uint32_t timestamp, int32_t stream);
+    void InitializeVideo(int32_t size, uint32_t time, int32_t stream);
+    void InitializeAudio(int32_t size, uint32_t time, int32_t stream);
 
 public:
     int32_t timestamp_delta;
@@ -120,8 +120,60 @@ public:
     virtual int32_t HandshakeWithClient(HandshakeBytes *handshake_bytes, IProtocolReaderWriter *rw);
 };
 
+class Packet
+{
+public:
+    Packet();
+    virtual ~Packet();
+
+public:
+    virtual int GetPreferCID();
+    virtual int GetMessageType();
+    virtual int Encode(int &size, char *&payload);
+    virtual int Decode(BufferManager *manager);
+
+protected:
+    virtual int GetSize();
+    virtual int EncodePacket(BufferManager *manager);
+};
+
+class SetChunkSizePacket : public Packet
+{
+public:
+    SetChunkSizePacket();
+    virtual ~SetChunkSizePacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    int32_t chunk_size;
+};
+
+class AckWindowSize
+{
+
+public:
+    AckWindowSize();
+    virtual ~AckWindowSize();
+
+public:
+    uint32_t window;
+    uint32_t sequence_number;
+    int64_t recv_bytes;
+};
+
 class Protocol
 {
+public:
 public:
     Protocol(IProtocolReaderWriter *rw);
     virtual ~Protocol();
@@ -129,18 +181,26 @@ public:
 public:
     virtual void SetSendTimeout(int64_t timeout_us);
     virtual void SetRecvTimeout(int64_t timeout_us);
-    virtual int ReadInterlacedMessage(CommonMessage **pmsg);
+    virtual int RecvMessage(CommonMessage **pmsg);
+    virtual int DecodeMessage(CommonMessage *msg, Packet **ppacket);
 
 protected:
+    virtual int RecvInterlacedMessage(CommonMessage **pmsg);
     virtual int ReadBasicHeader(char &fmt, int &cid);
     virtual int ReadMessageHeader(ChunkStream *cs, char fmt);
     virtual int ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg);
+    virtual int OnRecvMessage(CommonMessage *msg);
+    virtual int ResponseAckMessage();
+    virtual int DoDecodeMessage(MessageHeader &header, BufferManager *manager, Packet **packet);
 
 private:
     IProtocolReaderWriter *rw_;
+    int32_t in_chunk_size_;
+    int32_t out_chunk_size_;
     FastBuffer *in_buffer_;
     ChunkStream **cs_cache_;
     std::map<int, ChunkStream *> chunk_streams_;
+    AckWindowSize in_ack_size_;
 };
 
 } // namespace rtmp
