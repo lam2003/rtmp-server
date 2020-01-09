@@ -4,6 +4,8 @@
 #include <common/core.hpp>
 #include <common/io.hpp>
 #include <common/buffer.hpp>
+#include <common/error.hpp>
+#include <protocol/rtmp_amf0.hpp>
 
 #include <map>
 
@@ -120,6 +122,18 @@ public:
     virtual int32_t HandshakeWithClient(HandshakeBytes *handshake_bytes, IProtocolReaderWriter *rw);
 };
 
+class Request
+{
+public:
+    Request();
+    virtual ~Request();
+
+    // public:
+    //     std::string ip_;
+    //     std::string tc_url;
+    //     std::string page_url;
+};
+
 class Packet
 {
 public:
@@ -158,6 +172,30 @@ public:
     int32_t chunk_size;
 };
 
+class ConnectAppPacket : public Packet
+{
+public:
+    ConnectAppPacket();
+    virtual ~ConnectAppPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Ojbect *command_obj;
+    AMF0Ojbect *args;
+};
+
 class AckWindowSize
 {
 
@@ -183,6 +221,13 @@ public:
     virtual void SetRecvTimeout(int64_t timeout_us);
     virtual int RecvMessage(CommonMessage **pmsg);
     virtual int DecodeMessage(CommonMessage *msg, Packet **ppacket);
+
+    template <typename T>
+    int ExceptMessage(CommonMessage **pmsg, T **ppacket)
+    {
+        int ret = ERROR_SUCCESS;
+        return ret;
+    }
 
 protected:
     virtual int RecvInterlacedMessage(CommonMessage **pmsg);

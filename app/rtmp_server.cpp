@@ -43,3 +43,12 @@ int32_t RTMPServer::RecvMessage(rtmp::CommonMessage **pmsg)
 {
     protocol_->RecvMessage(pmsg);
 }
+
+int RTMPServer::ConnectAPP(rtmp::Request *req)
+{
+    int ret = ERROR_SUCCESS;
+    rtmp::CommonMessage *msg = nullptr;
+    
+
+    return ret;
+}

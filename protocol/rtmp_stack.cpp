@@ -1,8 +1,7 @@
 #include <protocol/rtmp_stack.hpp>
+#include <protocol/rtmp_consts.hpp>
 #include <common/utils.hpp>
-#include <common/error.hpp>
 #include <common/log.hpp>
-#include <core/consts.hpp>
 
 namespace rtmp
 {
@@ -377,6 +376,14 @@ int32_t SimpleHandshake::HandshakeWithClient(HandshakeBytes *handshake_bytes, IP
     return ret;
 }
 
+Request::Request()
+{
+}
+
+Request::~Request()
+{
+}
+
 Packet::Packet()
 {
 }
@@ -443,7 +450,7 @@ int Packet::EncodePacket(BufferManager *manager)
     return ERROR_SUCCESS;
 }
 
-SetChunkSizePacket::SetChunkSizePacket() : chunk_size(RS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE)
+SetChunkSizePacket::SetChunkSizePacket() : chunk_size(RTMP_PROTOCOL_CHUNK_SIZE)
 {
 }
 
@@ -496,6 +503,28 @@ int SetChunkSizePacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
+ConnectAppPacket::ConnectAppPacket()
+{
+    command_name = RTMP_AMF0_COMMAND_CONNECT;
+    transaction_id = 1;
+    command_obj = AMF0Any::Object();
+    args = nullptr;
+}
+
+ConnectAppPacket::~ConnectAppPacket()
+{
+    rs_freep(command_obj);
+    rs_freep(args);
+}
+
+int ConnectAppPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+
+    return ret;
+}
+
 AckWindowSize::AckWindowSize() : window(0),
                                  sequence_number(0),
                                  recv_bytes(0)
@@ -507,12 +536,12 @@ AckWindowSize::~AckWindowSize()
 }
 
 Protocol::Protocol(IProtocolReaderWriter *rw) : rw_(rw),
-                                                in_chunk_size_(RS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE),
-                                                out_chunk_size_(RS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE)
+                                                in_chunk_size_(RTMP_PROTOCOL_CHUNK_SIZE),
+                                                out_chunk_size_(RTMP_PROTOCOL_CHUNK_SIZE)
 {
     in_buffer_ = new FastBuffer;
-    cs_cache_ = new ChunkStream *[RS_CONSTS_CHUNK_STREAM_CHCAHE];
-    for (int cid = 0; cid < RS_CONSTS_CHUNK_STREAM_CHCAHE; cid++)
+    cs_cache_ = new ChunkStream *[RTMP_CHUNK_STREAM_CHCAHE];
+    for (int cid = 0; cid < RTMP_CHUNK_STREAM_CHCAHE; cid++)
     {
         ChunkStream *cs = new ChunkStream(cid);
         cs->header.perfer_cid = cid;
@@ -524,7 +553,7 @@ Protocol::~Protocol()
 {
     rs_freep(in_buffer_);
 
-    for (int cid = 0; cid < RS_CONSTS_CHUNK_STREAM_CHCAHE; cid++)
+    for (int cid = 0; cid < RTMP_CHUNK_STREAM_CHCAHE; cid++)
     {
         ChunkStream *cs = cs_cache_[cid];
         rs_freep(cs);
@@ -858,7 +887,7 @@ int Protocol::RecvInterlacedMessage(CommonMessage **pmsg)
     rs_verbose("read basic header success,fmt=%d,cid=%d", fmt, cid);
 
     ChunkStream *cs = nullptr;
-    if (cid < RS_CONSTS_CHUNK_STREAM_CHCAHE)
+    if (cid < RTMP_CHUNK_STREAM_CHCAHE)
     {
         rs_verbose("cs-cache hint,cid=%d", cid);
         cs = cs_cache_[cid];
@@ -1054,13 +1083,13 @@ int Protocol::OnRecvMessage(CommonMessage *msg)
     case RTMP_MSG_SET_CHUNK_SIZE:
     {
         SetChunkSizePacket *pkt = dynamic_cast<SetChunkSizePacket *>(packet);
-        if (pkt->chunk_size < RS_CONSTS_RTMP_MIN_CHUNK_SIZE || pkt->chunk_size > RS_CONSTS_RTMP_MAX_CHUNK_SIZE)
+        if (pkt->chunk_size < RTMP_MIN_CHUNK_SIZE || pkt->chunk_size > RTMP_MAX_CHUNK_SIZE)
         {
             rs_warn("accept chunk size:%d", pkt->chunk_size);
-            if (pkt->chunk_size < RS_CONSTS_RTMP_MIN_CHUNK_SIZE)
+            if (pkt->chunk_size < RTMP_MIN_CHUNK_SIZE)
             {
                 ret = ERROR_RTMP_CHUNK_START;
-                rs_error("chunk size should be %d+,value=%d,ret=%d", RS_CONSTS_RTMP_MIN_CHUNK_SIZE, pkt->chunk_size, ret);
+                rs_error("chunk size should be %d+,value=%d,ret=%d", RTMP_MIN_CHUNK_SIZE, pkt->chunk_size, ret);
                 return ret;
             }
         }
