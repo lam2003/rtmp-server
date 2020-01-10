@@ -75,8 +75,6 @@ extern IThreadContext *_context;
 #define rs_error(msg, ...) _log->Error(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
 #endif
 
-
-
 class FastLog : public ILog, IReloadHandler
 {
 public:
@@ -105,10 +103,10 @@ protected:
     int32_t level_;
 
 private:
-    char *log_data_;
     int32_t fd_;
     bool log_to_file_tank_;
     bool utc_;
+    char *log_data_;
 };
 
 class ThreadContext : public IThreadContext

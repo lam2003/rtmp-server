@@ -46,7 +46,7 @@
 //amf0 command message
 #define RTMP_AMF0_COMMAND_CONNECT "connect"
 
-// amf0 marker
+//amf0 marker
 #define RTMP_AMF0_NUMBER 0x00
 #define RTMP_AMF0_BOOLEAN 0x01
 #define RTMP_AMF0_STRING 0x02
@@ -64,5 +64,9 @@
 #define RTMP_AMF0_RECORD_SET 0x0e
 #define RTMP_AMF0_XML_DOCUMENT 0x0f
 #define RTMP_AMF0_TYPED_OBJECT 0x10
+//may be is amf3
+#define RTMP_AMF0_AVM_PLUS_OBJECT 0x11
+#define RTMP_AMF0_ORIGIN_STRICT_ARRAY 0x20
+#define RTMP_AMF0_INVALID 0x3f
 
 #endif

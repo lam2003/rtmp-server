@@ -541,7 +541,7 @@ int ConnectAppPacket::Decode(BufferManager *manager)
     if (transaction_id != 1.00)
     {
         //because some client don't send transaction_id=1.00, only warn them
-        rs_warn("amf0 decode connect transaction incorrect,transaction_id:%.2f,required:%.2f", 1.00, transaction_id);
+        rs_warn("amf0 decode connect transaction_id incorrect,transaction_id:%.2f,required:%.2f", 1.00, transaction_id);
     }
 
     

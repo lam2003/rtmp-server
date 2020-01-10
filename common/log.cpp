@@ -65,11 +65,11 @@ void IThreadContext::ClearID()
 {
 }
 
-FastLog::FastLog() : log_data_(new char[LOG_MAX_SIZE]),
-                     fd_(-1),
+FastLog::FastLog() : fd_(-1),
                      log_to_file_tank_(false),
                      utc_(false)
 {
+    log_data_ = new char[LOG_MAX_SIZE];
 }
 
 FastLog::~FastLog()
