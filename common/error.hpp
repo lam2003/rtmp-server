@@ -125,7 +125,7 @@
 #define ERROR_RTMP_CLIENT_NOT_FOUND 2049
 #define ERROR_RTMP_STREAM_NAME_EMPTY 2050
 #define ERROR_RTMP_BASIC_HEADER 2051
-//
+#define ERROR_RTMP_AMF3_NO_SUPPORT 2052
 // system control message,
 // not an error, but special control logic.
 // sys ctl: rtmp close stream, support replay.

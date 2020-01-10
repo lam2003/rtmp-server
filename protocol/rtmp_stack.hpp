@@ -5,6 +5,8 @@
 #include <common/io.hpp>
 #include <common/buffer.hpp>
 #include <common/error.hpp>
+#include <common/log.hpp>
+#include <common/utils.hpp>
 #include <protocol/rtmp_amf0.hpp>
 
 #include <map>
@@ -226,6 +228,41 @@ public:
     int ExceptMessage(CommonMessage **pmsg, T **ppacket)
     {
         int ret = ERROR_SUCCESS;
+
+        while (true)
+        {
+            CommonMessage *msg = nullptr;
+            if ((ret = RecvMessage(&msg)) != ERROR_SUCCESS)
+            {
+                if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+                {
+                    rs_error("recv message failed,ret=%d", ret);
+                }
+                return ret;
+            }
+
+            Packet *packet = nullptr;
+            if ((ret = DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
+            {
+                rs_error("decode message failed,ret=%d", ret);
+                rs_freep(msg);
+                rs_freep(packet);
+                return ret;
+            }
+
+            T *pkt = dynamic_cast<T *>(packet);
+            if (!pkt)
+            {
+                rs_warn("drop message(type=%d,size=%d,time=%lld,sid=%d)", msg->header.message_type, msg->header.payload_length, msg->header.timestamp, msg->header.stream_id);
+                rs_freep(msg);
+                rs_freep(packet);
+                continue;
+            }
+
+            *pmsg = msg;
+            *ppacket = pkt;
+            break;
+        }
         return ret;
     }
 

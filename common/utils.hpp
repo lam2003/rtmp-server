@@ -1,5 +1,5 @@
 #ifndef RS_UTILS_HPP
-#define RS_URILS_HPP
+#define RS_UTILS_HPP
 
 #include <common/core.hpp>
 

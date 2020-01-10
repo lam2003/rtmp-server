@@ -15,7 +15,7 @@ public:
     virtual void SetSendTimeout(int64_t timeout_us);
     virtual void SetRecvTimeout(int64_t timeout_us);
     virtual int32_t RecvMessage(rtmp::CommonMessage **pmsg);
-    virtual int ConnectAPP(rtmp::Request *req);
+    virtual int ConnectApp(rtmp::Request *req);
 
 private:
     IProtocolReaderWriter *rw_;

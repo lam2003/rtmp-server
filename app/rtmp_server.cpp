@@ -1,6 +1,7 @@
 #include <app/rtmp_server.hpp>
 #include <common/utils.hpp>
 #include <common/error.hpp>
+#include <protocol/rtmp_stack.hpp>
 
 RTMPServer::RTMPServer(IProtocolReaderWriter *rw) : rw_(rw)
 {
@@ -44,11 +45,14 @@ int32_t RTMPServer::RecvMessage(rtmp::CommonMessage **pmsg)
     protocol_->RecvMessage(pmsg);
 }
 
-int RTMPServer::ConnectAPP(rtmp::Request *req)
+int RTMPServer::ConnectApp(rtmp::Request *req)
 {
     int ret = ERROR_SUCCESS;
     rtmp::CommonMessage *msg = nullptr;
-    
+    rtmp::ConnectAppPacket  *pkt= nullptr;
 
+    if ((ret = protocol_->ExceptMessage<rtmp::ConnectAppPacket>(&msg, &pkt)) != ERROR_SUCCESS)
+    {
+    }
     return ret;
 }

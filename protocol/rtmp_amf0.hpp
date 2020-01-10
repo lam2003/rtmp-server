@@ -26,6 +26,6 @@ class AMF0Ojbect : public AMF0Any
 };
 
 extern int AMF0ReadString(BufferManager *manager, std::string &value);
-extern int AMF0ReadUTF8(BufferManager *managr, std::string &value);
+extern int AMF0ReadNumber(BufferManager *manager, double &value);
 } // namespace rtmp
 #endif

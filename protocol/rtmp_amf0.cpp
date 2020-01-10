@@ -18,7 +18,7 @@ AMF0Ojbect *AMF0Any::Object()
     return new AMF0Ojbect;
 }
 
-int AMF0ReadUTF8(BufferManager *manager, std::string &value)
+static int amf0_read_utf8(BufferManager *manager, std::string &value)
 {
     int ret = ERROR_SUCCESS;
 
@@ -72,6 +72,42 @@ int AMF0ReadString(BufferManager *manager, std::string &value)
     }
 
     rs_verbose("amf0 read string marker success");
+
+    return amf0_read_utf8(manager, value);
+}
+
+int AMF0ReadNumber(BufferManager *manager, double &value)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!manager->Require(1))
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read number marker failed,ret=%d", ret);
+        return ret;
+    }
+
+    char marker = manager->Read1Bytes();
+    if (marker != RTMP_AMF0_NUMBER)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 check number marker failed,marker=%#x,required=%#x,ret=%d", marker, RTMP_AMF0_NUMBER, ret);
+        return ret;
+    }
+
+    rs_verbose("amf0 read number marker success");
+
+    if (!manager->Require(8))
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read number value failed,ret=%d", ret);
+        return ret;
+    }
+
+    int64_t temp_value = manager->Read8Bytes();
+    memcpy(&value, &temp_value, 8);
+
+    rs_verbose("amf0 read number success,value=%.2f", value);
 
     return ret;
 }

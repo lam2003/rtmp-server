@@ -1,7 +1,5 @@
 #include <protocol/rtmp_stack.hpp>
 #include <protocol/rtmp_consts.hpp>
-#include <common/utils.hpp>
-#include <common/log.hpp>
 
 namespace rtmp
 {
@@ -521,8 +519,48 @@ int ConnectAppPacket::Decode(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
 
+    if ((ret = AMF0ReadString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode connect command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || command_name != RTMP_AMF0_COMMAND_CONNECT)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode connect command_name failed,command_name=%s,ret=%d", command_name, ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode connect transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (transaction_id != 1.00)
+    {
+        //because some client don't send transaction_id=1.00, only warn them
+        rs_warn("amf0 decode connect transaction incorrect,transaction_id:%.2f,required:%.2f", 1.00, transaction_id);
+    }
+
+    
 
     return ret;
+}
+
+int ConnectAppPacket::GetPreferCID()
+{
+}
+int ConnectAppPacket::GetMessageType()
+{
+}
+
+int ConnectAppPacket::GetSize()
+{
+}
+int ConnectAppPacket::EncodePacket(BufferManager *manager)
+{
 }
 
 AckWindowSize::AckWindowSize() : window(0),
@@ -1013,8 +1051,43 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
     int ret = ERROR_SUCCESS;
 
     Packet *packet = nullptr;
-    if (header.IsAMF0Command() || header.IsAMF3Command() || header.IsAMF0Data() || header.IsAMF3Data())
+
+    //no support amf3. If command message is amf3,direct return error.
+    if (header.IsAMF3Command() || header.IsAMF3Data())
     {
+        ret = ERROR_RTMP_AMF3_NO_SUPPORT;
+        rs_error("decode amf3 command message failed,no support amf3,ret=%d", ret);
+        return ret;
+    }
+    else if (header.IsAMF0Command() || header.IsAMF0Data())
+    {
+        rs_verbose("start to decode amf0 command message");
+        std::string command;
+        if ((ret = AMF0ReadString(manager, command)) != ERROR_SUCCESS)
+        {
+            rs_error("decode amf0 command name failed,ret=%d", ret);
+            return ret;
+        }
+
+        rs_verbose("decode amf0 command name success,command_name=%s", command.c_str());
+
+        // double transactionId = 0.0;
+        // if ((ret = AMF0ReadNumber(manager, &transactionId)) != ERROR_SUCCESS)
+        // {
+
+        // }
+
+        //reset buffer manager. start to decode amf0 packet
+        manager->Skip(-1 * manager->Pos());
+
+        if (command == RTMP_AMF0_COMMAND_CONNECT)
+        {
+            rs_verbose("decode amf0 command message(connect)");
+            *ppacket = packet = new ConnectAppPacket;
+            return packet->Decode(manager);
+        }
+
+        // return ret;
     }
     else if (header.IsSetChunkSize())
     {
@@ -1059,6 +1132,7 @@ int Protocol::OnRecvMessage(CommonMessage *msg)
         return ret;
     }
 
+    //only handle rtmp control message,but not rtmp command message
     Packet *packet = nullptr;
     switch (msg->header.message_type)
     {
@@ -1073,7 +1147,8 @@ int Protocol::OnRecvMessage(CommonMessage *msg)
         rs_verbose("decode packet from message payload success");
         break;
     default:
-        break;
+        //If recv amf0/amf3 message,just return
+        return ret;
     }
 
     rs_auto_free(Packet, packet);
