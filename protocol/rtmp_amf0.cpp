@@ -7,12 +7,170 @@
 namespace rtmp
 {
 
+static bool amf0_is_object_eof(BufferManager *manager)
+{
+    if (manager->Require(3))
+    {
+        int32_t flag = manager->Read3Bytes();
+        manager->Skip(-3);
+
+        return RTMP_AMF0_ObJECT_END == flag;
+    }
+    return false;
+}
+
+static int amf0_write_utf8(BufferManager *manager, const std::string &value)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!manager->Require(2))
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 write string length failed,ret=%d", ret);
+        return ret;
+    }
+
+    manager->Write2Bytes(value.length());
+    rs_verbose("amf0 write string length success,len=%d", (int)value.length());
+
+    if (value.length() <= 0)
+    {
+        rs_verbose("amf0 write empty stream,ret=%d", ret);
+        return ret;
+    }
+
+    if (!manager->Require(value.length()))
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 write string data failed,ret=%d", ret);
+        return ret;
+    }
+
+    manager->WriteString(value);
+
+    rs_verbose("amf0 write string data success");
+
+    rs_verbose("amf0 write string success");
+
+    return ret;
+}
+
+static int amf0_read_utf8(BufferManager *manager, std::string &value)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!manager->Require(2))
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read string length failed,ret=%d", ret);
+        return ret;
+    }
+
+    int64_t len = manager->Read2Bytes();
+    rs_verbose("amf0 read string length success,len=%d", len);
+
+    if (len <= 0)
+    {
+        rs_verbose("amf0 read empty string.ret=%d", ret);
+        return ret;
+    }
+
+    if (!manager->Require(len))
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read string data failed,ret=%d", ret);
+        return ret;
+    }
+
+    std::string str = manager->ReadString(len);
+    value = str;
+
+    rs_verbose("amf0 read string data success,data=%s", str.c_str());
+
+    rs_verbose("amf0 read string success");
+
+    return ret;
+}
+
 UnsortHashTable::UnsortHashTable()
 {
 }
 
 UnsortHashTable::~UnsortHashTable()
 {
+    Clear();
+}
+
+void UnsortHashTable::Set(const std::string &key, AMF0Any *value)
+{
+    std::vector<AMF0ObjectPropertyType>::iterator it;
+    for (it = properties_.begin(); it != properties_.end(); it++)
+    {
+        AMF0ObjectPropertyType &elem = *it;
+        std::string property_name = elem.first;
+        AMF0Any *property_value = elem.second;
+
+        if (property_name == key)
+        {
+            rs_freep(property_value);
+            properties_.erase(it);
+            break;
+        }
+    }
+
+    if (value)
+    {
+        properties_.push_back(std::make_pair(key, value));
+    }
+}
+
+int UnsortHashTable::Count()
+{
+    return (int)properties_.size();
+}
+
+void UnsortHashTable::Clear()
+{
+    std::vector<AMF0ObjectPropertyType>::iterator it;
+    for (it = properties_.begin(); it != properties_.end(); it++)
+    {
+        AMF0ObjectPropertyType &elem = *it;
+        AMF0Any *property_value = elem.second;
+        rs_freep(property_value);
+    }
+
+    properties_.clear();
+}
+
+void UnsortHashTable::Copy(UnsortHashTable *src)
+{
+    std::vector<AMF0ObjectPropertyType>::iterator it;
+
+    for (it = src->properties_.begin(); it != src->properties_.end(); it++)
+    {
+        AMF0ObjectPropertyType &elem = *it;
+        std::string property_name = elem.first;
+        AMF0Any *property_value = elem.second;
+        Set(property_name, property_value->Copy());
+    }
+}
+
+std::string UnsortHashTable::KeyAt(int index)
+{
+    AMF0ObjectPropertyType &elem = properties_[index];
+    return elem.first;
+}
+
+const char *UnsortHashTable::KeyRawAt(int index)
+{
+    AMF0ObjectPropertyType &elem = properties_[index];
+    return elem.first.data();
+}
+
+AMF0Any *UnsortHashTable::ValueAt(int index)
+{
+    AMF0ObjectPropertyType &elem = properties_[index];
+    return elem.second;
 }
 
 AMF0Any::AMF0Any()
@@ -23,9 +181,19 @@ AMF0Any::~AMF0Any()
 {
 }
 
-AMF0Ojbect *AMF0Any::Object()
+AMF0Object *AMF0Any::ToObject()
 {
-    return new AMF0Ojbect;
+    return dynamic_cast<AMF0Object *>(this);
+}
+
+bool AMF0Any::IsObject()
+{
+    return marker == RTMP_AMF0_OBJECT;
+}
+
+AMF0Object *AMF0Any::Object()
+{
+    return new AMF0Object;
 }
 
 AMF0Boolean *AMF0Any::Boolean(bool value)
@@ -59,97 +227,6 @@ AMF0Date *AMF0Any::Date(int64_t value)
 AMF0StrictArray *AMF0Any::StrictArray()
 {
     return new AMF0StrictArray();
-}
-
-static bool amf0_is_object_eof(BufferManager *manager)
-{
-    if (manager->Require(3))
-    {
-        int32_t flag = manager->Read3Bytes();
-        manager->Skip(-3);
-
-        return RTMP_AMF0_ObJECT_END == flag;
-    }
-    return false;
-}
-
-int AMF0Any::Discovery(BufferManager *manager, AMF0Any **ppvalue)
-{
-    int ret = ERROR_SUCCESS;
-
-    if (amf0_is_object_eof(manager))
-    {
-        *ppvalue = new AMF0ObjectEOF;
-        return ret;
-    }
-
-    if (!manager->Require(1))
-    {
-        ret = ERROR_RTMP_AMF0_DECODE;
-        rs_error("amf0 read any marker failed,ret=%d", ret);
-        return ret;
-    }
-
-    char marker = manager->Read1Bytes();
-    rs_verbose("amf0 read any marker success,marker=%#x", marker);
-
-    manager->Skip(-1);
-
-    switch (marker)
-    {
-    case RTMP_AMF0_STRING:
-    {
-        *ppvalue = AMF0Any::String();
-        return ret;
-    }
-    case RTMP_AMF0_BOOLEAN:
-    {
-        *ppvalue = AMF0Any::Boolean();
-        return ret;
-    }
-    case RTMP_AMF0_NUMBER:
-    {
-        *ppvalue = AMF0Any::Number();
-        return ret;
-    }
-    case RTMP_AMF0_NULL:
-    {
-        *ppvalue = AMF0Any::Null();
-        return ret;
-    }
-    case RTMP_AMF0_UNDEFINED:
-    {
-        *ppvalue = AMF0Any::Undefined();
-        return ret;
-    }
-    case RTMP_AMF0_OBJECT:
-    {
-        *ppvalue = AMF0Any::Object();
-        return ret;
-    }
-    case RTMP_AMF0_ECMA_ARRAY:
-    {
-        *ppvalue = AMF0Any::EcmaArray();
-        return ret;
-    }
-    case RTMP_AMF0_STRICT_ARRAY:
-    {
-        *ppvalue = AMF0Any::StrictArray();
-        return ret;
-    }
-    case RTMP_AMF0_DATE:
-    {
-        *ppvalue = AMF0Any::Date();
-        return ret;
-    }
-    default:
-    {
-        //  case RTMP_AMF0_INVALID
-        ret = ERROR_RTMP_AMF0_INVALID;
-        rs_error("invalid amf0 message type,marker=%#x,ret=%d", marker, ret);
-        return ret;
-    }
-    }
 }
 
 //AMFObjectEOF
@@ -232,8 +309,7 @@ int AMF0ObjectEOF::Write(BufferManager *manager)
 
 int AMF0ObjectEOF::TotalSize()
 {
-    //2 bytes zero value + 1 bytes marker
-    return 2 + 1;
+    return AMF0_LEN_OBJ_EOF;
 }
 
 AMF0Any *AMF0ObjectEOF::Copy()
@@ -263,8 +339,7 @@ int AMF0String::Write(BufferManager *manager)
 
 int AMF0String::TotalSize()
 {
-    //1 bytes marker + 2 bytes utf-8 length + n bytes string length
-    return 1 + 2 + value.length();
+    return AMF0_LEN_STR(value);
 }
 AMF0Any *AMF0String::Copy()
 {
@@ -293,8 +368,7 @@ int AMF0Boolean::Write(BufferManager *manager)
 
 int AMF0Boolean::TotalSize()
 {
-    //1 bytes marker + 1 bytes boolean length
-    return 1 + 1;
+    return AMF0_LEN_BOOLEAN;
 }
 AMF0Any *AMF0Boolean::Copy()
 {
@@ -322,8 +396,7 @@ int AMF0Number::Write(BufferManager *manager)
 }
 int AMF0Number::TotalSize()
 {
-    //1 bytes marker + 8 bytes number value
-    return 1 + 8;
+    return AMF0_LEN_NUMBER;
 }
 AMF0Any *AMF0Number::Copy()
 {
@@ -349,8 +422,7 @@ int AMF0Null::Write(BufferManager *manager)
 }
 int AMF0Null::TotalSize()
 {
-    //1 bytes marker
-    return 1;
+    return AMF0_LEN_NULL;
 }
 AMF0Any *AMF0Null::Copy()
 {
@@ -376,8 +448,7 @@ int AMF0Undefined::Write(BufferManager *manager)
 }
 int AMF0Undefined::TotalSize()
 {
-    //1 bytes marker
-    return 1;
+    return AMF0_LEN_UNDEFINED;
 }
 AMF0Any *AMF0Undefined::Copy()
 {
@@ -389,32 +460,311 @@ AMF0EcmaArray::AMF0EcmaArray() : count_(0)
 {
     marker = RTMP_AMF0_ECMA_ARRAY;
     properties_ = new UnsortHashTable;
-    eof_ = new AMF0ObjectEOF;
 }
 AMF0EcmaArray::~AMF0EcmaArray()
 {
     rs_freep(properties_);
-    rs_freep(eof_);
 }
+
+void AMF0EcmaArray::Set(const std::string &key, AMF0Any *value)
+{
+    properties_->Set(key, value);
+}
+
+std::string AMF0EcmaArray::KeyAt(int index)
+{
+    return properties_->KeyAt(index);
+}
+
+const char *AMF0EcmaArray::KeyRawAt(int index)
+{
+    return properties_->KeyRawAt(index);
+}
+
+AMF0Any *AMF0EcmaArray::ValueAt(int index)
+{
+    return properties_->ValueAt(index);
+}
+
+void AMF0EcmaArray::Clear()
+{
+    properties_->Clear();
+}
+
 int AMF0EcmaArray::Read(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
 
-    // if ((ret = manager->Require(1))!= ERROR_SUCCESS)
-    // {
-    //     ret = ERROR_RTMP_AMF0_DECODE;
-    //     rs_error("amf0 read ")
-    // }
+    if ((ret = manager->Require(1)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read ecma array marker failed,ret=%d", ret);
+        return ret;
+    }
+
+    char marker = manager->Read1Bytes();
+    if (marker != RTMP_AMF0_ECMA_ARRAY)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read ecma array check marker failed,ret=%d", ret);
+        return ret;
+    }
+
+    rs_verbose("amf0 read ecma array marker success");
+
+    if ((ret = manager->Require(4)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read ecma array count failed,ret=%d", ret);
+        return ret;
+    }
+
+    int32_t count = manager->Read4Bytes();
+    rs_verbose("amf0 read ecam array count success,count=%d", count);
+
+    count_ = count;
+
+    while (!manager->Empty())
+    {
+        if (amf0_is_object_eof(manager) != ERROR_SUCCESS)
+        {
+            AMF0ObjectEOF eof;
+            if ((ret = eof.Read(manager)) != ERROR_SUCCESS)
+            {
+                rs_error("amf0 read ecma array eof failed,ret=%d", ret);
+                return ret;
+            }
+            rs_verbose("amf0 read ecma array eof");
+            break;
+        }
+
+        std::string property_name;
+        if ((ret = amf0_read_utf8(manager, property_name)) != ERROR_SUCCESS)
+        {
+            rs_error("amf0 read ecma array property name failed,ret=%d", ret);
+            return ret;
+        }
+
+        AMF0Any *property_value = nullptr;
+        if ((ret = AMF0ReadAny(manager, &property_value)) != ERROR_SUCCESS)
+        {
+            rs_error("amf0 read ecma array property value failed,ret=%d", ret);
+            return ret;
+        }
+
+        Set(property_name, property_value);
+    }
+
     return ret;
 }
+
 int AMF0EcmaArray::Write(BufferManager *manager)
 {
+    int ret = ERROR_SUCCESS;
+
+    if ((manager->Require(1)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 write ecma array marker failed,ret=%d", ret);
+        return ret;
+    }
+
+    manager->Write1Bytes(RTMP_AMF0_ECMA_ARRAY);
+    rs_verbose("amf0 write ecma array marker success");
+
+    if ((manager->Require(4)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 write ecma array count failed,ret=%d", ret);
+        return ret;
+    }
+
+    manager->Write4Bytes(count_);
+    rs_verbose("amf0 write ecma array count success");
+
+    for (int i = 0; i < properties_->Count(); i++)
+    {
+        std::string property_name = KeyAt(i);
+        AMF0Any *property_value = ValueAt(i);
+
+        if ((ret = amf0_write_utf8(manager, property_name)) != ERROR_SUCCESS)
+        {
+            rs_error("amf0 write ecma array property name failed,ret=%d", ret);
+            return ret;
+        }
+
+        if ((ret = AMF0ReadAny(manager, &property_value)) != ERROR_SUCCESS)
+        {
+            rs_error("amf0 write ecma array property value failed,ret=%d", ret);
+            return ret;
+        }
+    }
+
+    AMF0ObjectEOF eof;
+    if ((ret = eof.Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 write ecma array eof failed,ret=%d", ret);
+        return ret;
+    }
+
+    rs_verbose("amf0 write ecma array success");
+    return ret;
 }
+
 int AMF0EcmaArray::TotalSize()
 {
+    int size = 1 + 4;
+
+    for (int i = 0; i < properties_->Count(); i++)
+    {
+        std::string key = KeyAt(i);
+        AMF0Any *value = ValueAt(i);
+
+        size += AMF0_LEN_UTF8(key);
+        size += AMF0_LEN_ANY(value);
+    }
+
+    size += AMF0_LEN_OBJ_EOF;
+
+    return size;
 }
+
 AMF0Any *AMF0EcmaArray::Copy()
 {
+    AMF0EcmaArray *copy = new AMF0EcmaArray;
+    copy->properties_->Copy(properties_);
+    copy->count_ = count_;
+    return copy;
+}
+
+//AMF0StrictArray
+AMF0StrictArray::AMF0StrictArray() : count_(0)
+{
+    marker = RTMP_AMF0_STRICT_ARRAY;
+}
+AMF0StrictArray::~AMF0StrictArray()
+{
+    Clear();
+}
+
+void AMF0StrictArray::Append(AMF0Any *any)
+{
+    properties_.push_back(any);
+    count_ = properties_.size();
+}
+
+void AMF0StrictArray::Clear()
+{
+    std::vector<AMF0Any *>::iterator it;
+    for (it = properties_.begin(); it != properties_.end(); it++)
+    {
+        AMF0Any *any = *it;
+        rs_freep(any);
+    }
+    properties_.clear();
+}
+
+int AMF0StrictArray::Read(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = manager->Require(1)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read strict array marker failed,ret=%d", ret);
+        return ret;
+    }
+
+    char marker = manager->Read1Bytes();
+    if (marker != RTMP_AMF0_STRICT_ARRAY)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read strict array check marker failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = manager->Require(4)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 read strict array count failed,ret=%d", ret);
+        return ret;
+    }
+
+    int32_t count = manager->Read4Bytes();
+    count_ = count;
+
+    for (int i = 0; i < count && !manager->Empty(); i++)
+    {
+        AMF0Any *elem = nullptr;
+        if ((ret = AMF0ReadAny(manager, &elem)) != ERROR_SUCCESS)
+        {
+            rs_error("amf0 read strict array value failed,ret=%d", ret);
+            return ret;
+        }
+
+        properties_.push_back(elem);
+    }
+
+    return ret;
+}
+int AMF0StrictArray::Write(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!manager->Require(1))
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 write strict array marker failed,ret=%d", ret);
+        return ret;
+    }
+
+    manager->Write1Bytes(RTMP_AMF0_STRICT_ARRAY);
+
+    if ((ret = manager->Require(4)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 write strict array count failed,ret=%d", ret);
+        return ret;
+    }
+
+    manager->Write4Bytes(count_);
+
+    for (int i = 0; i < (int)properties_.size(); i++)
+    {
+        AMF0Any *any = properties_[i];
+        if ((ret = AMF0WriteAny(manager, any)) != ERROR_SUCCESS)
+        {
+            rs_error("amf0 write strict array value failed,ret=%d", ret);
+            return ret;
+        }
+    }
+
+    return ret;
+}
+int AMF0StrictArray::TotalSize()
+{
+    int size = 1 + 4;
+
+    for (int i = 0; i < (int)properties_.size(); i++)
+    {
+        AMF0Any *any = properties_[i];
+        size += AMF0_LEN_ANY(any);
+    }
+    return size;
+}
+AMF0Any *AMF0StrictArray::Copy()
+{
+
+    AMF0StrictArray *copy = new AMF0StrictArray;
+
+    std::vector<AMF0Any *>::iterator it;
+    for (it = properties_.begin(); it != properties_.end(); it++)
+    {
+        AMF0Any *any = *it;
+        copy->Append(any);
+    }
+    copy->count_ = count_;
+    return copy;
 }
 
 //AMF0Date
@@ -520,8 +870,7 @@ int AMF0Date::Write(BufferManager *manager)
 
 int AMF0Date::TotalSize()
 {
-    //1 bytes marker + 8 bytes date_value + 2 bytes time_zone
-    return 1 + 8 + 2;
+    return AMF0_LEN_DATE;
 }
 
 AMF0Any *AMF0Date::Copy()
@@ -532,21 +881,29 @@ AMF0Any *AMF0Date::Copy()
     return copy;
 }
 
+int64_t AMF0Date::Date()
+{
+    return date_value_;
+}
+
+int16_t AMF0Date::TimeZone()
+{
+    return time_zone_;
+}
+
 //AMF0Object
-AMF0Ojbect::AMF0Ojbect()
+AMF0Object::AMF0Object()
 {
     marker = RTMP_AMF0_OBJECT;
-    hash_table_ = new UnsortHashTable;
-    eof_ = new AMF0ObjectEOF;
+    properties_ = new UnsortHashTable;
 }
 
-AMF0Ojbect::~AMF0Ojbect()
+AMF0Object::~AMF0Object()
 {
-    rs_freep(hash_table_);
-    rs_freep(eof_);
+    rs_freep(properties_);
 }
 
-int AMF0Ojbect::Read(BufferManager *manager)
+int AMF0Object::Read(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
 
@@ -569,68 +926,171 @@ int AMF0Ojbect::Read(BufferManager *manager)
 
     while (!manager->Empty())
     {
-        std::string property_name;
-        if ((ret = AMF0ReadString(manager, property_name)) != ERROR_SUCCESS)
+        if (amf0_is_object_eof(manager))
         {
-            ret = ERROR_RTMP_AMF0_DECODE;
+            AMF0ObjectEOF eof;
+            if ((ret = eof.Read(manager)) != ERROR_SUCCESS)
+            {
+                rs_error("amf0 read object eof failed,ret=%d", ret);
+                return ret;
+            }
+            rs_verbose("amf0  read object eof");
+            break;
+        }
+
+        std::string property_name;
+        if ((ret = amf0_read_utf8(manager, property_name)) != ERROR_SUCCESS)
+        {
             rs_error("amf0 read object property name failed,ret=%d", ret);
             return ret;
         }
+
+        AMF0Any *property_value = nullptr;
+
+        if ((ret = AMF0ReadAny(manager, &property_value)) != ERROR_SUCCESS)
+        {
+            rs_error("amf0 read object property value failed,ret=%d", ret);
+            rs_freep(property_value);
+            return ret;
+        }
+
+        Set(property_name, property_value);
     }
 
     return ret;
 }
 
-int AMF0Ojbect::Write(BufferManager *manager)
+std::string AMF0Object::KeyAt(int index)
+{
+    return properties_->KeyAt(index);
+}
+
+const char *AMF0Object::KeyRawAt(int index)
+{
+    return properties_->KeyRawAt(index);
+}
+
+AMF0Any *AMF0Object::ValueAt(int index)
+{
+    return properties_->ValueAt(index);
+}
+
+void AMF0Object::Set(const std::string &key, AMF0Any *value)
+{
+    properties_->Set(key, value);
+}
+
+int AMF0Object::Write(BufferManager *manager)
 {
     return 0;
 }
 
-int AMF0Ojbect::TotalSize()
+int AMF0Object::TotalSize()
 {
-    return 0;
+    int size = 1;
+    for (int i = 0; i < properties_->Count(); i++)
+    {
+        std::string property_name = KeyAt(i);
+        AMF0Any *property_value = ValueAt(i);
+
+        size += AMF0_LEN_UTF8(property_name);
+        size += AMF0_LEN_ANY(property_value);
+    }
+
+    size += AMF0_LEN_OBJ_EOF;
+
+    return size;
 }
 
-AMF0Any *AMF0Ojbect::Copy()
+void AMF0Object::Clear()
 {
-    return nullptr;
+    properties_->Clear();
 }
 
-static int amf0_read_utf8(BufferManager *manager, std::string &value)
+AMF0Any *AMF0Object::Copy()
+{
+    AMF0Object *copy = new AMF0Object;
+    copy->properties_->Copy(properties_);
+    return copy;
+}
+
+int AMF0Any::Discovery(BufferManager *manager, AMF0Any **ppvalue)
 {
     int ret = ERROR_SUCCESS;
 
-    if (!manager->Require(2))
+    if (amf0_is_object_eof(manager))
+    {
+        *ppvalue = new AMF0ObjectEOF;
+        return ret;
+    }
+
+    if (!manager->Require(1))
     {
         ret = ERROR_RTMP_AMF0_DECODE;
-        rs_error("amf0 read string length failed,ret=%d", ret);
+        rs_error("amf0 read any marker failed,ret=%d", ret);
         return ret;
     }
 
-    int64_t len = manager->Read2Bytes();
-    rs_verbose("amf0 read string length success,len=%d", len);
+    char marker = manager->Read1Bytes();
+    rs_verbose("amf0 read any marker success,marker=%#x", marker);
 
-    if (len <= 0)
+    manager->Skip(-1);
+
+    switch (marker)
     {
-        rs_verbose("amf0 read empty string.ret=%d", ret);
-        return ret;
-    }
-
-    if (!manager->Require(len))
+    case RTMP_AMF0_STRING:
     {
-        ret = ERROR_RTMP_AMF0_DECODE;
-        rs_error("amf0 read string data failed,ret=%d", ret);
+        *ppvalue = AMF0Any::String();
         return ret;
     }
-
-    std::string str = manager->ReadString(len);
-    value = str;
-
-    rs_verbose("amf0 read string data success,data=%s", str.c_str());
-
-    rs_verbose("amf0 read string success");
-
-    return ret;
+    case RTMP_AMF0_BOOLEAN:
+    {
+        *ppvalue = AMF0Any::Boolean();
+        return ret;
+    }
+    case RTMP_AMF0_NUMBER:
+    {
+        *ppvalue = AMF0Any::Number();
+        return ret;
+    }
+    case RTMP_AMF0_NULL:
+    {
+        *ppvalue = AMF0Any::Null();
+        return ret;
+    }
+    case RTMP_AMF0_UNDEFINED:
+    {
+        *ppvalue = AMF0Any::Undefined();
+        return ret;
+    }
+    case RTMP_AMF0_OBJECT:
+    {
+        *ppvalue = AMF0Any::Object();
+        return ret;
+    }
+    case RTMP_AMF0_ECMA_ARRAY:
+    {
+        *ppvalue = AMF0Any::EcmaArray();
+        return ret;
+    }
+    case RTMP_AMF0_STRICT_ARRAY:
+    {
+        *ppvalue = AMF0Any::StrictArray();
+        return ret;
+    }
+    case RTMP_AMF0_DATE:
+    {
+        *ppvalue = AMF0Any::Date();
+        return ret;
+    }
+    default:
+    {
+        //  case RTMP_AMF0_INVALID
+        ret = ERROR_RTMP_AMF0_INVALID;
+        rs_error("invalid amf0 message type,marker=%#x,ret=%d", marker, ret);
+        return ret;
+    }
+    }
 }
 
 int AMF0ReadString(BufferManager *manager, std::string &value)
@@ -723,42 +1183,6 @@ int AMF0WriteNumber(BufferManager *manager, double value)
     rs_verbose("amf0 write number data success,data=%.1f", value);
 
     rs_verbose("amf0 write number success");
-
-    return ret;
-}
-
-static int amf0_write_utf8(BufferManager *manager, const std::string &value)
-{
-    int ret = ERROR_SUCCESS;
-
-    if (!manager->Require(2))
-    {
-        ret = ERROR_RTMP_AMF0_ENCODE;
-        rs_error("amf0 write string length failed,ret=%d", ret);
-        return ret;
-    }
-
-    manager->Write2Bytes(value.length());
-    rs_verbose("amf0 write string length success,len=%d", (int)value.length());
-
-    if (value.length() <= 0)
-    {
-        rs_verbose("amf0 write empty stream,ret=%d", ret);
-        return ret;
-    }
-
-    if (!manager->Require(value.length()))
-    {
-        ret = ERROR_RTMP_AMF0_ENCODE;
-        rs_error("amf0 write string data failed,ret=%d", ret);
-        return ret;
-    }
-
-    manager->WriteString(value);
-
-    rs_verbose("amf0 write string data success");
-
-    rs_verbose("amf0 write string success");
 
     return ret;
 }
@@ -949,7 +1373,25 @@ int AMF0ReadAny(BufferManager *manager, AMF0Any **ppvalue)
 {
     int ret = ERROR_SUCCESS;
 
+    if ((ret = AMF0Any::Discovery(manager, ppvalue)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 discovery any elem failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = (*ppvalue)->Read(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 parse elem failed,ret=%d", ret);
+        rs_freep(ppvalue);
+        return ret;
+    }
+
     return ret;
+}
+
+int AMF0WriteAny(BufferManager *manager, AMF0Any *value)
+{
+    return value->Write(manager);
 }
 
 } // namespace rtmp

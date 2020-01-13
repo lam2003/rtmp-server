@@ -10,7 +10,7 @@
 namespace rtmp
 {
 
-class AMF0Ojbect;
+class AMF0Object;
 class AMF0Any;
 class AMF0ObjectEOF;
 class AMF0String;
@@ -34,6 +34,7 @@ extern int AMF0WriteNumber(BufferManager *manager, double value);
 extern int AMF0WriteBoolean(BufferManager *manager, bool value);
 extern int AMF0WriteNull(BufferManager *manager);
 extern int AMF0WriteUndefined(BufferManager *manager);
+extern int AMF0WriteAny(BufferManager *manager, AMF0Any *any);
 
 class UnsortHashTable
 {
@@ -41,9 +42,18 @@ public:
     UnsortHashTable();
     virtual ~UnsortHashTable();
 
+public:
+    virtual void Set(const std::string &key, AMF0Any *value);
+    virtual int Count();
+    virtual void Clear();
+    virtual void Copy(UnsortHashTable *src);
+    virtual std::string KeyAt(int index);
+    virtual const char *KeyRawAt(int index);
+    virtual AMF0Any *ValueAt(int index);
+
 private:
-    typedef std::pair<std::string, AMF0Any *> AMF0OjbectPropertyType;
-    std::vector<AMF0OjbectPropertyType> properties;
+    typedef std::pair<std::string, AMF0Any *> AMF0ObjectPropertyType;
+    std::vector<AMF0ObjectPropertyType> properties_;
 };
 
 class AMF0Any
@@ -53,7 +63,7 @@ public:
     virtual ~AMF0Any();
 
 public:
-    static AMF0Ojbect *Object();
+    static AMF0Object *Object();
     static AMF0String *String(const std::string &value = "");
     static AMF0Boolean *Boolean(bool value = false);
     static AMF0Number *Number(double value = 0.0);
@@ -62,13 +72,15 @@ public:
     static AMF0EcmaArray *EcmaArray();
     static AMF0Date *Date(int64_t value = 0);
     static AMF0StrictArray *StrictArray();
-
     static int Discovery(BufferManager *manager, AMF0Any **ppvalue);
 
     virtual int Read(BufferManager *manager) = 0;
     virtual int Write(BufferManager *manager) = 0;
     virtual int TotalSize() = 0;
     virtual AMF0Any *Copy() = 0;
+
+    virtual AMF0Object *ToObject();
+    virtual bool IsObject();
 
 public:
     char marker;
@@ -192,6 +204,11 @@ private:
     AMF0EcmaArray();
 
 public:
+    virtual void Set(const std::string &key, AMF0Any *value);
+    virtual std::string KeyAt(int index);
+    virtual const char *KeyRawAt(int index);
+    virtual AMF0Any *ValueAt(int index);
+    virtual void Clear();
     //AMF0Any
     virtual int Read(BufferManager *manager) override;
     virtual int Write(BufferManager *manager) override;
@@ -199,9 +216,8 @@ public:
     virtual AMF0Any *Copy() override;
 
 private:
-    int32_t count_;
+    int count_;
     UnsortHashTable *properties_;
-    AMF0ObjectEOF *eof_;
 };
 
 class AMF0Date : public AMF0Any
@@ -239,20 +255,8 @@ private:
     AMF0StrictArray();
 
 public:
-    //AMF0Any
-    virtual int Read(BufferManager *manager) override;
-    virtual int Write(BufferManager *manager) override;
-    virtual int TotalSize() override;
-    virtual AMF0Any *Copy() override;
-};
-
-class AMF0Ojbect : public AMF0Any
-{
-public:
-    AMF0Ojbect();
-    virtual ~AMF0Ojbect();
-
-public:
+    virtual void Append(AMF0Any *any);
+    virtual void Clear();
     //AMF0Any
     virtual int Read(BufferManager *manager) override;
     virtual int Write(BufferManager *manager) override;
@@ -260,8 +264,30 @@ public:
     virtual AMF0Any *Copy() override;
 
 private:
-    UnsortHashTable *hash_table_;
-    AMF0ObjectEOF *eof_;
+    int count_;
+    std::vector<AMF0Any *> properties_;
+};
+
+class AMF0Object : public AMF0Any
+{
+public:
+    AMF0Object();
+    virtual ~AMF0Object();
+
+public:
+    virtual void Clear();
+    virtual std::string KeyAt(int index);
+    virtual const char *KeyRawAt(int index);
+    virtual AMF0Any *ValueAt(int index);
+    virtual void Set(const std::string &key, AMF0Any *value);
+    //AMF0Any
+    virtual int Read(BufferManager *manager) override;
+    virtual int Write(BufferManager *manager) override;
+    virtual int TotalSize() override;
+    virtual AMF0Any *Copy() override;
+
+private:
+    UnsortHashTable *properties_;
 };
 
 } // namespace rtmp

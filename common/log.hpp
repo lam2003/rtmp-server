@@ -55,13 +55,13 @@ public:
 extern ILog *_log;
 extern IThreadContext *_context;
 
-#if 1
+#if 0
 #define rs_verbose(msg, ...) _log->Verbose(NULL, _context->GetID(), msg, ##__VA_ARGS__)
 #define rs_info(msg, ...) _log->Info(NULL, _context->GetID(), msg, ##__VA_ARGS__)
 #define rs_trace(msg, ...) _log->Trace(NULL, _context->GetID(), msg, ##__VA_ARGS__)
 #define rs_warn(msg, ...) _log->Warn(NULL, _context->GetID(), msg, ##__VA_ARGS__)
 #define rs_error(msg, ...) _log->Error(NULL, _context->GetID(), msg, ##__VA_ARGS__)
-#elif 0
+#elif 1
 #define rs_verbose(msg, ...) _log->Verbose(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
 #define rs_info(msg, ...) _log->Info(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
 #define rs_trace(msg, ...) _log->Trace(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)

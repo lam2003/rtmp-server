@@ -194,8 +194,8 @@ protected:
 public:
     std::string command_name;
     double transaction_id;
-    AMF0Ojbect *command_obj;
-    AMF0Ojbect *args;
+    AMF0Object *args;
+    AMF0Object *command_object;
 };
 
 class AckWindowSize
