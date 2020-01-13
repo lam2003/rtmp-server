@@ -22,8 +22,8 @@ int32_t RTMPConnection::DoCycle()
         return ret;
     }
 
-    // rtmp::CommonMessage *msg;
-    rtmp_->ConnectApp(nullptr);
+    rtmp::Request req;
+    rtmp_->ConnectApp(&req);
 
     return ret;
 }

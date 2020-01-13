@@ -9,6 +9,9 @@
 //rtmp chunk stream cache num
 #define RTMP_CHUNK_STREAM_CHCAHE 16
 
+//rtmp default port 
+#define RTMP_DEFAULT_PORT "1935"
+
 //rtmp message header type
 #define RTMP_FMT_TYPE0 0
 #define RTMP_FMT_TYPE1 1

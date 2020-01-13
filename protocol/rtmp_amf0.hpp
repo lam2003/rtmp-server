@@ -50,6 +50,9 @@ public:
     virtual std::string KeyAt(int index);
     virtual const char *KeyRawAt(int index);
     virtual AMF0Any *ValueAt(int index);
+    virtual AMF0Any *EnsurePropertyString(const std::string &key);
+    virtual AMF0Any *GetValue(const std::string &key);
+    virtual AMF0Any *EnsurePropertyNumber(const std::string &key);
 
 private:
     typedef std::pair<std::string, AMF0Any *> AMF0ObjectPropertyType;
@@ -81,6 +84,10 @@ public:
 
     virtual AMF0Object *ToObject();
     virtual bool IsObject();
+    virtual std::string ToString();
+    virtual bool IsString();
+    virtual double ToNumber();
+    virtual bool IsNumber();
 
 public:
     char marker;
@@ -278,8 +285,12 @@ public:
     virtual void Clear();
     virtual std::string KeyAt(int index);
     virtual const char *KeyRawAt(int index);
+    virtual int Count();
     virtual AMF0Any *ValueAt(int index);
     virtual void Set(const std::string &key, AMF0Any *value);
+    virtual AMF0Any *EnsurePropertyString(const std::string &key);
+    virtual AMF0Any *GetValue(const std::string &key);
+    virtual AMF0Any *EnsurePropertyNumber(const std::string &key);
     //AMF0Any
     virtual int Read(BufferManager *manager) override;
     virtual int Write(BufferManager *manager) override;

@@ -3,6 +3,47 @@
 
 namespace rtmp
 {
+
+void DiscoveryTcUrl(const std::string &tc_url,
+                    std::string &schema,
+                    std::string &host,
+                    std::string &vhost,
+                    std::string &app,
+                    std::string &stream,
+                    std::string &port,
+                    std::string &param)
+{
+    size_t pos = std::string::npos;
+    std::string url = tc_url;
+
+    if ((pos = url.find("://")) != std::string::npos)
+    {
+        schema = url.substr(0, pos);
+        url = url.substr(pos + 3);
+        rs_verbose("got schema:%s", schema.c_str());
+    }
+
+    if ((pos = url.find("/")) != std::string::npos)
+    {
+        host = url.substr(0, pos);
+        url = url.substr(pos + 1);
+
+        if ((pos = host.find(":")) != std::string::npos)
+        {
+            port = host.substr(pos + 1);
+            host = host.substr(0, pos);
+        }
+        else
+        {
+            port = RTMP_DEFAULT_PORT;
+        }
+
+        rs_verbose("got host:%s,port:%s", host.c_str(), port.c_str());
+    }
+
+    
+}
+
 IMessageHandler::IMessageHandler()
 {
 }

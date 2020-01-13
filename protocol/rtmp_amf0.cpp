@@ -173,6 +173,54 @@ AMF0Any *UnsortHashTable::ValueAt(int index)
     return elem.second;
 }
 
+AMF0Any *UnsortHashTable::GetValue(const std::string &key)
+{
+    std::vector<AMF0ObjectPropertyType>::iterator it;
+    for (it = properties_.begin(); it != properties_.end(); it++)
+    {
+        AMF0ObjectPropertyType &elem = *it;
+        std::string property_name = elem.first;
+        AMF0Any *property_value = elem.second;
+
+        if (property_name == key)
+        {
+            return property_value;
+        }
+    }
+    return nullptr;
+}
+
+AMF0Any *UnsortHashTable::EnsurePropertyString(const std::string &key)
+{
+    AMF0Any *value = GetValue(key);
+    if (!value)
+    {
+        return nullptr;
+    }
+
+    if (!value->IsString())
+    {
+        return nullptr;
+    }
+
+    return value;
+}
+
+AMF0Any *UnsortHashTable::EnsurePropertyNumber(const std::string &key)
+{
+    AMF0Any *value = GetValue(key);
+    if (!value)
+    {
+        return nullptr;
+    }
+    if (!value->IsNumber())
+    {
+        return nullptr;
+    }
+
+    return value;
+}
+
 AMF0Any::AMF0Any()
 {
 }
@@ -189,6 +237,27 @@ AMF0Object *AMF0Any::ToObject()
 bool AMF0Any::IsObject()
 {
     return marker == RTMP_AMF0_OBJECT;
+}
+
+std::string AMF0Any::ToString()
+{
+    AMF0String *p = dynamic_cast<AMF0String *>(this);
+    return p->value;
+}
+bool AMF0Any::IsString()
+{
+    return marker == RTMP_AMF0_STRING;
+}
+
+double AMF0Any::ToNumber()
+{
+    AMF0Number *p = dynamic_cast<AMF0Number *>(this);
+    return p->value;
+}
+
+bool AMF0Any::IsNumber()
+{
+    return marker == RTMP_AMF0_NUMBER;
 }
 
 AMF0Object *AMF0Any::Object()
@@ -965,6 +1034,11 @@ std::string AMF0Object::KeyAt(int index)
     return properties_->KeyAt(index);
 }
 
+int AMF0Object::Count()
+{
+    return properties_->Count();
+}
+
 const char *AMF0Object::KeyRawAt(int index)
 {
     return properties_->KeyRawAt(index);
@@ -978,6 +1052,21 @@ AMF0Any *AMF0Object::ValueAt(int index)
 void AMF0Object::Set(const std::string &key, AMF0Any *value)
 {
     properties_->Set(key, value);
+}
+
+AMF0Any *AMF0Object::EnsurePropertyString(const std::string &key)
+{
+    return properties_->EnsurePropertyString(key);
+}
+
+AMF0Any *AMF0Object::EnsurePropertyNumber(const std::string &key)
+{
+    return properties_->EnsurePropertyNumber(key);
+}
+
+AMF0Any *AMF0Object::GetValue(const std::string &key)
+{
+    return properties_->GetValue(key);
 }
 
 int AMF0Object::Write(BufferManager *manager)
