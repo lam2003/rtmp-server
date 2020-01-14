@@ -95,6 +95,7 @@ int RTMPServer::ConnectApp(rtmp::Request *req)
     }
 
     rtmp::DiscoveryTcUrl(req->tc_url, req->schema, req->host, req->vhost, req->app, req->stream, req->port, req->param);
+    req->Strip();
 
     return ret;
 }

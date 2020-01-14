@@ -11,6 +11,8 @@
 
 //rtmp default port 
 #define RTMP_DEFAULT_PORT "1935"
+//rtmp default vhost 
+#define RTMP_DEFAULT_VHOST_PARAM "?vhost=__defaultVhost__"
 
 //rtmp message header type
 #define RTMP_FMT_TYPE0 0

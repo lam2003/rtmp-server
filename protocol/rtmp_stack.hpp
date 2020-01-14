@@ -141,6 +141,9 @@ public:
     virtual ~Request();
 
 public:
+    void Strip();
+
+public:
     //base attributes
     std::string ip;
     std::string tc_url;

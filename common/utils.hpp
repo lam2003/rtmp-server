@@ -31,6 +31,12 @@ class Utils
 public:
     static std::string GetPeerIP(int32_t fd);
     static void RandomGenerate(char *bytes, int32_t size);
+    static std::string StringReplace(const std::string &str, const std::string &oldstr, const std::string &newstr);
+    static bool StringEndsWith(const std::string &str, const std::string &flag);
+    static std::string StringEraseLastSubstr(const std::string &str, const std::string &erase_str);
+    static std::string StringTrimStart(const std::string &str, const std::string &trim_chars);
+    static std::string StringTrimEnd(const std::string &str, const std::string &trim_chars);
+    static std::string StringRemove(const std::string &str, const std::string &remove_chars);
 };
 
 #define rs_auto_free(class_name, instance) __impl_AutoFree<class_name> __auto_free_##instance(&instance, false)
@@ -48,7 +54,7 @@ public:
     {
         if (is_array_)
         {
-            delete[] *p_;
+            delete[] * p_;
         }
         else
         {

@@ -4,6 +4,44 @@
 namespace rtmp
 {
 
+static void vhost_resolve(std::string &vhost, std::string &app, std::string &param)
+{
+    size_t pos = std::string::npos;
+    if ((pos = app.find("?")) != std::string::npos)
+    {
+        param = app.substr(pos);
+        rs_info("param:%s", param.c_str());
+    }
+
+    app = Utils::StringReplace(app, ",", "?");
+    app = Utils::StringReplace(app, "...", "?");
+    app = Utils::StringReplace(app, "&&", "?");
+    app = Utils::StringReplace(app, "=", "?");
+    if (Utils::StringEndsWith(app, "/_definst_"))
+    {
+        app = Utils::StringEraseLastSubstr(app, "/_definst_");
+    }
+
+    if ((pos = app.find("?")) != std::string::npos)
+    {
+        std::string query = app.substr(pos + 1);
+        app = app.substr(0, pos);
+
+        if ((pos = query.find("vhost?")) != std::string::npos)
+        {
+            query = query.substr(pos + 6);
+            if (!query.empty())
+            {
+                vhost = query;
+                if ((pos = vhost.find("?")) != std::string::npos)
+                {
+                    vhost = vhost.substr(0, pos);
+                }
+            }
+        }
+    }
+}
+
 void DiscoveryTcUrl(const std::string &tc_url,
                     std::string &schema,
                     std::string &host,
@@ -38,10 +76,19 @@ void DiscoveryTcUrl(const std::string &tc_url,
             port = RTMP_DEFAULT_PORT;
         }
 
-        rs_verbose("got host:%s,port:%s", host.c_str(), port.c_str());
+        rs_verbose("got host:%s,port:%s", host.c_str(), url.c_str());
     }
 
-    
+    app = url;
+    vhost = host;
+
+    vhost_resolve(vhost, app, param);
+    vhost_resolve(vhost, stream, param);
+
+    if (param == RTMP_DEFAULT_VHOST_PARAM)
+    {
+        param = "";
+    }
 }
 
 IMessageHandler::IMessageHandler()
@@ -421,6 +468,20 @@ Request::Request()
 
 Request::~Request()
 {
+}
+
+void Request::Strip()
+{
+    host = Utils::StringRemove(host, "/ \n\r\t");
+    vhost = Utils::StringRemove(vhost, "/ \n\r\t");
+    app = Utils::StringRemove(app, " \n\r\t");
+    stream = Utils::StringRemove(stream, " \n\r\t");
+
+    app = Utils::StringTrimEnd(app, "/");
+    stream = Utils::StringTrimEnd(stream, "/");
+
+    app = Utils::StringTrimStart(app, "/");
+    stream = Utils::StringTrimStart(stream, "/");
 }
 
 Packet::Packet()
