@@ -11,8 +11,8 @@ RTMPServer::RTMPServer(IProtocolReaderWriter *rw) : rw_(rw)
 
 RTMPServer::~RTMPServer()
 {
-    rs_freep(handshake_bytes_);
     rs_freep(protocol_);
+    rs_freep(handshake_bytes_);
 }
 
 int32_t RTMPServer::Handshake()
@@ -96,6 +96,21 @@ int RTMPServer::ConnectApp(rtmp::Request *req)
 
     rtmp::DiscoveryTcUrl(req->tc_url, req->schema, req->host, req->vhost, req->app, req->stream, req->port, req->param);
     req->Strip();
+
+    return ret;
+}
+
+int RTMPServer::SetWindowAckSize(int ackowledgement_window_size)
+{
+    int ret = ERROR_SUCCESS;
+
+    rtmp::SetWindowAckSizePacket *pkt = new rtmp::SetWindowAckSizePacket;
+    pkt->ackowledgement_window_size = ackowledgement_window_size;
+    if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
+    {
+        rs_error("send set_ackowledgement_window_size packet failed,ret=%d",ret);
+        return ret;
+    }
 
     return ret;
 }

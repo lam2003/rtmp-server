@@ -3,16 +3,20 @@
 
 #define RTMP_SEND_TIMEOUT_US (int64_t)(30 * 1000 * 1000LL)
 #define RTMP_RECV_TIMEOUT_US (int64_t)(30 * 1000 * 1000LL)
+#define RTMP_DEFAULT_WINDOW_ACK_SIZE (2.5 * 1000 * 1000)
+#define RTMP_DEFAULT_PEER_BAND_WIDTH (2.5 * 1000 * 1000)
+//rtmp default port
+#define RTMP_DEFAULT_PORT "1935"
+//rtmp default vhost
+#define RTMP_DEFAULT_VHOST_PARAM "?vhost=__defaultVhost__"
+
 #define RTMP_PROTOCOL_CHUNK_SIZE 128
 #define RTMP_MIN_CHUNK_SIZE 128
 #define RTMP_MAX_CHUNK_SIZE 65535
 //rtmp chunk stream cache num
 #define RTMP_CHUNK_STREAM_CHCAHE 16
-
-//rtmp default port 
-#define RTMP_DEFAULT_PORT "1935"
-//rtmp default vhost 
-#define RTMP_DEFAULT_VHOST_PARAM "?vhost=__defaultVhost__"
+//rtmp fmt0 header size(max base header)
+#define RTMP_FMT0_HEADER_SIZE 16
 
 //rtmp message header type
 #define RTMP_FMT_TYPE0 0

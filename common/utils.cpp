@@ -104,7 +104,7 @@ std::string Utils::StringTrimEnd(const std::string &str, const std::string &trim
     for (int i = 0; i < (int)trim_chars.length(); i++)
     {
         char ch = trim_chars.at(i);
-        while (!retstr.empty() && retstr.at(retstr.length()-1) == ch)
+        while (!retstr.empty() && retstr.at(retstr.length() - 1) == ch)
         {
             retstr.erase(retstr.end() - 1);
             //reset
@@ -126,7 +126,7 @@ std::string Utils::StringRemove(const std::string &str, const std::string &remov
         {
             if (*it == ch)
             {
-                retstr.erase(it);
+                it = retstr.erase(it);
             }
             else
             {

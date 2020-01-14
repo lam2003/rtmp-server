@@ -16,6 +16,7 @@ public:
     virtual void SetRecvTimeout(int64_t timeout_us);
     virtual int32_t RecvMessage(rtmp::CommonMessage **pmsg);
     virtual int ConnectApp(rtmp::Request *req);
+    virtual int SetWindowAckSize(int ackowledgement_window_size);
 
 private:
     IProtocolReaderWriter *rw_;

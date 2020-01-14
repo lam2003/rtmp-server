@@ -224,6 +224,27 @@ public:
     AMF0Object *command_object;
 };
 
+class SetWindowAckSizePacket : public Packet
+{
+public:
+    SetWindowAckSizePacket();
+    virtual ~SetWindowAckSizePacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    int32_t ackowledgement_window_size;
+};
+
 class AckWindowSize
 {
 
@@ -249,6 +270,7 @@ public:
     virtual void SetRecvTimeout(int64_t timeout_us);
     virtual int RecvMessage(CommonMessage **pmsg);
     virtual int DecodeMessage(CommonMessage *msg, Packet **ppacket);
+    virtual int SendAndFreePacket(Packet *packet, int stream_id);
 
     template <typename T>
     int ExpectMessage(CommonMessage **pmsg, T **ppacket)
@@ -260,7 +282,7 @@ public:
             CommonMessage *msg = nullptr;
             if ((ret = RecvMessage(&msg)) != ERROR_SUCCESS)
             {
-                if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+                if (!IsClientGracefullyClose(ret))
                 {
                     rs_error("recv message failed,ret=%d", ret);
                 }
@@ -300,6 +322,10 @@ protected:
     virtual int OnRecvMessage(CommonMessage *msg);
     virtual int ResponseAckMessage();
     virtual int DoDecodeMessage(MessageHeader &header, BufferManager *manager, Packet **packet);
+    virtual int DoSendAndFreePacket(Packet *packet, int stream_id);
+    virtual int DoSimpleSend(MessageHeader *header, char *payload, int size);
+    virtual int OnSendPacket(MessageHeader *header, Packet *packet);
+    virtual int ManualResponseFlush();
 
 private:
     IProtocolReaderWriter *rw_;
@@ -309,6 +335,8 @@ private:
     ChunkStream **cs_cache_;
     std::map<int, ChunkStream *> chunk_streams_;
     AckWindowSize in_ack_size_;
+    AckWindowSize out_ack_size_;
+    std::vector<Packet *> manual_response_queue_;
 };
 
 } // namespace rtmp

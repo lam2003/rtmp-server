@@ -21,12 +21,14 @@ public:
     virtual void CleanUp() override;
 
 protected:
+    virtual int32_t ServiceCycle();
     //Connection
     virtual int32_t DoCycle() override;
 
 private:
     StSocket *socket_;
     RTMPServer *rtmp_;
+    rtmp::Request *request_;
 };
 
 #endif
