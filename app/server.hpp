@@ -9,7 +9,7 @@
 
 enum class ListenerType
 {
-    RTMP_STEAM = 0,
+    RTMP = 0,
 };
 
 class Server;

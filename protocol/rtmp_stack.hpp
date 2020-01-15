@@ -23,6 +23,13 @@ extern void DiscoveryTcUrl(const std::string &tc_url,
                            std::string &port,
                            std::string &param);
 
+enum class PeerBandwidthType
+{
+    HARD = 0,
+    SOTF = 1,
+    DYNAMIC = 2,
+};
+
 class CommonMessage;
 
 class IMessageHandler
@@ -243,6 +250,27 @@ protected:
 
 public:
     int32_t ackowledgement_window_size;
+};
+
+class SetPeerBandwidthPacket : public Packet
+{
+public:
+    SetPeerBandwidthPacket();
+    virtual ~SetPeerBandwidthPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    int32_t bandwidth_;
+    int8_t type_;
 };
 
 class AckWindowSize

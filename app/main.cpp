@@ -26,7 +26,7 @@ int32_t main(int32_t argc, char *argv[])
    RunMaster();
 
 
-   RTMPStreamListener listener(_server, ListenerType::RTMP_STEAM);
+   RTMPStreamListener listener(_server, ListenerType::RTMP);
 
    listener.Listen("0.0.0.0", 1935);
 

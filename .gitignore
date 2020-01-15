@@ -2,3 +2,5 @@
 build/
 # VsCode
 .vscode/
+# Shell
+autobuild.sh

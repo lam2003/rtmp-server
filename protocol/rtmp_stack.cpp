@@ -821,6 +821,47 @@ int SetWindowAckSizePacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
+SetPeerBandwidthPacket::SetPeerBandwidthPacket() : bandwidth_(0),
+                                                   type_((int8_t)PeerBandwidthType::DYNAMIC)
+{
+}
+
+SetPeerBandwidthPacket::~SetPeerBandwidthPacket()
+{
+}
+
+int SetPeerBandwidthPacket::GetPreferCID()
+{
+    return RTMP_CID_PROTOCOL_CONTROL;
+}
+
+int SetPeerBandwidthPacket::GetMessageType()
+{
+    return RTMP_MSG_SET_PEER_BANDWIDTH;
+}
+
+int SetPeerBandwidthPacket::GetSize()
+{
+    return 5;
+}
+
+int SetPeerBandwidthPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!manager->Require(5))
+    {
+        ret = ERROR_RTMP_MESSAGE_ENCODE;
+        rs_error("encode set_peer_bandwidth_packet failed,ret=%d", ret);
+        return ret;
+    }
+
+    manager->Write4Bytes(bandwidth_);
+    manager->Write1Bytes(type_);
+
+    return ret;
+}
+
 AckWindowSize::AckWindowSize() : window(0),
                                  sequence_number(0),
                                  recv_bytes(0)

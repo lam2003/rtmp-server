@@ -48,9 +48,15 @@ int32_t RTMPConnection::ServiceCycle()
 {
     int ret = ERROR_SUCCESS;
 
-    if ((ret = rtmp_->SetWindowAckSize((int)RTMP_DEFAULT_WINDOW_ACK_SIZE)) != ERROR_SUCCESS)
+    if ((ret = rtmp_->SetWindowAckSize(RTMP_DEFAULT_WINDOW_ACK_SIZE)) != ERROR_SUCCESS)
     {
-        rs_error("set window ackowledgement size failed,ret=%d",ret);
+        rs_error("set window ackowledgement size failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = rtmp_->SetPeerBandwidth(RTMP_DEFAULT_PEER_BAND_WIDTH)) != ERROR_SUCCESS)
+    {
+        rs_error("set peer bandwidth failed,ret=%d",ret);
         return ret;
     }
 
