@@ -304,6 +304,54 @@ public:
     int8_t type;
 };
 
+class FMLEStartPacket : public Packet
+{
+public:
+    FMLEStartPacket();
+    virtual ~FMLEStartPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    std::string stream_name;
+};
+
+class FMLEStartResPacket : public Packet
+{
+public:
+    FMLEStartResPacket(double trans_id);
+    virtual ~FMLEStartResPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    double transaction_id;
+    std::string command_name;
+    std::string stream_name;
+    AMF0Any *command_object;
+    AMF0Any *args;
+};
+
 class AckWindowSize
 {
 

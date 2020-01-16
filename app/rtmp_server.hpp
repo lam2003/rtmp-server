@@ -22,6 +22,9 @@ public:
     virtual int ResponseConnectApp(rtmp::Request *req, const std::string &local_ip);
     virtual int IdentifyClient(int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration);
 
+protected:
+    virtual int IdentifyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_id);
+
 private:
     IProtocolReaderWriter *rw_;
     rtmp::HandshakeBytes *handshake_bytes_;

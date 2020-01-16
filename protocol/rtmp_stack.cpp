@@ -914,7 +914,7 @@ int ConnectAppResPacket::EncodePacket(BufferManager *manager)
 
     if ((ret = info->Write(manager)) != ERROR_SUCCESS)
     {
-        rs_error("amf0 encode connect.response.info failed,ret=%d",ret);
+        rs_error("amf0 encode connect.response.info failed,ret=%d", ret);
         return ret;
     }
 
@@ -1012,6 +1012,223 @@ int SetPeerBandwidthPacket::EncodePacket(BufferManager *manager)
 
     manager->Write4Bytes(bandwidth);
     manager->Write1Bytes(type);
+
+    return ret;
+}
+
+FMLEStartPacket::FMLEStartPacket() : command_name(RTMP_AMF0_COMMAND_RELEASE_STREAM),
+                                     transaction_id(0),
+                                     stream_name("")
+{
+}
+
+FMLEStartPacket::~FMLEStartPacket()
+{
+}
+
+int FMLEStartPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+int FMLEStartPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+int FMLEStartPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0ReadString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start packet command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || (command_name != RTMP_AMF0_COMMAND_RELEASE_STREAM &&
+                                 command_name != RTMP_AMF0_COMMAND_FC_PBLISH &&
+                                 command_name != RTMP_AMF0_COMMAND_UNPUBLISH))
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start packet check command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start packet transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNull(manager)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start packet null failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadString(manager, stream_name)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start packet stream_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int FMLEStartPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0WriteString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode FMLE start packet command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode FMLE start packet transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNull(manager)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode FMLE start packet null failed,ret=%d", ret);
+        return ret;
+    }
+    if ((ret = AMF0WriteString(manager, stream_name)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode FMLE start packet stream_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int FMLEStartPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_STR(stream_name);
+    return size;
+}
+
+FMLEStartResPacket::FMLEStartResPacket(double trans_id) : transaction_id(trans_id),
+                                                          command_name(RTMP_AMF0_COMMAND_RESULT),
+                                                          stream_name("")
+{
+    command_object = AMF0Any::Null();
+    args = AMF0Any::Undefined();
+}
+
+FMLEStartResPacket::~FMLEStartResPacket()
+{
+    rs_freep(command_object);
+    rs_freep(args);
+}
+
+int FMLEStartResPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+
+int FMLEStartResPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+
+int FMLEStartResPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0ReadString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start response packet command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || command_name != RTMP_AMF0_COMMAND_RESULT)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start response packet command_name check failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start response packet transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNull(manager)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start response packet null failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadUndefined(manager)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode FMLE start response packet undefined failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int FMLEStartResPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_UNDEFINED;
+    return size;
+}
+
+int FMLEStartResPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0WriteString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode FMLE start response packet command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode FMLE start response packet transactoin_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNull(manager)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode FMLE start response packet null failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteUndefined(manager)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode FMLE start response packet undefined failed,ret=%d", ret);
+        return ret;
+    }
 
     return ret;
 }
@@ -1556,6 +1773,12 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
         {
             rs_verbose("decode amf0 command message(connect)");
             *ppacket = packet = new ConnectAppPacket;
+            return packet->Decode(manager);
+        }
+        else if (command == RTMP_AMF0_COMMAND_RELEASE_STREAM)
+        {
+            rs_verbose("decode amf0 command message(releaseStream)");
+            *ppacket = packet = new FMLEStartPacket;
             return packet->Decode(manager);
         }
 
