@@ -62,17 +62,83 @@ extern IThreadContext *_context;
 #define rs_warn(msg, ...) _log->Warn(NULL, _context->GetID(), msg, ##__VA_ARGS__)
 #define rs_error(msg, ...) _log->Error(NULL, _context->GetID(), msg, ##__VA_ARGS__)
 #elif 1
-#define rs_verbose(msg, ...) _log->Verbose(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define rs_info(msg, ...) _log->Info(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define rs_trace(msg, ...) _log->Trace(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define rs_warn(msg, ...) _log->Warn(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define rs_error(msg, ...) _log->Error(__FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_verbose(msg, ...)                                                \
+    do                                                                      \
+    {                                                                       \
+        char tag[1024] = {0};                                               \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __FUNCTION__); \
+        _log->Verbose(tag, _context->GetID(), msg, ##__VA_ARGS__);          \
+    } while (0)
+
+#define rs_info(msg, ...)                                                   \
+    do                                                                      \
+    {                                                                       \
+        char tag[1024] = {0};                                               \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __FUNCTION__); \
+        _log->Info(tag, _context->GetID(), msg, ##__VA_ARGS__);             \
+    } while (0)
+
+#define rs_trace(msg, ...)                                                  \
+    do                                                                      \
+    {                                                                       \
+        char tag[1024] = {0};                                               \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __FUNCTION__); \
+        _log->Trace(tag, _context->GetID(), msg, ##__VA_ARGS__);            \
+    } while (0)
+
+#define rs_warn(msg, ...)                                                   \
+    do                                                                      \
+    {                                                                       \
+        char tag[1024] = {0};                                               \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __FUNCTION__); \
+        _log->Warn(tag, _context->GetID(), msg, ##__VA_ARGS__);             \
+    } while (0)
+#define rs_error(msg, ...)                                                  \
+    do                                                                      \
+    {                                                                       \
+        char tag[1024] = {0};                                               \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __FUNCTION__); \
+        _log->Error(tag, _context->GetID(), msg, ##__VA_ARGS__);            \
+    } while (0)
 #else
-#define rs_verbose(msg, ...) _log->Verbose(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define rs_info(msg, ...) _log->Info(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define rs_trace(msg, ...) _log->Trace(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define rs_warn(msg, ...) _log->Warn(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
-#define rs_error(msg, ...) _log->Error(__PRETTY_FUNCTION__, _context->GetID(), msg, ##__VA_ARGS__)
+#define rs_verbose(msg, ...)                                                       \
+    do                                                                             \
+    {                                                                              \
+        char tag[1024] = {0};                                                      \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        _log->Verbose(tag, _context->GetID(), msg, ##__VA_ARGS__);                 \
+    } while (0)
+
+#define rs_info(msg, ...)                                                          \
+    do                                                                             \
+    {                                                                              \
+        char tag[1024] = {0};                                                      \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        _log->Info(tag, _context->GetID(), msg, ##__VA_ARGS__);                    \
+    } while (0)
+
+#define rs_trace(msg, ...)                                                         \
+    do                                                                             \
+    {                                                                              \
+        char tag[1024] = {0};                                                      \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        _log->Trace(tag, _context->GetID(), msg, ##__VA_ARGS__);                   \
+    } while (0)
+
+#define rs_warn(msg, ...)                                                          \
+    do                                                                             \
+    {                                                                              \
+        char tag[1024] = {0};                                                      \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        _log->Warn(tag, _context->GetID(), msg, ##__VA_ARGS__);                    \
+    } while (0)
+#define rs_error(msg, ...)                                                         \
+    do                                                                             \
+    {                                                                              \
+        char tag[1024] = {0};                                                      \
+        snprintf(tag, 1024, "%s:%d<%s>", __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        _log->Error(tag, _context->GetID(), msg, ##__VA_ARGS__);                   \
+    } while (0)
 #endif
 
 class FastLog : public ILog, IReloadHandler

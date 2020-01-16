@@ -27,6 +27,44 @@ std::string Utils::GetPeerIP(int32_t fd)
     return ip;
 }
 
+std::string Utils::GetLocalIP(int32_t fd)
+{
+    std::string ip = "";
+
+    sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+
+    if (getsockname(fd, (sockaddr *)&addr, &addrlen) == -1)
+    {
+        return ip;
+    }
+
+    char buf[INET6_ADDRSTRLEN];
+    memset(buf, 0, sizeof(buf));
+
+    if (inet_ntop(addr.sin_family, &addr.sin_addr, buf, sizeof(buf)) == nullptr)
+    {
+        return ip;
+    }
+
+    ip = buf;
+    return ip;
+}
+
+int Utils::GetLocalPort(int32_t fd)
+{
+    sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+
+    if (getsockname(fd, (sockaddr *)&addr, &addrlen) == -1)
+    {
+        return 0;
+    }
+
+    return ntohs(addr.sin_port);
+
+}
+
 void Utils::RandomGenerate(char *bytes, int32_t size)
 {
     static bool rand_initialized = false;

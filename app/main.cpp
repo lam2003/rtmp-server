@@ -4,11 +4,13 @@
 #include <common/thread.hpp>
 #include <common/listener.hpp>
 #include <common/error.hpp>
+#include <common/config.hpp>
 #include <app/server.hpp>
 
 ILog *_log = new FastLog;
 IThreadContext *_context = new ThreadContext;
 Server *_server = new Server;
+Config *_config = new Config;
 
 int32_t RunMaster()
 {
@@ -23,8 +25,13 @@ int32_t RunMaster()
 
 int32_t main(int32_t argc, char *argv[])
 {
-   RunMaster();
+   rs_info("##################################################");
+   rs_info("repo_version:%s", REPO_VERSION);
+   rs_info("repo_date:%s", REPO_DATE);
+   rs_info("repo_hash:%s", REPO_HASH);
+   rs_info("##################################################");
 
+   RunMaster();
 
    RTMPStreamListener listener(_server, ListenerType::RTMP);
 
@@ -34,5 +41,4 @@ int32_t main(int32_t argc, char *argv[])
    st_usleep(100000000);
 
    return 0;
-
 }

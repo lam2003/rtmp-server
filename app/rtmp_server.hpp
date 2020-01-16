@@ -17,7 +17,10 @@ public:
     virtual int32_t RecvMessage(rtmp::CommonMessage **pmsg);
     virtual int ConnectApp(rtmp::Request *req);
     virtual int SetWindowAckSize(int ackowledgement_window_size);
-    virtual int SetPeerBandwidth(int bandwidth);
+    virtual int SetPeerBandwidth(int bandwidth, int type);
+    virtual int SetChunkSize(int chunk_size);
+    virtual int ResponseConnectApp(rtmp::Request *req, const std::string &local_ip);
+    virtual int IdentifyClient(int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration);
 
 private:
     IProtocolReaderWriter *rw_;

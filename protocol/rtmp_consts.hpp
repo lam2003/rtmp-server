@@ -52,8 +52,25 @@
 #define RTMP_MSG_AMF0_SHARED_OBJ 0x13
 #define RTMP_MSG_AGGREGATE 0x16
 
+// #define RTMP_SIG_FMS_VER "FMS/3,5,3,888"
+// #define RTMP_SIG_AMF0_VER 0
+// #define RTMP_SIG_CLIENT_ID "ASAICiss"
+// #define RTMP_STATUS_LEVEL "level"
+// #define RTMP_STATUS_CODE "code"
+// #define RTMP_STATUS_DESCRIPTION "description"
+// #define RTMP_STATUS_DETAILS "details"
+// #define RTMP_STATUS_CLIENT_ID "clientid"
+
+// #define RTMP_STATUS_LEVEL_Status "status"
+// #define RTMP_STATUS_LEVEL_Error "error"
+
+// #define RTMP_STATUS_CODE_Success "NetConnection.Connect.Success"
+// #define RTMP_STATUS_CODE_Rejected "NetConnection.Connect.Rejected"
+// #define RTMP_STATUS_CODE_Reset "NetStream.Play.Reset"
+
 //amf0 command message
 #define RTMP_AMF0_COMMAND_CONNECT "connect"
+#define RTMP_AMF0_COMMAND_RESULT "_result"
 
 //amf0 marker
 #define RTMP_AMF0_NUMBER 0x00

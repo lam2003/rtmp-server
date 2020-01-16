@@ -21,6 +21,7 @@ public:
     virtual void CleanUp() override;
 
 protected:
+    virtual int32_t StreamServiceCycle();
     virtual int32_t ServiceCycle();
     //Connection
     virtual int32_t DoCycle() override;

@@ -127,7 +127,6 @@ void DiscoveryTcUrl(const std::string &tc_url,
     {
         schema = url.substr(0, pos);
         url = url.substr(pos + 3);
-        rs_verbose("got schema:%s", schema.c_str());
     }
 
     if ((pos = url.find("/")) != std::string::npos)
@@ -144,8 +143,6 @@ void DiscoveryTcUrl(const std::string &tc_url,
         {
             port = RTMP_DEFAULT_PORT;
         }
-
-        rs_verbose("got host:%s,port:%s", host.c_str(), url.c_str());
     }
 
     app = url;
@@ -759,12 +756,169 @@ int ConnectAppPacket::GetMessageType()
 
 int ConnectAppPacket::GetSize()
 {
-    return 0;
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_OBJECT(command_object);
+    if (args)
+    {
+        size += AMF0_LEN_OBJECT(args);
+    }
+    return size;
 }
 
 int ConnectAppPacket::EncodePacket(BufferManager *manager)
 {
-    return 0;
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0WriteString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect transaction_id failed,ret=%d");
+        return ret;
+    }
+
+    if ((ret = command_object->Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect command_object failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (args && (ret = args->Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect args failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+ConnectAppResPacket::ConnectAppResPacket() : command_name(RTMP_AMF0_COMMAND_RESULT),
+                                             transaction_id(1),
+                                             props(AMF0Any::Object()),
+                                             info(AMF0Any::Object())
+{
+}
+
+ConnectAppResPacket::~ConnectAppResPacket()
+{
+    rs_freep(info);
+    rs_freep(props);
+}
+
+int ConnectAppResPacket::GetPreferCID()
+{
+    return RTMP_CID_PROTOCOL_CONTROL;
+}
+
+int ConnectAppResPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+
+int ConnectAppResPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0ReadString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode connect command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || command_name != RTMP_AMF0_COMMAND_RESULT)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode connect command_name failed,command_name=%s,ret=%d", command_name.c_str(), ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode connect transaction failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (transaction_id != 1.0)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode connect transaction failed,transaction_id=%.1f,ret=%d", transaction_id, ret);
+        return ret;
+    }
+    {
+        AMF0Any *p = nullptr;
+
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS)
+        {
+            rs_error("amf0 decode connect properties failed,ret=%d", ret);
+            return ret;
+        }
+
+        if (!p->IsObject())
+        {
+            rs_warn("ignore decode connect properties,marker=%#x", p->marker);
+            rs_freep(p);
+        }
+        else
+        {
+            rs_freep(props);
+            props = p->ToObject();
+        }
+    }
+
+    if ((ret = info->Read(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode connect info failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int ConnectAppResPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_OBJECT(props);
+    size += AMF0_LEN_OBJECT(info);
+    return size;
+}
+
+int ConnectAppResPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0WriteString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect.response.command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect.response.transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = props->Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect.response.props failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = info->Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect.response.info failed,ret=%d",ret);
+        return ret;
+    }
+
+    return ret;
 }
 
 SetWindowAckSizePacket::SetWindowAckSizePacket() : ackowledgement_window_size(0)
@@ -821,8 +975,8 @@ int SetWindowAckSizePacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
-SetPeerBandwidthPacket::SetPeerBandwidthPacket() : bandwidth_(0),
-                                                   type_((int8_t)PeerBandwidthType::DYNAMIC)
+SetPeerBandwidthPacket::SetPeerBandwidthPacket() : bandwidth(0),
+                                                   type((int8_t)PeerBandwidthType::DYNAMIC)
 {
 }
 
@@ -856,8 +1010,8 @@ int SetPeerBandwidthPacket::EncodePacket(BufferManager *manager)
         return ret;
     }
 
-    manager->Write4Bytes(bandwidth_);
-    manager->Write1Bytes(type_);
+    manager->Write4Bytes(bandwidth);
+    manager->Write1Bytes(type);
 
     return ret;
 }

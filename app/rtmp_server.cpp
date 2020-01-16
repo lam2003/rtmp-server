@@ -115,16 +115,99 @@ int RTMPServer::SetWindowAckSize(int ackowledgement_window_size)
     return ret;
 }
 
-int RTMPServer::SetPeerBandwidth(int bandwidth)
+int RTMPServer::SetPeerBandwidth(int bandwidth, int type)
 {
     int ret = ERROR_SUCCESS;
 
     rtmp::SetPeerBandwidthPacket *pkt = new rtmp::SetPeerBandwidthPacket;
-    pkt->bandwidth_ = bandwidth;
+    pkt->bandwidth = bandwidth;
+    pkt->type = type;
     if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
     {
-        rs_error("send set_peer_bandwidth packet failed,ret=%d",ret);
+        rs_error("send set_peer_bandwidth packet failed,ret=%d", ret);
         return ret;
+    }
+
+    return ret;
+}
+
+int RTMPServer::SetChunkSize(int chunk_size)
+{
+    int ret = ERROR_SUCCESS;
+
+    rtmp::SetChunkSizePacket *pkt = new rtmp::SetChunkSizePacket;
+    pkt->chunk_size = chunk_size;
+    if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
+    {
+        rs_error("send set_chunk_size_packet failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int RTMPServer::ResponseConnectApp(rtmp::Request *req, const std::string &local_ip)
+{
+    int ret = ERROR_SUCCESS;
+
+    rtmp::ConnectAppResPacket *pkt = new rtmp::ConnectAppResPacket;
+
+    pkt->props->Set("fmsVer", rtmp::AMF0Any::String("FMS/3,5,3,888"));
+    pkt->props->Set("capabilities", rtmp::AMF0Any::Number(127));
+    pkt->props->Set("mode", rtmp::AMF0Any::Number(1));
+    pkt->props->Set("level", rtmp::AMF0Any::String("status"));
+    pkt->props->Set("code", rtmp::AMF0Any::String("NetConnection.Connect.Success"));
+    pkt->props->Set("description", rtmp::AMF0Any::String("Connection succeeded"));
+    pkt->props->Set("objectEncoding", rtmp::AMF0Any::Number(req->object_encoding));
+
+    rtmp::AMF0EcmaArray *ecma_array = rtmp::AMF0Any::EcmaArray();
+    pkt->props->Set("data", ecma_array);
+
+    ecma_array->Set("version", rtmp::AMF0Any::String("3,5,3,888"));
+
+    if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
+    {
+        rs_error("send connect app response message failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration)
+{
+    int ret = ERROR_SUCCESS;
+    type = rtmp::ConnType::UNKNOW;
+
+    while (true)
+    {
+        rtmp::CommonMessage *msg = nullptr;
+        if ((ret = protocol_->RecvMessage(&msg)) != ERROR_SUCCESS)
+        {
+            if (!IsClientGracefullyClose(ret))
+            {
+                rs_error("recv identify client message failed,ret=%d", ret);
+            }
+            return ret;
+        }
+
+        rs_auto_free(rtmp::CommonMessage, msg);
+        rtmp::MessageHeader &h = msg->header;
+
+        if (!h.IsAMF0Command() && !h.IsAMF3Command())
+        {
+            continue;
+        }
+    
+        rtmp::Packet *packet = nullptr;
+        if ((ret = protocol_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
+        {
+            rs_error("identify decode message failed,ret=%d", ret);
+            return ret;
+        }
+
+        rs_auto_free(rtmp::Packet, packet);
+    
     }
 
     return ret;

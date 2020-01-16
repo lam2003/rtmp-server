@@ -30,6 +30,8 @@ class Utils
 {
 public:
     static std::string GetPeerIP(int32_t fd);
+    static std::string GetLocalIP(int32_t fd);
+    static int GetLocalPort(int32_t fd);
     static void RandomGenerate(char *bytes, int32_t size);
     static std::string StringReplace(const std::string &str, const std::string &oldstr, const std::string &newstr);
     static bool StringEndsWith(const std::string &str, const std::string &flag);

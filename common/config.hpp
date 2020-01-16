@@ -3,19 +3,19 @@
 
 #include <common/reload.hpp>
 
-class IConfig
+class Config
 {
 public:
-    IConfig();
-    virtual ~IConfig();
+    Config();
+    virtual ~Config();
 
 public:
     virtual void Subscribe(IReloadHandler *handler);
     virtual void UnSubscirbe(IReloadHandler *handler);
     virtual int32_t Reload();
-
-protected:
-    
+    virtual int32_t GetChunkSize(const std::string &vhost);
 };
+
+extern Config *_config;
 
 #endif

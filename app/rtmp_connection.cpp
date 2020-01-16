@@ -2,6 +2,7 @@
 #include <protocol/rtmp_stack.hpp>
 #include <protocol/rtmp_consts.hpp>
 #include <common/error.hpp>
+#include <common/config.hpp>
 #include <common/log.hpp>
 
 RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd) : Connection(server, stfd)
@@ -44,22 +45,59 @@ int32_t RTMPConnection::DoCycle()
     return ret;
 }
 
+int32_t RTMPConnection::StreamServiceCycle()
+{
+    int ret = ERROR_SUCCESS;
+
+    rtmp::ConnType type;
+    std::string stream_name;
+    double duration;
+    if ((ret = rtmp_->IdentifyClient(1,type,stream_name,duration)) != ERROR_SUCCESS)
+    {
+
+    }
+    return ret;
+}
+
 int32_t RTMPConnection::ServiceCycle()
 {
     int ret = ERROR_SUCCESS;
 
-    if ((ret = rtmp_->SetWindowAckSize(RTMP_DEFAULT_WINDOW_ACK_SIZE)) != ERROR_SUCCESS)
+    if ((ret = rtmp_->SetWindowAckSize((int)RTMP_DEFAULT_WINDOW_ACK_SIZE)) != ERROR_SUCCESS)
     {
         rs_error("set window ackowledgement size failed,ret=%d", ret);
         return ret;
     }
 
-    if ((ret = rtmp_->SetPeerBandwidth(RTMP_DEFAULT_PEER_BAND_WIDTH)) != ERROR_SUCCESS)
+    if ((ret = rtmp_->SetPeerBandwidth((int)RTMP_DEFAULT_PEER_BAND_WIDTH, (int)rtmp::PeerBandwidthType::DYNAMIC)) != ERROR_SUCCESS)
     {
-        rs_error("set peer bandwidth failed,ret=%d",ret);
+        rs_error("set peer bandwidth failed,ret=%d", ret);
         return ret;
     }
 
+    std::string local_ip = Utils::GetLocalIP(st_netfd_fileno(client_stfd_));
+
+    int chunk_size = _config->GetChunkSize(request_->vhost);
+    if ((ret = rtmp_->SetChunkSize(chunk_size)) != ERROR_SUCCESS)
+    {
+        rs_error("set chunk size failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = rtmp_->ResponseConnectApp(request_, local_ip)) != ERROR_SUCCESS)
+    {
+        rs_error("response connect app failed,ret=%d");
+        return ret;
+    }
+
+    while (!disposed_)
+    {
+        ret = StreamServiceCycle();
+        if (ret == ERROR_SUCCESS)
+        {
+            continue;
+        }
+    }
     return ret;
 }
 

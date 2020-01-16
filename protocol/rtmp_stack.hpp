@@ -30,6 +30,13 @@ enum class PeerBandwidthType
     DYNAMIC = 2,
 };
 
+enum class ConnType
+{
+    UNKNOW = 0,
+    PLAY = 1,
+    FMLE_PUBLISH = 2,
+};
+
 class CommonMessage;
 
 class IMessageHandler
@@ -231,6 +238,30 @@ public:
     AMF0Object *command_object;
 };
 
+class ConnectAppResPacket : public Packet
+{
+public:
+    ConnectAppResPacket();
+    virtual ~ConnectAppResPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Object *props;
+    AMF0Object *info;
+};
+
 class SetWindowAckSizePacket : public Packet
 {
 public:
@@ -269,8 +300,8 @@ protected:
     virtual int EncodePacket(BufferManager *manager) override;
 
 public:
-    int32_t bandwidth_;
-    int8_t type_;
+    int32_t bandwidth;
+    int8_t type;
 };
 
 class AckWindowSize
