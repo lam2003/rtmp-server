@@ -9,7 +9,7 @@
 #define RTMP_DEFAULT_PORT "1935"
 //rtmp default vhost
 #define RTMP_DEFAULT_VHOST_PARAM "?vhost=__defaultVhost__"
-
+#define RTMP_DEFAULT_VHOST "__defaultVhost__"
 #define RTMP_PROTOCOL_CHUNK_SIZE 128
 #define RTMP_MIN_CHUNK_SIZE 128
 #define RTMP_MAX_CHUNK_SIZE 65535

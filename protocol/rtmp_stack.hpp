@@ -155,7 +155,10 @@ public:
     virtual ~Request();
 
 public:
-    void Strip();
+    virtual void Strip();
+    virtual Request *Copy();
+    virtual std::string GetStreamUrl();
+    virtual void Update(Request *req);
 
 public:
     //base attributes

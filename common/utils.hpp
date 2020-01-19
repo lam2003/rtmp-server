@@ -39,6 +39,9 @@ public:
     static std::string StringTrimStart(const std::string &str, const std::string &trim_chars);
     static std::string StringTrimEnd(const std::string &str, const std::string &trim_chars);
     static std::string StringRemove(const std::string &str, const std::string &remove_chars);
+    static int64_t GetSteadyNanoSeconds();
+    static int64_t GetSteadyMicroSeconds();
+    static int64_t GetSteadyMilliSeconds();
 };
 
 #define rs_auto_free(class_name, instance) __impl_AutoFree<class_name> __auto_free_##instance(&instance, false)

@@ -23,3 +23,8 @@ int32_t Config::Reload()
 {
     return 0;
 }
+
+bool Config::GetATC(const std::string &vhost)
+{
+    return false;
+}

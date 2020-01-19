@@ -50,12 +50,42 @@ int32_t RTMPConnection::StreamServiceCycle()
     int ret = ERROR_SUCCESS;
 
     rtmp::ConnType type;
-    std::string stream_name;
-    double duration;
-    if ((ret = rtmp_->IdentifyClient(1,type,stream_name,duration)) != ERROR_SUCCESS)
+    if ((ret = rtmp_->IdentifyClient(1, type, request_->stream, request_->duration)) != ERROR_SUCCESS)
     {
-
+        rs_error("identify client failed,ret=%d");
+        return ret;
     }
+
+    rtmp::DiscoveryTcUrl(request_->tc_url,
+                         request_->schema,
+                         request_->host,
+                         request_->vhost,
+                         request_->app,
+                         request_->stream,
+                         request_->port,
+                         request_->param);
+    request_->Strip();
+
+    if (request_->schema.empty() || request_->vhost.empty() || request_->port.empty() || request_->app.empty())
+    {
+        ret = ERROR_RTMP_REQ_TCURL;
+        rs_error("discovery tcUrl failed,tcUrl=%s,schema=%s,vhost=%s,port=%s,app=%s,ret=%d",
+                 request_->tc_url.c_str(),
+                 request_->schema.c_str(),
+                 request_->vhost.c_str(),
+                 request_->port.c_str(),
+                 request_->app.c_str(),
+                 ret);
+        return ret;
+    }
+
+    if (request_->stream.empty())
+    {
+        ret= ERROR_RTMP_STREAM_NAME_EMPTY;
+        rs_error("rtmp:empty stream name is not allowed,ret=%d",ret);
+        return ret;
+    }
+
     return ret;
 }
 
@@ -97,6 +127,8 @@ int32_t RTMPConnection::ServiceCycle()
         {
             continue;
         }
+
+        return ret;
     }
     return ret;
 }

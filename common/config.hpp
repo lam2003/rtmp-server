@@ -14,6 +14,7 @@ public:
     virtual void UnSubscirbe(IReloadHandler *handler);
     virtual int32_t Reload();
     virtual int32_t GetChunkSize(const std::string &vhost);
+    virtual bool GetATC(const std::string &vhost);
 };
 
 extern Config *_config;
