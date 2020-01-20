@@ -2,6 +2,7 @@
 #include <common/utils.hpp>
 #include <common/error.hpp>
 #include <protocol/rtmp_stack.hpp>
+#include <protocol/rtmp_consts.hpp>
 
 RTMPServer::RTMPServer(IProtocolReaderWriter *rw) : rw_(rw)
 {
@@ -233,12 +234,111 @@ int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string 
         }
 
         rs_auto_free(rtmp::Packet, packet);
-        rs_info("#################################################");
         if (dynamic_cast<rtmp::FMLEStartPacket *>(packet))
         {
             rs_info("identify client by realseStream,fmle publish");
             return IdentifyFmlePublishClient(dynamic_cast<rtmp::FMLEStartPacket *>(packet), type, stream_name);
         }
+    }
+
+    return ret;
+}
+
+int RTMPServer::StartFmlePublish(int stream_id)
+{
+    int ret = ERROR_SUCCESS;
+
+    double fc_publish_tid = 0;
+    {
+        rtmp::CommonMessage *msg = nullptr;
+        rtmp::FMLEStartPacket *pkt = nullptr;
+
+        if ((ret = protocol_->ExpectMessage<rtmp::FMLEStartPacket>(&msg, &pkt)) != ERROR_SUCCESS)
+        {
+            rs_error("recv FCPublish message failed,ret=%d", ret);
+            return ret;
+        }
+
+        rs_auto_free(rtmp::CommonMessage, msg);
+        rs_auto_free(rtmp::FMLEStartPacket, pkt);
+
+        fc_publish_tid = pkt->transaction_id;
+    }
+    {
+        rtmp::FMLEStartResPacket *pkt = new rtmp::FMLEStartResPacket(fc_publish_tid);
+
+        if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
+        {
+            rs_error("send FCPublish response message failed,ret=%d", ret);
+            return ret;
+        }
+    }
+
+    double create_stream_id = 0;
+    {
+        rtmp::CommonMessage *msg = nullptr;
+        rtmp::CreateStreamPacket *pkt = nullptr;
+
+        if ((ret = protocol_->ExpectMessage<rtmp::CreateStreamPacket>(&msg, &pkt)) != ERROR_SUCCESS)
+        {
+            rs_error("recv createStream message failed,ret=%d", ret);
+            return ret;
+        }
+        rs_auto_free(rtmp::CommonMessage, msg);
+        rs_auto_free(rtmp::CreateStreamPacket, pkt);
+
+        create_stream_id = pkt->transaction_id;
+    }
+
+    {
+        rtmp::CreateStreamResPacket *pkt = new rtmp::CreateStreamResPacket(create_stream_id, stream_id);
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send createStream response message failed,ret=%d", ret);
+            return ret;
+        }
+    }
+
+    {
+        rtmp::CommonMessage *msg;
+        rtmp::PublishPacket *pkt;
+
+        if ((ret = protocol_->ExpectMessage<rtmp::PublishPacket>(&msg, &pkt)) != ERROR_SUCCESS)
+        {
+            rs_error("recv publish message failed,ret=%d", ret);
+            return ret;
+        }
+
+        rs_info("recv publish request message success,stream_name:%s,type=%s", pkt->stream_name.c_str(), pkt->type.c_str());
+
+        rs_auto_free(rtmp::CommonMessage, msg);
+        rs_auto_free(rtmp::PublishPacket, pkt);
+    }
+    {
+        rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
+        pkt->command_name = RTMP_AMF0_COMMAND_FC_PUBLISH;
+        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Publish.Start"));
+        pkt->data->Set("description", rtmp::AMF0Any::String("Started publishing stream"));
+
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send onFCPublish(NetStream.Publish.Start) message failed,ret=%d", ret);
+            return ret;
+        }
+        rs_info("send onFCPublish(NetStream.Publish.Start) message success");
+    }
+    {
+        rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
+        pkt->data->Set("level", rtmp::AMF0Any::String("status"));
+        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Publish.Start"));
+        pkt->data->Set("description", rtmp::AMF0Any::String("Started publishing stream"));
+        pkt->data->Set("clientid",  rtmp::AMF0Any::String("ASAICiss"));
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send onStatus(NetStream.Publish.Start) message failed,ret=%d", ret);
+            return ret;
+        }
+        rs_info("send onStatus(NetStream.Publish.Start) message success");
     }
 
     return ret;

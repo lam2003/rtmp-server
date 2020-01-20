@@ -152,3 +152,15 @@ int32_t Server::ListenRTMP()
 void Server::OnRemove(Connection *conn)
 {
 }
+
+int Server::OnPublish(rtmp::Source *s, rtmp::Request *r)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
+int Server::OnUnPublish(rtmp::Source *s, rtmp::Request *r)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}

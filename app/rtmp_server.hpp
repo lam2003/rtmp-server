@@ -21,6 +21,7 @@ public:
     virtual int SetChunkSize(int chunk_size);
     virtual int ResponseConnectApp(rtmp::Request *req, const std::string &local_ip);
     virtual int IdentifyClient(int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration);
+    virtual int StartFmlePublish(int stream_id);
 
 protected:
     virtual int IdentifyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_id);

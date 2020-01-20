@@ -116,6 +116,54 @@ public:
     MessageHeader header;
 };
 
+struct SharedMessageHeader
+{
+    int32_t payload_length;
+    int8_t message_type;
+    int perfer_cid;
+};
+
+class SharedPtrMessage
+{
+public:
+    SharedPtrMessage();
+    virtual ~SharedPtrMessage();
+
+public:
+    virtual int Create(CommonMessage *msg);
+    virtual int Create(MessageHeader *pheader, char *payload, int size);
+    virtual int Count();
+    virtual bool Check(int stream_id);
+    virtual bool IsAV();
+    virtual bool IsAudio();
+    virtual bool IsVideo();
+    virtual int ChunkHeader(char *buf, bool c0);
+    virtual SharedPtrMessage *Copy();
+
+private:
+    class SharedPtrPayload
+    {
+    public:
+        SharedPtrPayload();
+        virtual ~SharedPtrPayload();
+
+    public:
+        SharedMessageHeader header;
+        char *payload;
+        int size;
+        int shared_count;
+    };
+
+public:
+    int64_t timestamp;
+    int32_t stream_id;
+    int size;
+    char *payload;
+
+private:
+    SharedPtrPayload *ptr_;
+};
+
 class HandshakeBytes
 {
 public:
@@ -177,6 +225,12 @@ public:
     std::string stream;
     double duration;
     AMF0Object *args;
+};
+
+class Response
+{
+public:
+    int stream_id = 1;
 };
 
 class Packet
@@ -353,6 +407,102 @@ public:
     std::string stream_name;
     AMF0Any *command_object;
     AMF0Any *args;
+};
+
+class CreateStreamPacket : public Packet
+{
+public:
+    CreateStreamPacket();
+    virtual ~CreateStreamPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Any *command_object;
+};
+
+class CreateStreamResPacket : public Packet
+{
+public:
+    CreateStreamResPacket(double trans_id, int sid);
+    virtual ~CreateStreamResPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Any *command_object;
+    double stream_id;
+};
+
+class PublishPacket : public Packet
+{
+public:
+    PublishPacket();
+    virtual ~PublishPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Any *command_object;
+    std::string stream_name;
+    std::string type;
+};
+
+class OnStatusCallPacket : public Packet
+{
+public:
+    OnStatusCallPacket();
+    virtual ~OnStatusCallPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Any *args;
+    AMF0Object *data;
 };
 
 class AckWindowSize

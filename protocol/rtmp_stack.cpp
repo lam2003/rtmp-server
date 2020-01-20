@@ -325,6 +325,145 @@ ChunkStream::~ChunkStream()
 {
 }
 
+SharedPtrMessage::SharedPtrPayload::SharedPtrPayload() : payload(nullptr),
+                                                         size(0),
+                                                         shared_count(0)
+{
+}
+
+SharedPtrMessage::SharedPtrPayload::~SharedPtrPayload()
+{
+    rs_freep(payload);
+}
+
+SharedPtrMessage::SharedPtrMessage() : ptr_(nullptr)
+{
+}
+
+SharedPtrMessage::~SharedPtrMessage()
+{
+    if (ptr_)
+    {
+        if (ptr_->shared_count == 0)
+        {
+            rs_freep(ptr_);
+        }
+        else
+        {
+            ptr_->shared_count--;
+        }
+    }
+}
+
+int SharedPtrMessage::Create(MessageHeader *pheader, char *payload, int size)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (ptr_)
+    {
+        ret = ERROR_SYSTEM_ASSERT_FAILED;
+        rs_error("couldn't set payload twice.ret=%d", ret);
+        rs_assert(false);
+    }
+
+    ptr_ = new SharedPtrPayload;
+    if (pheader)
+    {
+        ptr_->header.message_type = pheader->message_type;
+        ptr_->header.payload_length = pheader->payload_length;
+        ptr_->header.perfer_cid = pheader->perfer_cid;
+        timestamp = pheader->timestamp;
+        stream_id = pheader->stream_id;
+    }
+    ptr_->payload = payload;
+    ptr_->size = size;
+
+    payload = ptr_->payload;
+    size = ptr_->size;
+
+    return ret;
+}
+
+int SharedPtrMessage::Create(CommonMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = Create(&msg->header, msg->payload, msg->size)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    msg->payload = nullptr;
+    msg->size = 0;
+
+    return ret;
+}
+
+int SharedPtrMessage::Count()
+{
+    return ptr_->shared_count;
+}
+
+bool SharedPtrMessage::Check(int stream_id)
+{
+    if (ptr_->header.perfer_cid < 2 || ptr_->header.perfer_cid > 63)
+    {
+        rs_info("change the chunk_id=%d to default=%d", ptr_->header.perfer_cid, RTMP_CID_PROTOCOL_CONTROL);
+        ptr_->header.perfer_cid = RTMP_CID_PROTOCOL_CONTROL;
+    }
+
+    if (this->stream_id == stream_id)
+    {
+        return true;
+    }
+
+    this->stream_id = stream_id;
+
+    return false;
+}
+
+bool SharedPtrMessage::IsAV()
+{
+    return ptr_->header.message_type == RTMP_MSG_AUDIO_MESSAGE ||
+           ptr_->header.message_type == RTMP_MSG_VIDEO_MESSAGE;
+}
+
+bool SharedPtrMessage::IsAudio()
+{
+    return ptr_->header.message_type == RTMP_MSG_AUDIO_MESSAGE;
+}
+
+bool SharedPtrMessage::IsVideo()
+{
+    return ptr_->header.message_type == RTMP_MSG_VIDEO_MESSAGE;
+}
+
+int SharedPtrMessage::ChunkHeader(char *buf, bool c0)
+{
+    if (c0)
+    {
+        return chunk_header_c0(ptr_->header.perfer_cid, timestamp, ptr_->header.payload_length, ptr_->header.message_type, stream_id, buf);
+    }
+    else
+    {
+        return chunk_header_c3(ptr_->header.perfer_cid, timestamp, buf);
+    }
+}
+
+SharedPtrMessage *SharedPtrMessage::Copy()
+{
+    SharedPtrMessage *copy = new SharedPtrMessage;
+    copy->ptr_ = ptr_;
+    ptr_->shared_count++;
+
+    copy->timestamp = timestamp;
+    copy->stream_id = stream_id;
+    copy->payload = ptr_->payload;
+    copy->size = ptr_->size;
+
+    return copy;
+}
+
 HandshakeBytes::HandshakeBytes() : c0c1(nullptr),
                                    s0s1s2(nullptr),
                                    c2(nullptr)
@@ -1111,7 +1250,7 @@ int FMLEStartPacket::Decode(BufferManager *manager)
     }
 
     if (command_name.empty() || (command_name != RTMP_AMF0_COMMAND_RELEASE_STREAM &&
-                                 command_name != RTMP_AMF0_COMMAND_FC_PBLISH &&
+                                 command_name != RTMP_AMF0_COMMAND_FC_PUBLISH &&
                                  command_name != RTMP_AMF0_COMMAND_UNPUBLISH))
     {
         ret = ERROR_RTMP_AMF0_DECODE;
@@ -1292,6 +1431,279 @@ int FMLEStartResPacket::EncodePacket(BufferManager *manager)
     {
         ret = ERROR_RTMP_AMF0_ENCODE;
         rs_error("amf0 encode FMLE start response packet undefined failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+CreateStreamPacket::CreateStreamPacket() : command_name(RTMP_AMF0_COMMAND_CREATE_STREAM),
+                                           transaction_id(2)
+{
+    command_object = AMF0Any::Null();
+}
+
+CreateStreamPacket::~CreateStreamPacket()
+{
+    rs_freep(command_object);
+}
+
+int CreateStreamPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+
+int CreateStreamPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+
+int CreateStreamPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0ReadString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode createStream command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || command_name != RTMP_AMF0_COMMAND_CREATE_STREAM)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode createStream command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode createStream transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNull(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode createStream null failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int CreateStreamPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_NULL;
+    return size;
+}
+int CreateStreamPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
+CreateStreamResPacket::CreateStreamResPacket(double trans_id, int sid) : command_name(RTMP_AMF0_COMMAND_RESULT),
+                                                                         transaction_id(trans_id),
+                                                                         stream_id(sid)
+{
+    command_object = AMF0Any::Null();
+}
+
+CreateStreamResPacket::~CreateStreamResPacket()
+{
+    rs_freep(command_object);
+}
+
+int CreateStreamResPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+int CreateStreamResPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+int CreateStreamResPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
+int CreateStreamResPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_NUMBER;
+    return size;
+}
+
+int CreateStreamResPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0WriteString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 write createStream reponse packet command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 write createStream reponse packet transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNull(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 write createStream reponse packet null failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, stream_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 write createStream response packet stream_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+PublishPacket::PublishPacket() : command_name(RTMP_AMF0_COMMAND_PUBLISH),
+                                 transaction_id(0),
+                                 type("live")
+{
+    command_object = AMF0Any::Null();
+}
+
+PublishPacket::~PublishPacket()
+{
+    rs_freep(command_object);
+}
+
+int PublishPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+int PublishPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+int PublishPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    if ((ret = AMF0ReadString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || command_name != RTMP_AMF0_COMMAND_PUBLISH)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 decode publish message command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+    if ((ret = AMF0ReadNull(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message null failed,ret=%d", ret);
+        return ret;
+    }
+    if ((ret = AMF0ReadString(manager, stream_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message stream_name failed,ret=%d", ret);
+        return ret;
+    }
+    if ((ret = AMF0ReadString(manager, type)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message type failed,ret=%d", ret);
+        return ret;
+    }
+    return ret;
+}
+
+int PublishPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_STR(stream_name);
+    size += AMF0_LEN_STR(type);
+    return size;
+}
+int PublishPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
+OnStatusCallPacket::OnStatusCallPacket() : command_name(RTMP_AMF0_COMMAND_ON_STATUS),
+                                           transaction_id(0)
+{
+    args = AMF0Any::Null();
+    data = AMF0Any::Object();
+}
+OnStatusCallPacket::~OnStatusCallPacket()
+{
+    rs_freep(args);
+    rs_freep(data);
+}
+int OnStatusCallPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+int OnStatusCallPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+int OnStatusCallPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+int OnStatusCallPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_OBJECT(data);
+    return size;
+}
+int OnStatusCallPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0WriteString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode onStatus packet commmand_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode onStatus packet transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNull(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode onStatus packet null failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = data->Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode onStatus packet data failed,ret=%d", ret);
         return ret;
     }
 
@@ -1498,16 +1910,19 @@ int Protocol::ReadMessageHeader(ChunkStream *cs, char fmt)
         return ret;
     }
 
-    char *ptr = in_buffer_->ReadSlice(mh_size);
     BufferManager manager;
-    if ((ret = manager.Initialize(ptr, mh_size)) != ERROR_SUCCESS)
-    {
-        rs_error("initialize buffer manager failed,ret=%d", ret);
-        return ret;
-    }
+    char *ptr;
 
     if (fmt <= RTMP_FMT_TYPE2)
     {
+        ptr = in_buffer_->ReadSlice(mh_size);
+
+        if ((ret = manager.Initialize(ptr, mh_size)) != ERROR_SUCCESS)
+        {
+            rs_error("initialize buffer manager failed,ret=%d", ret);
+            return ret;
+        }
+
         cs->header.timestamp_delta = manager.Read3Bytes();
         cs->extended_timestamp = (cs->header.timestamp_delta >= RTMP_EXTENDED_TIMESTAMP);
 
@@ -1840,13 +2255,26 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
             *ppacket = packet = new ConnectAppPacket;
             return packet->Decode(manager);
         }
-        else if (command == RTMP_AMF0_COMMAND_RELEASE_STREAM)
+        else if (command == RTMP_AMF0_COMMAND_RELEASE_STREAM ||
+                 command == RTMP_AMF0_COMMAND_FC_PUBLISH ||
+                 command == RTMP_AMF0_COMMAND_UNPUBLISH)
         {
             rs_verbose("decode amf0 command message(releaseStream)");
             *ppacket = packet = new FMLEStartPacket;
             return packet->Decode(manager);
         }
-
+        else if (command == RTMP_AMF0_COMMAND_CREATE_STREAM)
+        {
+            rs_verbose("decode amf0 command message(createStream)");
+            *ppacket = packet = new CreateStreamPacket;
+            return packet->Decode(manager);
+        }
+        else if (command == RTMP_AMF0_COMMAND_PUBLISH)
+        {
+            rs_verbose("decode amf0 command message(publish)");
+            *ppacket = packet = new PublishPacket;
+            return packet->Decode(manager);
+        }
         // return ret;
     }
     else if (header.IsSetChunkSize())

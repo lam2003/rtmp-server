@@ -1,13 +1,17 @@
 #include <app/rtmp_connection.hpp>
 #include <protocol/rtmp_stack.hpp>
 #include <protocol/rtmp_consts.hpp>
+#include <protocol/rtmp_source.hpp>
 #include <common/error.hpp>
 #include <common/config.hpp>
 #include <common/log.hpp>
 
-RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd) : Connection(server, stfd)
+RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd) : Connection(server, stfd),
+                                                                  server_(server),
+                                                                  type_(rtmp::ConnType::UNKNOW)
 {
     request_ = new rtmp::Request;
+    response_ = new rtmp::Response;
     socket_ = new StSocket(stfd);
     rtmp_ = new RTMPServer(socket_);
 }
@@ -16,6 +20,7 @@ RTMPConnection::~RTMPConnection()
 {
     rs_freep(rtmp_);
     rs_freep(socket_);
+    rs_freep(response_);
     rs_freep(request_);
 }
 
@@ -50,7 +55,8 @@ int32_t RTMPConnection::StreamServiceCycle()
     int ret = ERROR_SUCCESS;
 
     rtmp::ConnType type;
-    if ((ret = rtmp_->IdentifyClient(1, type, request_->stream, request_->duration)) != ERROR_SUCCESS)
+
+    if ((ret = rtmp_->IdentifyClient(response_->stream_id, type, request_->stream, request_->duration)) != ERROR_SUCCESS)
     {
         rs_error("identify client failed,ret=%d");
         return ret;
@@ -81,9 +87,32 @@ int32_t RTMPConnection::StreamServiceCycle()
 
     if (request_->stream.empty())
     {
-        ret= ERROR_RTMP_STREAM_NAME_EMPTY;
-        rs_error("rtmp:empty stream name is not allowed,ret=%d",ret);
+        ret = ERROR_RTMP_STREAM_NAME_EMPTY;
+        rs_error("rtmp:empty stream name is not allowed,ret=%d", ret);
         return ret;
+    }
+
+    rtmp::Source *source = nullptr;
+    if ((ret = rtmp::Source::FetchOrCreate(request_, server_, &source)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    type_ = type;
+    switch (type)
+    {
+    case rtmp::ConnType::FMLE_PUBLISH:
+        rs_info("FMLE start to publish stream %s", request_->stream.c_str());
+        if ((ret = rtmp_->StartFmlePublish(response_->stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("start to publish stream failed,ret=%d",ret);
+            return ret;
+        }
+        break;
+    case rtmp::ConnType::PLAY:
+        break;
+    case rtmp::ConnType::UNKNOW:
+        break;
     }
 
     return ret;

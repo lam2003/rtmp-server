@@ -36,6 +36,21 @@ int Source::FetchOrCreate(rtmp::Request *r, ISourceHandler *h, Source **pps)
 
     std::string stream_url = r->GetStreamUrl();
 
+    std::string vhost = r->vhost;
+
+    source = new Source;
+
+    if ((ret = source->Initialize(r, h)) != ERROR_SUCCESS)
+    {
+        rs_freep(source);
+        return ret;
+    }
+
+    pool_[stream_url] = source;
+    *pps = source;
+
+    rs_info("create new source for url=%s,vhost=%s", stream_url.c_str(), vhost.c_str());
+
     return ret;
 }
 
