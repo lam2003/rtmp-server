@@ -302,12 +302,12 @@ CommonMessage::CommonMessage() : size(0),
 
 CommonMessage::~CommonMessage()
 {
-    rs_freep(payload);
+    rs_freepa(payload);
 }
 
 void CommonMessage::CreatePayload(int32_t size)
 {
-    rs_freep(payload);
+    rs_freepa(payload);
     payload = new char[size];
     rs_verbose("create payload for rtmp message,size=%d", size);
 }
@@ -1955,7 +1955,7 @@ int Protocol::ReadMessageHeader(ChunkStream *cs, char fmt)
             if (fmt <= RTMP_FMT_TYPE0)
             {
                 cs->header.stream_id = manager.Read4Bytes();
-                rs_verbose("header read completed,fmt=%d,mh_size=%d,ext_time=%d,time=%lld,payload=%d,####type=%d,sid=%d",
+                rs_verbose("header read completed,fmt=%d,mh_size=%d,ext_time=%d,time=%lld,payload=%d,type=%d,sid=%d",
                            fmt, mh_size, cs->extended_timestamp, cs->header.timestamp, cs->header.payload_length,
                            cs->header.message_type, cs->header.stream_id);
             }
@@ -2042,14 +2042,13 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
     }
 
     int payload_size = cs->header.payload_length - cs->msg->size;
-    payload_size = rs_min(cs->header.payload_length, in_chunk_size_);
+    payload_size = rs_min(payload_size, in_chunk_size_);
 
     rs_verbose("chunk payload size is %d,message_size=%d,recveived_size=%d,in_chunk_size=%d", payload_size, cs->header.payload_length, cs->msg->size, in_chunk_size_);
 
     if (!cs->msg->payload)
     {
-
-        cs->msg->CreatePayload(payload_size);
+        cs->msg->CreatePayload(cs->header.payload_length);
     }
 
     if ((ret = in_buffer_->Grow(rw_, payload_size)) != ERROR_SUCCESS)
@@ -2073,7 +2072,7 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
         rs_verbose("got entire rtmp message(type=%d,size=%d,time=%lld,sid=%d)", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id);
         return ret;
     }
-    rs_verbose("got part of rtmp message(type=%d,size=%d,time=%lld,size=%d),partial size=%d", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id, cs->msg->size);
+    rs_verbose("got part of rtmp message(type=%d,size=%d,time=%lld,sid=%d),partial size=%d", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id, cs->msg->size);
     return ret;
 }
 

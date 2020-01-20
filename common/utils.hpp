@@ -57,15 +57,18 @@ public:
 
     ~__impl_AutoFree()
     {
-        if (is_array_)
+        if (*p_)
         {
-            delete[] * p_;
+            if (is_array_)
+            {
+                delete[] *p_;
+            }
+            else
+            {
+                delete *p_;
+            }
+            *p_ = nullptr;
         }
-        else
-        {
-            delete *p_;
-        }
-        *p_ = nullptr;
     }
 
 private:
