@@ -98,4 +98,15 @@
 #define AMF0_LEN_STRICT_ARR(a) ((a)->TotalSize())
 #define AMF0_LEN_ANY(a) ((a)->TotalSize())
 
+//rtmp perf
+#define RTMP_PERF_MW_MSGS 128
+
+//rtmp jitter duration
+#define RTMP_MAX_JITTER_MS 250
+#define RTMP_MAX_JITTER_MS_NEG -250
+#define RTMP_DEFAULT_FRAME_TIME_MS 10
+
+//the timeout to wait for client control message
+#define RTMP_PULSE_TIMEOUT_US (int64_t)(500 * 1000LL)
+
 #endif

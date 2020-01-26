@@ -4,6 +4,7 @@
 #include <common/core.hpp>
 #include <common/thread.hpp>
 #include <common/io.hpp>
+#include <common/kbps.hpp>
 #include <protocol/rtmp_source.hpp>
 #include <protocol/rtmp_stack.hpp>
 
@@ -18,30 +19,44 @@ enum EdgeState
     PUBLISH = 200,
 };
 
-// class EdgeForwarder : public internal::IThreadHandler
-// {
-// public:
-//     EdgeForwarder();
-//     virtual ~EdgeForwarder();
 
-// public:
-//     virtual int Initialize();
-//     virtual void SetQueueSize(double queue_size);
-//     virtual int Start();
-//     virtual void Stop();
-//     virtual int Proxy(CommonMessage *msg);
-//     //internal::IThreadHandler
-//     virtual int Cycle() override;
 
-// private:
-//     virtual void CloseUnderLayerSocket();
-//     virtual int ConnectServer(const std::string &ep_server, const std::string &ep_port);
-//     virtual int ConnectApp(const std::string &ep_server, const std::string &ep_port);
+class PublishEdge;
 
-// private:
-//     internal::Thread *thread_;
-//     IProtocolReaderWriter *rw_;
-// };
+
+
+class EdgeForwarder : public internal::IThreadHandler
+{
+public:
+    EdgeForwarder();
+    virtual ~EdgeForwarder();
+
+public:
+    virtual int Initialize();
+    virtual void SetQueueSize(double queue_size);
+    virtual int Start();
+    virtual void Stop();
+    virtual int Proxy(CommonMessage *msg);
+    //internal::IThreadHandler
+    virtual int Cycle() override;
+
+private:
+    virtual void CloseUnderLayerSocket();
+    virtual int ConnectServer(const std::string &ep_server, const std::string &ep_port);
+    virtual int ConnectApp(const std::string &ep_server, const std::string &ep_port);
+
+private:
+    int stream_id_;
+    Source *source_;
+    PublishEdge *edge_;
+    Request request_;
+    internal::Thread *thread_;
+    st_netfd_t stfd_;
+    IProtocolReaderWriter *rw_;
+    Kbps *kbps_;
+    Client *client_;
+    int origin_index_;
+};
 
 class PublishEdge
 {

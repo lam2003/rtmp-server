@@ -105,7 +105,7 @@ int32_t RTMPConnection::StreamServiceCycle()
         rs_info("FMLE start to publish stream %s", request_->stream.c_str());
         if ((ret = rtmp_->StartFmlePublish(response_->stream_id)) != ERROR_SUCCESS)
         {
-            rs_error("start to publish stream failed,ret=%d",ret);
+            rs_error("start to publish stream failed,ret=%d", ret);
             return ret;
         }
         break;
@@ -114,6 +114,14 @@ int32_t RTMPConnection::StreamServiceCycle()
     case rtmp::ConnType::UNKNOW:
         break;
     }
+
+    return ret;
+}
+
+int32_t RTMPConnection::Publishing(rtmp::Source *source)
+{
+    int ret = ERROR_SUCCESS;
+
 
     return ret;
 }

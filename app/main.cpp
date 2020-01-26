@@ -37,8 +37,8 @@ int32_t main(int32_t argc, char *argv[])
 
    listener.Listen("0.0.0.0", 1935);
 
-   // while(1)
-   st_usleep(100000000);
+   while (1)
+      st_usleep(100000000);
 
    return 0;
 }

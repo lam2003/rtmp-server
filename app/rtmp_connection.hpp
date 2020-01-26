@@ -23,6 +23,7 @@ public:
 protected:
     virtual int32_t StreamServiceCycle();
     virtual int32_t ServiceCycle();
+    virtual int32_t Publishing(rtmp::Source *source);
     //Connection
     virtual int32_t DoCycle() override;
 

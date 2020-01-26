@@ -464,6 +464,37 @@ SharedPtrMessage *SharedPtrMessage::Copy()
     return copy;
 }
 
+MessageArray::MessageArray(int max_msgs)
+{
+    msgs = new SharedPtrMessage *[max_msgs];
+    max = max_msgs;
+
+    Zero(max_msgs);
+}
+
+MessageArray::~MessageArray()
+{
+    rs_freep(msgs);
+}
+
+void MessageArray::Free(int count)
+{
+    for (int i = 0; i < count; i++)
+    {
+        SharedPtrMessage *msg = msgs[i];
+        rs_freep(msg);
+        msgs[i] = nullptr;
+    }
+}
+
+void MessageArray::Zero(int count)
+{
+    for (int i = 0; i < count; i++)
+    {
+        msgs[i] = nullptr;
+    }
+}
+
 HandshakeBytes::HandshakeBytes() : c0c1(nullptr),
                                    s0s1s2(nullptr),
                                    c2(nullptr)
