@@ -9,8 +9,8 @@
 #define RS_MAX_SOCKER_BUFFER_SIZE 262144
 
 BufferManager::BufferManager() : buf_(nullptr),
-                   ptr_(nullptr),
-                   size_(0)
+                                 ptr_(nullptr),
+                                 size_(0)
 {
 }
 
@@ -240,16 +240,12 @@ char *FastBuffer::Bytes()
 
 void FastBuffer::SetBuffer(int buffer_size)
 {
-    if (buffer_size > RS_MAX_SOCKER_BUFFER_SIZE)
-    {
-        rs_warn("limit user space buffer from %d to %d", buffer_size, RS_MAX_SOCKER_BUFFER_SIZE);
-    }
-
     buffer_size = rs_min(RS_MAX_SOCKER_BUFFER_SIZE, buffer_size);
+
+    rs_trace("user space recv buffer size set to %d", buffer_size);
 
     if (buffer_size < capacity_)
     {
-        rs_warn("only realloc when buffer changed bigger");
         return;
     }
 
@@ -346,7 +342,6 @@ void FastBuffer::SetMergeReadHandler(bool enable, IMergeReadHandler *mr_handler)
     merged_read_ = enable;
     mr_handler_ = mr_handler;
 }
-
 
 void FastBuffer::Skip(int size)
 {

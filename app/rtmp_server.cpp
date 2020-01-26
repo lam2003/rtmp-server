@@ -41,7 +41,6 @@ void RTMPServer::SetRecvTimeout(int64_t timeout_us)
     protocol_->SetRecvTimeout(timeout_us);
 }
 
-
 int RTMPServer::ConnectApp(rtmp::Request *req)
 {
     int ret = ERROR_SUCCESS;
@@ -326,7 +325,7 @@ int RTMPServer::StartFmlePublish(int stream_id)
         pkt->data->Set("level", rtmp::AMF0Any::String("status"));
         pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Publish.Start"));
         pkt->data->Set("description", rtmp::AMF0Any::String("Started publishing stream"));
-        pkt->data->Set("clientid",  rtmp::AMF0Any::String("ASAICiss"));
+        pkt->data->Set("clientid", rtmp::AMF0Any::String("ASAICiss"));
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
         {
             rs_error("send onStatus(NetStream.Publish.Start) message failed,ret=%d", ret);
@@ -336,4 +335,19 @@ int RTMPServer::StartFmlePublish(int stream_id)
     }
 
     return ret;
+}
+
+int RTMPServer::RecvMessage(rtmp::CommonMessage **pmsg)
+{
+    return protocol_->RecvMessage(pmsg);
+}
+
+void RTMPServer::SetRecvBuffer(int buffer_size)
+{
+    protocol_->SetRecvBuffer(buffer_size);
+}
+
+void RTMPServer::SetMargeRead(bool v, IMergeReadHandler *handler)
+{
+    protocol_->SetMargeRead(v, handler);
 }

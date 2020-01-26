@@ -49,7 +49,7 @@ public:
     virtual bool CanHandle() = 0;
     virtual int32_t Handle(CommonMessage *msg) = 0;
     virtual void OnRecvError(int32_t ret) = 0;
-    virtual void OnTrheadStart() = 0;
+    virtual void OnThreadStart() = 0;
     virtual void OnThreadStop() = 0;
 };
 
@@ -550,6 +550,8 @@ public:
     virtual int RecvMessage(CommonMessage **pmsg);
     virtual int DecodeMessage(CommonMessage *msg, Packet **ppacket);
     virtual int SendAndFreePacket(Packet *packet, int stream_id);
+    virtual void SetRecvBuffer(int buffer_size);
+    virtual void SetMargeRead(bool v, IMergeReadHandler *handler);
 
     template <typename T>
     int ExpectMessage(CommonMessage **pmsg, T **ppacket)

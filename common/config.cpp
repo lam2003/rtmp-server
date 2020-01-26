@@ -16,7 +16,7 @@ int32_t Config::GetChunkSize(const std::string &vhost)
 void Config::Subscribe(IReloadHandler *handler)
 {
 }
-void Config::UnSubscirbe(IReloadHandler *handler)
+void Config::UnSubscribe(IReloadHandler *handler)
 {
 }
 int32_t Config::Reload()
@@ -25,6 +25,21 @@ int32_t Config::Reload()
 }
 
 bool Config::GetATC(const std::string &vhost)
+{
+    return false;
+}
+
+bool Config::GetMREnabled(const std::string &vhost)
+{
+    return false;
+}
+
+int Config::GetMRSleepMS(const std::string &vhost)
+{
+    return 350;
+}
+
+bool Config::GetRealTimeEnabled(const std::string &host)
 {
     return false;
 }

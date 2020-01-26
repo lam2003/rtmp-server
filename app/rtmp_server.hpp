@@ -21,6 +21,9 @@ public:
     virtual int ResponseConnectApp(rtmp::Request *req, const std::string &local_ip);
     virtual int IdentifyClient(int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration);
     virtual int StartFmlePublish(int stream_id);
+    virtual int RecvMessage(rtmp::CommonMessage **pmsg);
+    virtual void SetRecvBuffer(int buffer_size);
+    virtual void SetMargeRead(bool v, IMergeReadHandler *handler);
 
 protected:
     virtual int IdentifyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_id);
