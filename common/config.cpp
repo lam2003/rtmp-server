@@ -39,7 +39,12 @@ int Config::GetMRSleepMS(const std::string &vhost)
     return 350;
 }
 
-bool Config::GetRealTimeEnabled(const std::string &host)
+bool Config::GetRealTimeEnabled(const std::string &vhost)
 {
     return false;
+}
+
+bool Config::GetReduceSequenceHeader(const std::string &vhost)
+{
+    return true;
 }

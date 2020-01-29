@@ -351,3 +351,61 @@ void RTMPServer::SetMargeRead(bool v, IMergeReadHandler *handler)
 {
     protocol_->SetMargeRead(v, handler);
 }
+
+int RTMPServer::DecodeMessage(rtmp::CommonMessage *msg, rtmp::Packet **ppacket)
+{
+    return protocol_->DecodeMessage(msg, ppacket);
+}
+
+int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
+{
+    int ret = ERROR_SUCCESS;
+    {
+        rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
+        pkt->command_name = RTMP_AMF0_COMMAND_UNPUBLISH;
+        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Unpublish.Success"));
+        pkt->data->Set("description", rtmp::AMF0Any::String("Stop publishing stream"));
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            if (!IsSystemControlError(ret) && !IsClientGracefullyClose(ret))
+            {
+                rs_error("send onFCUnpublish(NetStream.Unpublish.Success) message failed. ret=%d", ret);
+            }
+            return ret;
+        }
+
+        rs_info("send onFCUnpublish(NetStream.Unpublish.Success) message success.");
+    }
+    {
+        rtmp::FMLEStartResPacket *pkt = new rtmp::FMLEStartResPacket(unpublish_tid);
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            if (!IsSystemControlError(ret) && !IsClientGracefullyClose(ret))
+            {
+                rs_error("send FCUnpublish response messsage failed. ret=%d", ret);
+            }
+            return ret;
+        }
+    }
+    {
+        rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
+        pkt->data->Set("level", rtmp::AMF0Any::String("status"));
+        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Unpublish.Success"));
+        pkt->data->Set("description", rtmp::AMF0Any::String("Stream is now unpublished"));
+        pkt->data->Set("clientid", rtmp::AMF0Any::String("ASAICiss"));
+
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            if(!IsSystemControlError(ret) && !IsClientGracefullyClose(ret)){
+                rs_error("send onStatus(NetStream.Unpublish.Success) message failed. ret=%d",ret);
+            }
+            return ret;
+        }
+
+        rs_info("send onStatus(NetStream.Unpublish.Success) message success.");
+    }
+
+    rs_trace("FMLE unpublish success.");
+
+    return ret;
+}

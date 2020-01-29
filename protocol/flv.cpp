@@ -1,4 +1,7 @@
 #include <protocol/flv.hpp>
+#include <common/error.hpp>
+#include <common/log.hpp>
+#include <common/buffer.hpp>
 
 namespace flv
 {
@@ -63,5 +66,30 @@ bool Codec::IsAudioSeqenceHeader(char *data, int size)
     char packet_type = data[1];
 
     return packet_type == (char)AudioPacketType::SEQUENCE_HEADER;
+}
+
+int Codec::DemuxAudio(char *data, int size, CodecSampleUnit *sample)
+{
+    int ret = ERROR_SUCCESS;
+
+    sample->is_video = false;
+    if (!data || size <= 0)
+    {
+        rs_warn("no audio persent, ignore it.");
+        return ret;
+    }
+
+    BufferManager manager;
+    if ((ret = manager.Initialize(data, size)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    int sound_type = data[0] & 0x01;
+    int sound_size = (data[0] >> 1)0x01;
+    int sound_rate = (data[0] >> 2) & 0x03;
+    int sound_format = (data[0] >> 4) & 0x0f;
+
+    return ret;
 }
 } // namespace flv

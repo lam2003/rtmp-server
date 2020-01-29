@@ -24,6 +24,8 @@ public:
     virtual int RecvMessage(rtmp::CommonMessage **pmsg);
     virtual void SetRecvBuffer(int buffer_size);
     virtual void SetMargeRead(bool v, IMergeReadHandler *handler);
+    virtual int DecodeMessage(rtmp::CommonMessage *msg, rtmp::Packet **ppacket);
+    virtual int FMLEUnPublish(int stream_id, double unpublish_tid);
 
 protected:
     virtual int IdentifyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_id);

@@ -17,7 +17,8 @@ public:
     virtual bool GetATC(const std::string &vhost);
     virtual bool GetMREnabled(const std::string &vhost);
     virtual int GetMRSleepMS(const std::string &vhost);
-    virtual bool GetRealTimeEnabled(const std::string &host);
+    virtual bool GetRealTimeEnabled(const std::string &vhost);
+    virtual bool GetReduceSequenceHeader(const std::string &vhost);
 };
 
 extern Config *_config;

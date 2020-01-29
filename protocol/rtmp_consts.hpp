@@ -64,6 +64,7 @@
 #define RTMP_AMF0_COMMAND_PUBLISH "publish"
 #define RTMP_AMF0_COMMAND_CREATE_STREAM "createStream"
 #define RTMP_AMF0_COMMAND_ON_STATUS "onStatus"
+#define RTMP_AMF0_COMMAND_ERROR "error"
 //amf0 marker
 #define RTMP_AMF0_NUMBER 0x00
 #define RTMP_AMF0_BOOLEAN 0x01

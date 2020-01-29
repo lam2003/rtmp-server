@@ -5,6 +5,7 @@
 #include <common/error.hpp>
 #include <common/config.hpp>
 #include <common/log.hpp>
+#include <common/utils.hpp>
 
 RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd) : Connection(server, stfd),
                                                                   server_(server),
@@ -182,4 +183,63 @@ int64_t RTMPConnection::GetRecvBytesDelta()
 }
 void RTMPConnection::CleanUp()
 {
+}
+
+int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_edge)
+{
+    int ret = ERROR_SUCCESS;
+    if (is_edge)
+    {
+        //TODO implement edge opt
+    }
+
+    if (msg->header.IsAudio())
+    {
+        
+    }
+
+    return ret;
+}
+
+int RTMPConnection::handle_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_fmle, bool is_edge)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (msg->header.IsAMF0Command() || msg->header.IsAMF3Command())
+    {
+        rtmp::Packet *packet = nullptr;
+        if ((ret = rtmp_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
+        {
+            rs_error("fmle decode unpublish message failed. ret=%d", ret);
+            return ret;
+        }
+
+        rs_auto_free(rtmp::Packet, packet);
+
+        if (!is_fmle)
+        {
+            rs_trace("refresh flash publish finished.");
+            return ERROR_CONTROL_REPUBLISH;
+        }
+
+        if (dynamic_cast<rtmp::FMLEStartPacket *>(packet))
+        {
+            rtmp::FMLEStartPacket *pkt = dynamic_cast<rtmp::FMLEStartPacket *>(packet);
+            if ((ret = rtmp_->FMLEUnPublish(response_->stream_id, pkt->transaction_id)) != ERROR_SUCCESS)
+            {
+                return ret;
+            }
+
+            return ERROR_CONTROL_REPUBLISH;
+        }
+        return ret;
+    }
+
+    if ((ret = process_publish_message(source, msg, is_edge)) != ERROR_SUCCESS)
+    {
+        rs_error("FMLE process publish message failed. ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
 }

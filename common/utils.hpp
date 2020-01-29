@@ -42,6 +42,7 @@ public:
     static int64_t GetSteadyNanoSeconds();
     static int64_t GetSteadyMicroSeconds();
     static int64_t GetSteadyMilliSeconds();
+    static bool BytesEquals(void *pa, void *pb, int size);
 };
 
 #define rs_auto_free(class_name, instance) __impl_AutoFree<class_name> __auto_free_##instance(&instance, false)
@@ -61,7 +62,7 @@ public:
         {
             if (is_array_)
             {
-                delete[] *p_;
+                delete[] * p_;
             }
             else
             {

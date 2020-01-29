@@ -51,15 +51,26 @@ enum class AudioPacketType
     RAW_DATA = 1
 };
 
+class CodecSampleUnit
+{
+
+public:
+    bool is_video;
+};
+
 class Codec
 {
 public:
     static bool IsVideoSeqenceHeader(char *data, int size);
     static bool IsAudioSeqenceHeader(char *data, int size);
+    int DemuxAudio(char *data, int size, CodecSampleUnit *sample);
 
 private:
     static bool is_h264(char *data, int size);
     static bool is_aac(char *data, int size);
+
+public:
+    bool audio_codec_id;
 };
 
 } // namespace flv

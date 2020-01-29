@@ -6,9 +6,12 @@
 #include <common/connection.hpp>
 #include <app/rtmp_server.hpp>
 #include <app/server.hpp>
+#include <app/rtmp_recv_thread.hpp>
 
 class RTMPConnection : virtual public Connection
 {
+    friend class PublishRecvThread;
+
 public:
     RTMPConnection(Server *server, st_netfd_t stfd);
     virtual ~RTMPConnection();
@@ -26,6 +29,10 @@ protected:
     virtual int32_t Publishing(rtmp::Source *source);
     //Connection
     virtual int32_t DoCycle() override;
+
+private:
+    int handle_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_fmle, bool is_edge);
+    int process_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_edge);
 
 private:
     Server *server_;

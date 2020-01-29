@@ -7,6 +7,8 @@
 #include <app/rtmp_connection.hpp>
 #include <app/rtmp_server.hpp>
 
+class RTMPConnection;
+
 class RTMPRecvThread : virtual public internal::IThreadHandler
 {
 public:
@@ -55,6 +57,7 @@ public:
     virtual void OnThreadStart() override;
     virtual void OnThreadStop() override;
     virtual void OnRead(ssize_t nread) override;
+    virtual int Handle(rtmp::CommonMessage *msg) override;
 
 private:
     void set_socket_buffer(int sleep_ms);

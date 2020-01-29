@@ -253,5 +253,5 @@
 #define ERROR_USER_END 9999
 
 extern bool IsClientGracefullyClose(int32_t err_code);
-
+extern bool IsSystemControlError(int err_code);
 #endif

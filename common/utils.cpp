@@ -197,3 +197,28 @@ int64_t Utils::GetSteadyMilliSeconds()
     steady_clock::time_point now = steady_clock::now();
     return duration_cast<milliseconds>(now.time_since_epoch()).count();
 }
+
+bool Utils::BytesEquals(void *pa, void *pb, int size);
+{
+    uint8_t *a = (uint8_t *)pa;
+    uint8_t *b = (uint8_t *)pb;
+
+    if (!a && !b)
+    {
+        return true;
+    }
+
+    if (!a || !b)
+    {
+        return false;
+    }
+
+    for (int i = 0; i < size; i++)
+    {
+        if (a[i] != b[i])
+        {
+            return false
+        }
+    }
+    return true;
+}
