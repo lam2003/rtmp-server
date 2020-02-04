@@ -138,12 +138,16 @@ public:
 
 public:
     static int FetchOrCreate(Request *r, ISourceHandler *h, Source **pps);
-    int Initialize(Request *r, ISourceHandler *h);
-    bool CanPublish(bool is_edge);
-    void OnConsumerDestroy(Consumer *consumer);
+    virtual int Initialize(Request *r, ISourceHandler *h);
+    virtual bool CanPublish(bool is_edge);
+    virtual void OnConsumerDestroy(Consumer *consumer);
+    virtual int OnAudio(CommonMessage *msg);
 
 protected:
     static Source *Fetch(Request *r);
+
+private:
+    int on_audio_impl(SharedPtrMessage *msg);
 
 private:
     static std::map<std::string, Source *> pool_;
@@ -151,6 +155,14 @@ private:
     bool atc_;
     ISourceHandler *handler_;
     bool can_publish_;
+    bool mix_correct_;
+    bool is_monotonically_increase_;
+    int64_t last_packet_time_;
+    SharedPtrMessage *cache_metadata_;
+    SharedPtrMessage *cache_sh_video_;
+    SharedPtrMessage *cache_sh_audio_;
+    std::vector<Consumer *> consumers_;
+    JitterAlgorithm jitter_algorithm_;
 };
 } // namespace rtmp
 #endif

@@ -204,6 +204,11 @@
 #define ERROR_RESPONSE_DATA 3065
 #define ERROR_REQUEST_DATA 3066
 #define ERROR_TS_CONTEXT_NOT_READY 3067
+#define ERROR_DECODE_AAC_EXTRA_DATA_FAILED 3068
+#define ERROR_ACODEC_NOT_SUPPORT 3069
+#define ERROR_SAMPLE_EXCEED 3070
+#define ERROR_DECODE_AAC_FAILED 3071
+#define ERROR_ACODEC_TRY_MP3 3072
 
 ///////////////////////////////////////////////////////
 // HTTP/StreamCaster protocol error.

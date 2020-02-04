@@ -233,11 +233,15 @@ int PublishRecvThread::Handle(rtmp::CommonMessage *msg)
         video_frames_++;
     }
 
-    // ret =
+    ret = conn_->handle_publish_message(source_, msg, is_fmle_, is_edge_);
 
     rs_freep(msg);
 
     return ret;
+}
+
+void PublishRecvThread::OnRecvError(int32_t ret)
+{
 }
 
 bool PublishRecvThread::CanHandle()

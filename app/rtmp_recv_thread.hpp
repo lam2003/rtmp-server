@@ -58,6 +58,7 @@ public:
     virtual void OnThreadStop() override;
     virtual void OnRead(ssize_t nread) override;
     virtual int Handle(rtmp::CommonMessage *msg) override;
+    virtual void OnRecvError(int32_t ret)override;
 
 private:
     void set_socket_buffer(int sleep_ms);

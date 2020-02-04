@@ -198,7 +198,7 @@ int64_t Utils::GetSteadyMilliSeconds()
     return duration_cast<milliseconds>(now.time_since_epoch()).count();
 }
 
-bool Utils::BytesEquals(void *pa, void *pb, int size);
+bool Utils::BytesEquals(void *pa, void *pb, int size)
 {
     uint8_t *a = (uint8_t *)pa;
     uint8_t *b = (uint8_t *)pb;
@@ -217,7 +217,7 @@ bool Utils::BytesEquals(void *pa, void *pb, int size);
     {
         if (a[i] != b[i])
         {
-            return false
+            return false;
         }
     }
     return true;

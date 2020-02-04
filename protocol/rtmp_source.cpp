@@ -1,6 +1,6 @@
 #include <protocol/rtmp_source.hpp>
 #include <protocol/rtmp_consts.hpp>
-#include <protocol/flv.hpp>
+#include <protocol/av.hpp>
 #include <common/config.hpp>
 
 namespace rtmp
@@ -347,13 +347,13 @@ void MessageQueue::Shrink()
     {
         SharedPtrMessage *msg = msgs_.At(i);
 
-        if (msg->IsAudio() && flv::Codec::IsAudioSeqenceHeader(msg->payload, msg->size))
+        if (msg->IsAudio() && av::Codec::IsAudioSeqenceHeader(msg->payload, msg->size))
         {
             rs_freep(audio_sh);
             audio_sh = msg;
             continue;
         }
-        if (msg->IsVideo() && flv::Codec::IsVideoSeqenceHeader(msg->payload, msg->size))
+        if (msg->IsVideo() && av::Codec::IsVideoSeqenceHeader(msg->payload, msg->size))
         {
             rs_freep(video_sh);
             video_sh = msg;
@@ -451,8 +451,18 @@ int MessageQueue::DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag)
     return ret;
 }
 
-Source::Source() : request_(nullptr), can_publish_(true)
+Source::Source()
 {
+    request_ = nullptr;
+    atc_ = false;
+    handler_ = nullptr;
+    can_publish_ = true;
+    mix_correct_ = true;
+    is_monotonically_increase_ = true;
+    last_packet_time_ = 0;
+    cache_metadata_ = nullptr;
+    cache_sh_video_ = nullptr;
+    cache_sh_audio_ = nullptr;
 }
 
 std::map<std::string, Source *> Source::pool_;
@@ -532,5 +542,92 @@ bool Source::CanPublish(bool is_edge)
 
 void Source::OnConsumerDestroy(Consumer *consumer)
 {
+}
+
+int Source::on_audio_impl(SharedPtrMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+
+    bool is_aac_sequence_header = av::Codec::IsAudioSeqenceHeader(msg->payload, msg->size);
+    bool is_sequence_header = is_aac_sequence_header;
+
+    bool drop_for_reduce = false;
+    if (is_sequence_header && cache_sh_audio_ && _config->GetReduceSequenceHeader(request_->vhost))
+    {
+        if (cache_sh_audio_->size == msg->size)
+        {
+            drop_for_reduce = Utils::BytesEquals(cache_sh_audio_->payload, msg->payload, msg->size);
+            rs_warn("drop for reduce sh audio, size=%d", msg->size);
+        }
+    }
+
+    if (is_aac_sequence_header)
+    {
+        av::Codec codec;
+        av::CodecSample sample;
+
+        if ((ret = codec.DemuxAudio(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
+        {
+            rs_error("source codec demux audio failed. ret=%d", ret);
+            return ret;
+        }
+
+        static int sample_sizes[] = {8, 16, 0};
+        static int sound_types[] = {1, 2, 0};
+        static int flv_sample_rates[] = {5512, 11025, 22050, 44100, 0};
+
+        rs_trace("%dB audio sh, codec(%d, profile=%s, %dHz, %dbits, %dchannels) flv sample rate: %dHz", msg->size,
+                 codec.audio_codec_id,
+                 av::AACProfile2Str(codec.aac_object_type).c_str(),
+                 sample.aac_sample_rate,
+                 sample_sizes[(int)sample.sound_size],
+                 sound_types[(int)sample.sound_type],
+                 flv_sample_rates[(int)sample.flv_sample_rate]);
+    }
+
+    if (!drop_for_reduce)
+    {
+        for (int i = 0; i < (int)consumers_.size(); i++)
+        {
+            Consumer *consumer = consumers_.at(i);
+            if ((ret = consumer->Enqueue(msg, atc_, jitter_algorithm_)) != ERROR_SUCCESS)
+            {
+                rs_error("dispatch audio failed. ret=%d", ret);
+                return ret;
+            }
+        }
+    }
+    return ret;
+}
+
+int Source::OnAudio(CommonMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!mix_correct_ && is_monotonically_increase_)
+    {
+        if (last_packet_time_ > 0 && msg->header.timestamp < last_packet_time_)
+        {
+            is_monotonically_increase_ = false;
+            rs_warn("AUDIO: stream not monotonically increase, please open mix_correct.");
+        }
+    }
+
+    last_packet_time_ = msg->header.timestamp;
+
+    SharedPtrMessage shared_msg;
+    if ((shared_msg.Create(msg)) != ERROR_SUCCESS)
+    {
+        rs_error("initialize the audio failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (!mix_correct_)
+    {
+        return on_audio_impl(&shared_msg);
+    }
+
+    return ret;
+
 }
 } // namespace rtmp
