@@ -3,6 +3,8 @@
 #include <protocol/av.hpp>
 #include <common/config.hpp>
 
+#define MIX_CORRECT_PURE_AV 10
+
 namespace rtmp
 {
 ISourceHandler::ISourceHandler()
@@ -451,6 +453,85 @@ int MessageQueue::DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag)
     return ret;
 }
 
+MixQueue::MixQueue()
+{
+    nb_videos_ = 0;
+    nb_audios_ = 0;
+}
+
+MixQueue::~MixQueue()
+{
+    Clear();
+}
+
+void MixQueue::Clear()
+{
+    std::multimap<int64_t, SharedPtrMessage *>::iterator it;
+    for (it = msgs_.begin(); it != msgs_.end(); it++)
+    {
+        SharedPtrMessage *msg = it->second;
+        rs_freep(msg);
+    }
+
+    msgs_.clear();
+    nb_videos_ = 0;
+    nb_audios_ = 0;
+}
+
+void MixQueue::Push(SharedPtrMessage *msg)
+{
+    if (msg->IsVideo())
+    {
+        nb_videos_++;
+    }
+    else
+    {
+        nb_audios_++;
+    }
+
+    msgs_.insert(std::make_pair(msg->timestamp, msg));
+}
+
+SharedPtrMessage *MixQueue::Pop()
+{
+    bool mix_ok = false;
+
+    if (nb_videos_ >= MIX_CORRECT_PURE_AV && nb_audios_ == 0)
+    {
+        mix_ok = true;
+    }
+    if (nb_audios_ > MIX_CORRECT_PURE_AV && nb_videos_ == 0)
+    {
+        mix_ok = true;
+    }
+    if (nb_videos_ > 0 && nb_audios_ > 0)
+    {
+        mix_ok = true;
+    }
+
+    if (!mix_ok)
+    {
+        return nullptr;
+    }
+
+    std::multimap<int64_t, SharedPtrMessage *>::iterator it = msgs_.begin();
+    SharedPtrMessage *msg = it->second;
+    msgs_.erase(it);
+
+    if (msg->IsVideo())
+    {
+        nb_videos_--;
+    }
+    else
+    {
+        nb_audios_--;
+    }
+
+    return msg;
+}
+
+std::map<std::string, Source *> Source::pool_;
+
 Source::Source()
 {
     request_ = nullptr;
@@ -463,12 +544,16 @@ Source::Source()
     cache_metadata_ = nullptr;
     cache_sh_video_ = nullptr;
     cache_sh_audio_ = nullptr;
+    mix_queue_ = new MixQueue;
 }
-
-std::map<std::string, Source *> Source::pool_;
 
 Source::~Source()
 {
+    rs_freep(mix_queue_);
+    rs_freep(cache_sh_audio_);
+    rs_freep(cache_sh_video_);
+    rs_freep(cache_metadata_);
+
     rs_freep(request_);
 }
 
@@ -544,6 +629,12 @@ void Source::OnConsumerDestroy(Consumer *consumer)
 {
 }
 
+int Source::on_video_impl(SharedPtrMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
 int Source::on_audio_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
@@ -576,7 +667,7 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
         static int sound_types[] = {1, 2, 0};
         static int flv_sample_rates[] = {5512, 11025, 22050, 44100, 0};
 
-        rs_trace("%dB audio sh, codec(%d, profile=%s, %dHz, %dbits, %dchannels) flv sample rate: %dHz", msg->size,
+        rs_trace("%dB audio sh, codec(%d, profile=%s, %dHz, %dbits, %dchannels) flv(%dHz)", msg->size,
                  codec.audio_codec_id,
                  av::AACProfile2Str(codec.aac_object_type).c_str(),
                  sample.aac_sample_rate,
@@ -627,7 +718,25 @@ int Source::OnAudio(CommonMessage *msg)
         return on_audio_impl(&shared_msg);
     }
 
-    return ret;
+    mix_queue_->Push(shared_msg.Copy());
 
+    SharedPtrMessage *m = mix_queue_->Pop();
+    if (!m)
+    {
+        return ret;
+    }
+
+    if (m->IsAudio())
+    {
+        on_audio_impl(m);
+    }
+    else
+    {
+        on_video_impl(m);
+    }
+
+    rs_freep(m);
+
+    return ret;
 }
 } // namespace rtmp

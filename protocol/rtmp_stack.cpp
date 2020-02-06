@@ -378,9 +378,9 @@ int SharedPtrMessage::Create(MessageHeader *pheader, char *payload, int size)
     ptr_->payload = payload;
     ptr_->size = size;
 
-    payload = ptr_->payload;
-    size = ptr_->size;
-
+    this->payload = ptr_->payload;
+    this->size = ptr_->size;
+    
     return ret;
 }
 

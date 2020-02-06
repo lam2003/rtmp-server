@@ -137,7 +137,6 @@ bool Codec::is_h264(char *data, int size)
     }
 
     char codec_id = data[0];
-    codec_id &= 0x0f;
 
     return codec_id == (char)VideoCodecType::AVC;
 }
@@ -150,7 +149,8 @@ bool Codec::is_aac(char *data, int size)
     }
 
     char codec_id = data[0];
-    codec_id &= 0x0f;
+    codec_id = (codec_id >> 4)& 0x0f;
+
     return codec_id == (char)AudioCodecType::AAC;
 }
 
@@ -197,7 +197,7 @@ int Codec::aac_sequence_header_demux(char *data, int size)
     int ret = ERROR_SUCCESS;
 
     BufferManager manager;
-    if (!manager.Initialize(data, size) != ERROR_SUCCESS)
+    if (manager.Initialize(data, size) != ERROR_SUCCESS)
     {
         return ret;
     }

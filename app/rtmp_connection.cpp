@@ -195,7 +195,11 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
 
     if (msg->header.IsAudio())
     {
-        
+        if ((ret = source->OnAudio(msg)) != ERROR_SUCCESS)
+        {
+            rs_error("source process audio message failed. ret=%d", ret);
+            return ret;
+        }
     }
 
     return ret;
