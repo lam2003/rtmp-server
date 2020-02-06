@@ -1,3 +1,8 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-06 17:02:50
+ * @LastEditTime : 2020-02-06 17:45:47
+ */
 #ifndef RS_RTMP_RECV_THREAD_HPP
 #define RS_RTMP_RECV_THREAD_HPP
 
@@ -53,12 +58,16 @@ public:
     virtual int Start();
     virtual void Stop();
     virtual bool CanHandle();
+    virtual int GetCID();
+    virtual void SetCID(int cid);
+    virtual int ErrorCode();
+    virtual int64_t GetMsgNum();
     //rtmp::IMessageHandler
     virtual void OnThreadStart() override;
     virtual void OnThreadStop() override;
     virtual void OnRead(ssize_t nread) override;
     virtual int Handle(rtmp::CommonMessage *msg) override;
-    virtual void OnRecvError(int32_t ret)override;
+    virtual void OnRecvError(int32_t ret) override;
 
 private:
     void set_socket_buffer(int sleep_ms);

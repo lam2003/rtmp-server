@@ -175,7 +175,7 @@ void PublishRecvThread::set_socket_buffer(int sleep_ms)
 
     ::getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &nb_rbuf, &sock_buf_size);
 
-    rs_trace("mr change sleep %dms=>%dms,erbuf=%d, rbuf %d=>%d", socket_buffer_size, onb_rbuf, nb_rbuf);
+    rs_trace("mr change sleep %dms=>%dms,erbuf=%d, rbuf %d=>%d", mr_sleep_, sleep_ms, socket_buffer_size, onb_rbuf, nb_rbuf);
 
     rtmp_->SetRecvBuffer(nb_rbuf);
 }
@@ -242,9 +242,31 @@ int PublishRecvThread::Handle(rtmp::CommonMessage *msg)
 
 void PublishRecvThread::OnRecvError(int32_t ret)
 {
+    recv_error_code_ = ret;
+    st_cond_signal(error_);
 }
 
 bool PublishRecvThread::CanHandle()
 {
     return true;
+}
+
+int PublishRecvThread::GetCID()
+{
+    return ncid;
+}
+
+void PublishRecvThread::SetCID(int cid)
+{
+    ncid = cid;
+}
+
+int PublishRecvThread::ErrorCode()
+{
+    return recv_error_code_;
+}
+
+int64_t PublishRecvThread::GetMsgNum()
+{
+    return nb_msgs_;
 }

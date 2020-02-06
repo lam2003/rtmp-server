@@ -65,11 +65,13 @@ void IThreadContext::ClearID()
 {
 }
 
-FastLog::FastLog() : fd_(-1),
-                     log_to_file_tank_(false),
-                     utc_(false)
+FastLog::FastLog()
 {
+    fd_ = -1;
+    log_to_file_tank_ = false;
+    utc_ = false;
     log_data_ = new char[LOG_MAX_SIZE];
+    level_ = LogLevel::INFO;
 }
 
 FastLog::~FastLog()

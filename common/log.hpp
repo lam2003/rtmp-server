@@ -165,14 +165,12 @@ protected:
     virtual void WriteLog(int32_t &fd, char *str_log, int32_t size, int32_t level);
     virtual void OpenLogFile();
 
-protected:
-    int32_t level_;
-
 private:
     int32_t fd_;
     bool log_to_file_tank_;
     bool utc_;
     char *log_data_;
+    int32_t level_;
 };
 
 class ThreadContext : public IThreadContext

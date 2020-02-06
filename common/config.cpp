@@ -31,7 +31,7 @@ bool Config::GetATC(const std::string &vhost)
 
 bool Config::GetMREnabled(const std::string &vhost)
 {
-    return false;
+    return true;
 }
 
 int Config::GetMRSleepMS(const std::string &vhost)
@@ -45,6 +45,26 @@ bool Config::GetRealTimeEnabled(const std::string &vhost)
 }
 
 bool Config::GetReduceSequenceHeader(const std::string &vhost)
+{
+    return true;
+}
+
+bool Config::GetVhostIsEdge(const std::string &vhost)
+{
+    return true;
+}
+
+int Config::GetPublishFirstPktTimeout(const std::string &vhost)
+{
+    return 20000;
+}
+
+int Config::GetPublishNormalPktTimeout(const std::string &vhost)
+{
+    return 5000;
+}
+
+bool Config::GetTCPNoDelay(const std::string &vhost)
 {
     return true;
 }

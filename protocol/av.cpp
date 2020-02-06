@@ -149,7 +149,7 @@ bool Codec::is_aac(char *data, int size)
     }
 
     char codec_id = data[0];
-    codec_id = (codec_id >> 4)& 0x0f;
+    codec_id = (codec_id >> 4) & 0x0f;
 
     return codec_id == (char)AudioCodecType::AAC;
 }

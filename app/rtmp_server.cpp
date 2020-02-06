@@ -405,7 +405,7 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
         rs_info("send onStatus(NetStream.Unpublish.Success) message success.");
     }
 
-    rs_trace("FMLE unpublish success.");
+    rs_trace("FMLE unpublish success");
 
     return ret;
 }

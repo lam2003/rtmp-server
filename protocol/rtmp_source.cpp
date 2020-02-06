@@ -3,6 +3,8 @@
 #include <protocol/av.hpp>
 #include <common/config.hpp>
 
+#include <common/file.hpp>
+
 #define MIX_CORRECT_PURE_AV 10
 
 namespace rtmp
@@ -632,6 +634,23 @@ void Source::OnConsumerDestroy(Consumer *consumer)
 int Source::on_video_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
+
+    bool is_sequence_hander = av::Codec::IsVideoSeqenceHeader(msg->payload, msg->size);
+
+    bool drop_for_reduce = false;
+    if (is_sequence_hander && cache_sh_video_ && _config->GetReduceSequenceHeader(request_->host))
+    {
+        if (cache_sh_video_->size == msg->size)
+        {
+            drop_for_reduce = Utils::BytesEquals(cache_sh_video_->payload, msg->payload, msg->size);
+            rs_warn("drop for reduce sh video, size=%d", msg->size);
+        }
+    }
+
+    // if (is_sequence_hander)
+    // {
+    //     rs_freep(cache_sh_video_);
+    // }
     return ret;
 }
 

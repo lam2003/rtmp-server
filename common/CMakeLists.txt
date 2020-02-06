@@ -6,7 +6,7 @@ add_library(common
     socket.cpp
     st.cpp
     reader.cpp
-    file_reader.cpp
+    file.cpp
     thread.cpp
     log.cpp
     error.cpp

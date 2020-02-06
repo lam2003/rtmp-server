@@ -1,3 +1,9 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-06 17:27:12
+ * @LastEditTime : 2020-02-06 18:21:23
+ */
+
 #include <app/rtmp_connection.hpp>
 #include <protocol/rtmp_stack.hpp>
 #include <protocol/rtmp_consts.hpp>
@@ -7,22 +13,27 @@
 #include <common/log.hpp>
 #include <common/utils.hpp>
 
-RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd) : Connection(server, stfd),
-                                                                  server_(server),
-                                                                  type_(rtmp::ConnType::UNKNOW)
+#include <netinet/tcp.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+
+RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd) : Connection(server, stfd)
 {
-    request_ = new rtmp::Request;
-    response_ = new rtmp::Response;
+    server_ = server;
     socket_ = new StSocket(stfd);
     rtmp_ = new RTMPServer(socket_);
+    request_ = new rtmp::Request;
+    response_ = new rtmp::Response;
+    type_ = rtmp::ConnType::UNKNOW;
+    tcp_nodelay_ = false;
 }
 
 RTMPConnection::~RTMPConnection()
 {
-    rs_freep(rtmp_);
-    rs_freep(socket_);
     rs_freep(response_);
     rs_freep(request_);
+    rs_freep(rtmp_);
+    rs_freep(socket_);
 }
 
 int32_t RTMPConnection::DoCycle()
@@ -123,6 +134,15 @@ int32_t RTMPConnection::Publishing(rtmp::Source *source)
 {
     int ret = ERROR_SUCCESS;
 
+    bool vhost_is_edge = _config->GetVhostIsEdge(request_->vhost);
+    PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ != rtmp::ConnType::FMLE_PUBLISH, vhost_is_edge);
+
+    rs_info("start to publish stream %s success.", request_->stream.c_str());
+
+    ret = do_publishing(source, &recv_thread);
+
+    recv_thread.Stop();
+
     return ret;
 }
 
@@ -222,7 +242,7 @@ int RTMPConnection::handle_publish_message(rtmp::Source *source, rtmp::CommonMes
 
         if (!is_fmle)
         {
-            rs_trace("refresh flash publish finished.");
+            rs_trace("refresh flash publish finished");
             return ERROR_CONTROL_REPUBLISH;
         }
 
@@ -243,6 +263,100 @@ int RTMPConnection::handle_publish_message(rtmp::Source *source, rtmp::CommonMes
     {
         rs_error("FMLE process publish message failed. ret=%d", ret);
         return ret;
+    }
+
+    return ret;
+}
+
+/**
+ * @name: set_socket_option
+ * @msg: 配置tcp NO_DELAY选项
+ */
+void RTMPConnection::set_socket_option()
+{
+    bool nvalue = _config->GetTCPNoDelay(request_->vhost);
+    if (nvalue != tcp_nodelay_)
+    {
+        tcp_nodelay_ = nvalue;
+
+        int fd = st_netfd_fileno(client_stfd_);
+        socklen_t nb_v = sizeof(int);
+        int ov = 0;
+
+        getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &ov, &nb_v);
+
+        int nv = tcp_nodelay_;
+        if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nv, nb_v) < 0)
+        {
+            rs_error("set socket TCP_NODELAY=%d failed", nv);
+            return;
+        }
+
+        getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nv, &nb_v);
+        rs_trace("set socket TCP_NODELAY=%d success. %d=>%d", tcp_nodelay_, ov, nv);
+    }
+}
+
+int RTMPConnection::do_publishing(rtmp::Source *source, PublishRecvThread *recv_thread)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = recv_thread->Start()) != ERROR_SUCCESS)
+    {
+        rs_error("start isolate recv thread failed. ret=%d", ret);
+        return ret;
+    }
+
+    int recv_thread_cid = recv_thread->GetCID();
+    //marge isolate recv thread log
+    recv_thread->SetCID(_context->GetID());
+
+    publish_first_pkt_timeout_ = _config->GetPublishFirstPktTimeout(request_->vhost);
+    publish_normal_pkt_timeout_ = _config->GetPublishNormalPktTimeout(request_->vhost);
+
+    set_socket_option();
+
+    bool mr = _config->GetMREnabled(request_->vhost);
+    int mr_sleep = _config->GetMRSleepMS(request_->vhost);
+
+    rs_trace("start publish mr=%d/%d, first_pkt_timeout=%d, normal_pkt_timeout=%d, rtcid=%d", mr, mr_sleep, publish_first_pkt_timeout_, publish_normal_pkt_timeout_, recv_thread_cid);
+
+    int64_t nb_msgs = 0;
+
+    while (!disposed_)
+    {
+        if (expired_)
+        {
+            ret = ERROR_USER_DISCONNECT;
+            rs_error("connection expired. ret=%d", ret);
+            return ret;
+        }
+        if (nb_msgs == 0)
+        {
+            recv_thread->Wait(publish_first_pkt_timeout_);
+        }
+        else
+        {
+            recv_thread->Wait(publish_normal_pkt_timeout_);
+        }
+
+        if ((ret = recv_thread->ErrorCode()) != ERROR_SUCCESS)
+        {
+            if (!IsSystemControlError(ret) && !IsClientGracefullyClose(ret))
+            {
+                rs_error("recv thread failed. ret=%d", ret);
+                return ret;
+            }
+        }
+
+        if (recv_thread->GetMsgNum() <= nb_msgs)
+        {
+            ret = ERROR_SOCKET_TIMEOUT;
+            rs_warn("publish timeout %dms, nb_msgs=%lld, ret=%d.", nb_msgs ? publish_normal_pkt_timeout_ : publish_first_pkt_timeout_, nb_msgs, ret);
+            break;
+        }
+
+        nb_msgs = recv_thread->GetMsgNum();
     }
 
     return ret;
