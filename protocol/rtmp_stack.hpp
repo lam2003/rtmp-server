@@ -524,6 +524,28 @@ public:
     AMF0Object *data;
 };
 
+class OnMetadataPacket : public Packet
+{
+public:
+    OnMetadataPacket();
+    virtual ~OnMetadataPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string name;
+    AMF0Object *metadata;
+};
+
 class AckWindowSize
 {
 

@@ -1,3 +1,8 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-08 11:59:08
+ * @LastEditTime : 2020-02-09 16:58:37
+ */
 #ifndef RS_UTILS_HPP
 #define RS_UTILS_HPP
 
@@ -43,10 +48,19 @@ public:
     static int64_t GetSteadyMicroSeconds();
     static int64_t GetSteadyMilliSeconds();
     static bool BytesEquals(void *pa, void *pb, int size);
+    static std::string BuildStreamPath(const std::string &template_path,
+                                       const std::string &vhost,
+                                       const std::string &app,
+                                       const std::string &stream);
+    static std::string BuildIndexPath(const std::string &template_path);
+    static std::string BuildTimestampPath(const std::string &template_path, const std::string &format = "%Y-%m-%d_%H-%M-%S");
+    static std::string BuildIndexSuffixPath(const std::string &template_path, int index);
+    static bool IsFileExist(const std::string &path);
+    static int CreateDirRecursively(const std::string &dir);
 };
 
 #define rs_auto_free(class_name, instance) __impl_AutoFree<class_name> __auto_free_##instance(&instance, false)
-#define rs_auto_freea(class_name, instance) __impl_Auto_Free<class_name> __auto_free_##instance(&instance, true)
+#define rs_auto_freea(class_name, instance) __impl_AutoFree<class_name> __auto_free_##instance(&instance, true)
 
 template <typename T>
 class __impl_AutoFree

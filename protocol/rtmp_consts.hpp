@@ -65,6 +65,10 @@
 #define RTMP_AMF0_COMMAND_CREATE_STREAM "createStream"
 #define RTMP_AMF0_COMMAND_ON_STATUS "onStatus"
 #define RTMP_AMF0_COMMAND_ERROR "error"
+#define RTMP_AMF0_COMMAND_ON_FC_PUBLISH "onFCPublish"
+#define RTMP_AMF0_COMMAND_ON_FC_UNPUBLISH "onFCUnpublish"
+#define RTMP_AMF0_COMMAND_ON_METADATA "onMetaData"
+#define RTMP_AMF0_COMMAND_SET_DATAFRAME "@setDataFrame"
 //amf0 marker
 #define RTMP_AMF0_NUMBER 0x00
 #define RTMP_AMF0_BOOLEAN 0x01
@@ -87,20 +91,6 @@
 #define RTMP_AMF0_AVM_PLUS_OBJECT 0x11
 #define RTMP_AMF0_ORIGIN_STRICT_ARRAY 0x20
 #define RTMP_AMF0_INVALID 0x3f
-
-//amf0 elem size
-#define AMF0_LEN_UTF8(a) (2 + (a).length())
-#define AMF0_LEN_STR(a) (1 + AMF0_LEN_UTF8(a))
-#define AMF0_LEN_NUMBER (1 + 8)
-#define AMF0_LEN_DATE (1 + 8 + 2)
-#define AMF0_LEN_NULL (1)
-#define AMF0_LEN_UNDEFINED (1)
-#define AMF0_LEN_BOOLEAN (1 + 1)
-#define AMF0_LEN_OBJECT(a) ((a)->TotalSize())
-#define AMF0_LEN_OBJ_EOF (2 + 1)
-#define AMF0_LEN_ECMA_ARR(a) ((a)->TotalSize())
-#define AMF0_LEN_STRICT_ARR(a) ((a)->TotalSize())
-#define AMF0_LEN_ANY(a) ((a)->TotalSize())
 
 //rtmp perf
 #define RTMP_PERF_MW_MSGS 128

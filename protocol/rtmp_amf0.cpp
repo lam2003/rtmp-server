@@ -260,6 +260,16 @@ bool AMF0Any::IsNumber()
     return marker == RTMP_AMF0_NUMBER;
 }
 
+AMF0EcmaArray *AMF0Any::ToEcmaArray()
+{
+    return dynamic_cast<AMF0EcmaArray *>(this);
+}
+
+bool AMF0Any::IsEcmaArray()
+{
+    return marker == RTMP_AMF0_ECMA_ARRAY;
+}
+
 AMF0Object *AMF0Any::Object()
 {
     return new AMF0Object;
@@ -560,6 +570,11 @@ void AMF0EcmaArray::Clear()
     properties_->Clear();
 }
 
+int AMF0EcmaArray::Count()
+{
+    return properties_->Count();
+}
+
 int AMF0EcmaArray::Read(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
@@ -581,7 +596,7 @@ int AMF0EcmaArray::Read(BufferManager *manager)
 
     rs_verbose("amf0 read ecma array marker success");
 
-    if ((ret = manager->Require(4)) != ERROR_SUCCESS)
+    if (!manager->Require(4))
     {
         ret = ERROR_RTMP_AMF0_DECODE;
         rs_error("amf0 read ecma array count failed,ret=%d", ret);

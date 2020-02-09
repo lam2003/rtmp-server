@@ -309,7 +309,7 @@ int RTMPServer::StartFmlePublish(int stream_id)
     }
     {
         rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
-        pkt->command_name = RTMP_AMF0_COMMAND_FC_PUBLISH;
+        pkt->command_name = RTMP_AMF0_COMMAND_ON_FC_PUBLISH;
         pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Publish.Start"));
         pkt->data->Set("description", rtmp::AMF0Any::String("Started publishing stream"));
 
@@ -362,7 +362,7 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
     int ret = ERROR_SUCCESS;
     {
         rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
-        pkt->command_name = RTMP_AMF0_COMMAND_UNPUBLISH;
+        pkt->command_name = RTMP_AMF0_COMMAND_ON_FC_UNPUBLISH;
         pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Unpublish.Success"));
         pkt->data->Set("description", rtmp::AMF0Any::String("Stop publishing stream"));
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)

@@ -1,3 +1,8 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-08 11:59:08
+ * @LastEditTime : 2020-02-08 21:49:02
+ */
 #ifndef RS_CONFIG_HPP
 #define RS_CONFIG_HPP
 
@@ -23,6 +28,9 @@ public:
     virtual int GetPublishFirstPktTimeout(const std::string &vhost);
     virtual int GetPublishNormalPktTimeout(const std::string &vhost);
     virtual bool GetTCPNoDelay(const std::string &vhost);
+    virtual int GetDvrTimeJitter(const std::string &vhost);
+    virtual std::string GetDvrPath(const std::string &vhost);
+    virtual bool GetUTCTime();
 };
 
 extern Config *_config;

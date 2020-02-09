@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime : 2020-02-06 18:21:23
+ * @LastEditTime : 2020-02-09 18:35:54
  */
 
 #include <app/rtmp_connection.hpp>
@@ -218,6 +218,29 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
         if ((ret = source->OnAudio(msg)) != ERROR_SUCCESS)
         {
             rs_error("source process audio message failed. ret=%d", ret);
+            return ret;
+        }
+    }
+
+    if (msg->header.IsAMF0Data() || msg->header.IsAMF3Data())
+    {
+        rtmp::Packet *packet = nullptr;
+        if ((ret = rtmp_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
+        {
+            rs_error("decode onMetaData message failed. ret=%d", ret);
+            return ret;
+        }
+        rs_auto_free(rtmp::Packet, packet);
+
+        if (dynamic_cast<rtmp::OnMetadataPacket *>(packet))
+        {
+            rtmp::OnMetadataPacket *pkt = dynamic_cast<rtmp::OnMetadataPacket *>(packet);
+            if ((ret = source->OnMetadata(msg, pkt)) != ERROR_SUCCESS)
+            {
+                rs_error("source process on_metadata message failed. ret=%d", ret);
+                return ret;
+            }
+            
             return ret;
         }
     }

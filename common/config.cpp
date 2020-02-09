@@ -1,3 +1,8 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-08 13:11:52
+ * @LastEditTime : 2020-02-08 21:49:39
+ */
 #include <common/config.hpp>
 
 Config::Config()
@@ -67,4 +72,19 @@ int Config::GetPublishNormalPktTimeout(const std::string &vhost)
 bool Config::GetTCPNoDelay(const std::string &vhost)
 {
     return true;
+}
+
+int Config::GetDvrTimeJitter(const std::string &vhost)
+{
+    return 1;
+}
+
+std::string Config::GetDvrPath(const std::string &vhost)
+{
+    return "/win/flv_test";
+}
+
+bool Config::GetUTCTime()
+{
+    return false;
 }

@@ -159,6 +159,7 @@ public:
     virtual bool CanPublish(bool is_edge);
     virtual void OnConsumerDestroy(Consumer *consumer);
     virtual int OnAudio(CommonMessage *msg);
+    virtual int OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt);
 
 protected:
     static Source *Fetch(Request *r);

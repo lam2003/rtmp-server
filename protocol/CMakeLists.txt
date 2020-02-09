@@ -4,6 +4,7 @@ add_library(protocol
     rtmp_source.cpp
     rtmp_edge.cpp
     av.cpp
+    flv.cpp
 )
 
 add_dependencies(protocol
