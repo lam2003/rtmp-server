@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 11:59:08
- * @LastEditTime : 2020-02-10 14:02:47
+ * @LastEditTime : 2020-02-10 16:26:59
  */
 #ifndef RS_CONFIG_HPP
 #define RS_CONFIG_HPP
@@ -50,6 +50,9 @@ public:
     virtual bool GetUTCTime();
     virtual bool GetDvrWaitKeyFrame(const std::string &vhost);
     virtual std::string GetDvrPlan(const std::string &vhost);
+    virtual int GetDrvDuration(const std::string &vhost);
+    virtual bool GetDvrEnbaled(const std::string &vhost);
+    virtual bool GetATCAuto(const std::string &vhost);
 };
 
 extern Config *_config;

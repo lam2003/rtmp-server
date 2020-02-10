@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime : 2020-02-09 18:35:54
+ * @LastEditTime : 2020-02-10 17:41:39
  */
 
 #include <app/rtmp_connection.hpp>
@@ -135,13 +135,16 @@ int32_t RTMPConnection::Publishing(rtmp::Source *source)
     int ret = ERROR_SUCCESS;
 
     bool vhost_is_edge = _config->GetVhostIsEdge(request_->vhost);
-    PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ != rtmp::ConnType::FMLE_PUBLISH, vhost_is_edge);
+    if ((ret = acquire_publish(source, false)) == ERROR_SUCCESS)
+    {
+        PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ != rtmp::ConnType::FMLE_PUBLISH, vhost_is_edge);
 
-    rs_info("start to publish stream %s success.", request_->stream.c_str());
+        rs_info("start to publish stream %s success.", request_->stream.c_str());
 
-    ret = do_publishing(source, &recv_thread);
+        ret = do_publishing(source, &recv_thread);
 
-    recv_thread.Stop();
+        recv_thread.Stop();
+    }
 
     return ret;
 }
@@ -240,7 +243,7 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
                 rs_error("source process on_metadata message failed. ret=%d", ret);
                 return ret;
             }
-            
+
             return ret;
         }
     }
@@ -318,6 +321,32 @@ void RTMPConnection::set_socket_option()
         getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nv, &nb_v);
         rs_trace("set socket TCP_NODELAY=%d success. %d=>%d", tcp_nodelay_, ov, nv);
     }
+}
+
+int RTMPConnection::acquire_publish(rtmp::Source *source, bool is_edge)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!source->CanPublish(is_edge))
+    {
+        ret = ERROR_SYSTEM_STREAM_BUSY;
+        rs_warn("stream %s is already publishing. ret=%d", request_->GetStreamUrl().c_str());
+        return ret;
+    }
+
+    if (is_edge)
+    {
+    }
+    else
+    {
+        if ((ret = source->OnPublish()) != ERROR_SUCCESS)
+        {
+            rs_error("notify publish failed. ret=%d", ret);
+            return ret;
+        }
+    }
+
+    return ret;
 }
 
 int RTMPConnection::do_publishing(rtmp::Source *source, PublishRecvThread *recv_thread)

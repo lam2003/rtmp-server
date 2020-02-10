@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 13:11:52
- * @LastEditTime : 2020-02-10 14:05:38
+ * @LastEditTime : 2020-02-10 17:29:52
  */
 #include <common/config.hpp>
 
@@ -30,6 +30,11 @@ int32_t Config::Reload()
 }
 
 bool Config::GetATC(const std::string &vhost)
+{
+    return false;
+}
+
+bool Config::GetATCAuto(const std::string &vhost)
 {
     return false;
 }
@@ -97,4 +102,15 @@ bool Config::GetDvrWaitKeyFrame(const std::string &vhost)
 std::string Config::GetDvrPlan(const std::string &vhost)
 {
     return RS_CONFIG_NVR_PLAN_SEGMENT;
+}
+
+int Config::GetDrvDuration(const std::string &vhost)
+{
+    //seconds
+    return 10;
+}
+
+bool Config::GetDvrEnbaled(const std::string &vhost)
+{
+    return true;
 }

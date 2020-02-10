@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 19:10:29
- * @LastEditTime : 2020-02-10 14:01:01
+ * @LastEditTime : 2020-02-10 15:27:22
  */
 #ifndef RS_DVR_HPP
 #define RS_DVR_HPP
@@ -63,10 +63,10 @@ public:
     virtual ~DvrPlan();
 
 public:
-    static DvrPlan *create_plan(const std::string &vhost);
+    static DvrPlan *CreatePlan(const std::string &vhost);
     virtual int Initialize(rtmp::Request *request);
     virtual int OnPublish() = 0;
-    virtual int OnUnpublish() = 0;
+    virtual void OnUnpublish() = 0;
     virtual int OnMetadata(rtmp::SharedPtrMessage *shared_metadata);
     virtual int OnAudio(rtmp::SharedPtrMessage *shared_audio);
     virtual int OnVideo(rtmp::SharedPtrMessage *shared_video);
@@ -76,7 +76,7 @@ protected:
     virtual int on_reap_segment();
     virtual int64_t filter_timestamp(int64_t timestamp);
 
-private:
+protected:
     rtmp::Request *request_;
     bool dvr_enabled_;
     FlvSegment *segment_;
@@ -89,8 +89,21 @@ public:
     virtual ~DvrSegmentPlan();
 
 public:
+    virtual int Initialize(rtmp::Request *request) override;
     virtual int OnPublish() override;
-    virtual int OnUnpublish() override;
+    virtual void OnUnpublish() override;
+    virtual int OnMetadata(rtmp::SharedPtrMessage *shared_metadata) override;
+    virtual int OnAudio(rtmp::SharedPtrMessage *shared_audio) override;
+    virtual int OnVideo(rtmp::SharedPtrMessage *shared_video) override;
+
+private:
+    int update_duration(rtmp::SharedPtrMessage *msg);
+
+private:
+    int segment_duration_;
+    rtmp::SharedPtrMessage *sh_video_;
+    rtmp::SharedPtrMessage *sh_audio_;
+    rtmp::SharedPtrMessage *metadata_;
 };
 
 class DvrAppendPlan : public DvrPlan
@@ -101,7 +114,7 @@ public:
 
 public:
     virtual int OnPublish() override;
-    virtual int OnUnpublish() override;
+    virtual void OnUnpublish() override;
 };
 
 class DvrSessionPlan : public DvrPlan
@@ -112,11 +125,26 @@ public:
 
 public:
     virtual int OnPublish() override;
-    virtual int OnUnpublish() override;
+    virtual void OnUnpublish() override;
 };
 
 class Dvr
 {
+public:
+    Dvr();
+    virtual ~Dvr();
+
+public:
+    virtual int Initialize(rtmp::Source *source, rtmp::Request *request);
+    virtual int OnPublish(rtmp::Request *request);
+    virtual void OnUnpubish();
+    virtual int OnMetadata(rtmp::SharedPtrMessage *shared_metadata);
+    virtual int OnAudio(rtmp::SharedPtrMessage *shared_audio);
+    virtual int OnVideo(rtmp::SharedPtrMessage *shared_video);
+
+private:
+    rtmp::Source *source_;
+    DvrPlan *plan_;
 };
 
 #endif

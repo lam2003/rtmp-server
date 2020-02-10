@@ -1,3 +1,8 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-10 16:16:08
+ * @LastEditTime: 2020-02-10 17:37:01
+ */
 #ifndef RS_RTMP_CONNECTION_HPP
 #define RS_RTMP_CONNECTION_HPP
 
@@ -37,6 +42,7 @@ private:
     int process_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_edge);
     int do_publishing(rtmp::Source *source, PublishRecvThread *recv_thread);
     void set_socket_option();
+    int acquire_publish(rtmp::Source *source, bool is_edge);
 
 private:
     Server *server_;
@@ -46,7 +52,7 @@ private:
     rtmp::Response *response_;
     rtmp::ConnType type_;
     bool tcp_nodelay_;
-    
+
     int publish_first_pkt_timeout_;
     int publish_normal_pkt_timeout_;
 };

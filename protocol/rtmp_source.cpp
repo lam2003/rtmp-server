@@ -2,8 +2,10 @@
 #include <protocol/rtmp_consts.hpp>
 #include <protocol/av.hpp>
 #include <common/config.hpp>
-
 #include <common/file.hpp>
+#include <app/dvr.hpp>
+
+#include <sstream>
 
 #define MIX_CORRECT_PURE_AV 10
 
@@ -547,15 +549,16 @@ Source::Source()
     cache_sh_video_ = nullptr;
     cache_sh_audio_ = nullptr;
     mix_queue_ = new MixQueue;
+    dvr_ = new Dvr;
 }
 
 Source::~Source()
 {
+    rs_freep(dvr_);
     rs_freep(mix_queue_);
     rs_freep(cache_sh_audio_);
     rs_freep(cache_sh_video_);
     rs_freep(cache_metadata_);
-
     rs_freep(request_);
 }
 
@@ -619,6 +622,11 @@ int Source::Initialize(rtmp::Request *r, ISourceHandler *h)
 
     atc_ = _config->GetATC(r->vhost);
 
+    if ((ret = dvr_->Initialize(this, request_)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
     return ret;
 }
 
@@ -647,10 +655,6 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         }
     }
 
-    // if (is_sequence_hander)
-    // {
-    //     rs_freep(cache_sh_video_);
-    // }
     return ret;
 }
 
@@ -693,6 +697,13 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
                  sample_sizes[(int)sample.sound_size],
                  sound_types[(int)sample.sound_type],
                  flv_sample_rates[(int)sample.flv_sample_rate]);
+    }
+
+    if ((ret = dvr_->OnAudio(msg)) != ERROR_SUCCESS)
+    {
+        rs_warn("dvr process audio message failed, ignore and disable dvr. ret=%d", ret);
+        dvr_->OnUnpubish();
+        ret = ERROR_SUCCESS;
     }
 
     if (!drop_for_reduce)
@@ -763,6 +774,123 @@ int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
 {
     int ret = ERROR_SUCCESS;
 
+    //when exists the duration, remove it to make ExoPlayer happy.
+    rtmp::AMF0Any *prop = NULL;
+    if (pkt->metadata->GetValue("duration") != NULL)
+    {
+        pkt->metadata->Remove("duration");
+    }
+
+    std::ostringstream oss;
+    if ((prop = pkt->metadata->EnsurePropertyNumber("width")) != nullptr)
+    {
+        oss << ", width=" << (int)prop->ToNumber();
+    }
+    if ((prop = pkt->metadata->EnsurePropertyNumber("height")) != nullptr)
+    {
+        oss << ", height=" << (int)prop->ToNumber();
+    }
+    if ((prop = pkt->metadata->EnsurePropertyNumber("videocodecid")) != nullptr)
+    {
+        oss << ", vcodec=" << (int)prop->ToNumber();
+    }
+    if ((prop = pkt->metadata->EnsurePropertyNumber("audiocodecid")) != nullptr)
+    {
+        oss << ", acodec=" << (int)prop->ToNumber();
+    }
+
+    rs_trace("got metadata%s", oss.str().c_str());
+
+    atc_ = _config->GetATC(request_->vhost);
+    if (_config->GetATCAuto(request_->vhost))
+    {
+        if ((prop = pkt->metadata->GetValue("bravo_atc")) != NULL)
+        {
+            if (prop->IsString() && prop->ToString() == "true")
+            {
+                atc_ = true;
+            }
+        }
+    }
+
+    int size = 0;
+    char *payload = nullptr;
+    if ((ret = pkt->Encode(size, payload)) != ERROR_SUCCESS)
+    {
+        rs_error("encode metadata error. ret=%d", ret);
+        rs_freep(payload);
+        return ret;
+    }
+
+    if (size <= 0)
+    {
+        rs_warn("ignore the invalid metadata. size=%d", size);
+        return ret;
+    }
+
+    bool drop_for_reduce = false;
+    if (cache_metadata_ && _config->GetReduceSequenceHeader(request_->vhost))
+    {
+        drop_for_reduce = true;
+        rs_warn("drop for reduce sh metadata, size=%d", msg->size);
+    }
+
+    rs_freep(cache_metadata_);
+    cache_metadata_ = new rtmp::SharedPtrMessage;
+
+    if ((ret = cache_metadata_->Create(&msg->header, payload, size)) != ERROR_SUCCESS)
+    {
+        rs_error("initialize the cache metadata failed. ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = dvr_->OnMetadata(cache_metadata_)) != ERROR_SUCCESS)
+    {
+        rs_error("dvr process on_metadata message failed. ret=%d", ret);
+        return ret;
+    }
+
     return ret;
+}
+
+int Source::OnDvrRequestSH()
+{
+    int ret = ERROR_SUCCESS;
+
+    if (cache_metadata_ && ((ret = dvr_->OnMetadata(cache_metadata_)) != ERROR_SUCCESS))
+    {
+        rs_error("dvr process on_metadata message failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (cache_sh_audio_ && ((ret = dvr_->OnAudio(cache_sh_audio_)) != ERROR_SUCCESS))
+    {
+        rs_error("dvr process audio sequence header message failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (cache_sh_video_ && ((ret = dvr_->OnVideo(cache_sh_video_)) != ERROR_SUCCESS))
+    {
+        rs_error("dvr process video sequence header message failed. ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int Source::OnPublish()
+{
+    int ret = ERROR_SUCCESS;
+    if ((ret = dvr_->OnPublish(request_)) != ERROR_SUCCESS)
+    {
+        rs_error("start dvr failed. ret=%d", ret);
+        return ret;
+    }
+    return ret;
+}
+
+void Source::OnUnpublish()
+{
+    dvr_->OnUnpubish();
 }
 } // namespace rtmp

@@ -67,6 +67,7 @@ public:
     virtual AMF0Any *EnsurePropertyString(const std::string &key);
     virtual AMF0Any *GetValue(const std::string &key);
     virtual AMF0Any *EnsurePropertyNumber(const std::string &key);
+    virtual void Remove(const std::string &key);
 
 private:
     typedef std::pair<std::string, AMF0Any *> AMF0ObjectPropertyType;
@@ -308,6 +309,7 @@ public:
     virtual AMF0Any *EnsurePropertyString(const std::string &key);
     virtual AMF0Any *GetValue(const std::string &key);
     virtual AMF0Any *EnsurePropertyNumber(const std::string &key);
+    virtual void Remove(const std::string &key);
     //AMF0Any
     virtual int Read(BufferManager *manager) override;
     virtual int Write(BufferManager *manager) override;
