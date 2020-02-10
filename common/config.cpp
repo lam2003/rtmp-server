@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 13:11:52
- * @LastEditTime : 2020-02-08 21:49:39
+ * @LastEditTime : 2020-02-10 14:05:38
  */
 #include <common/config.hpp>
 
@@ -87,4 +87,14 @@ std::string Config::GetDvrPath(const std::string &vhost)
 bool Config::GetUTCTime()
 {
     return false;
+}
+
+bool Config::GetDvrWaitKeyFrame(const std::string &vhost)
+{
+    return true;
+}
+
+std::string Config::GetDvrPlan(const std::string &vhost)
+{
+    return RS_CONFIG_NVR_PLAN_SEGMENT;
 }

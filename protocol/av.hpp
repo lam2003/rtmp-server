@@ -167,11 +167,12 @@ public:
 public:
     static bool IsVideoSeqenceHeader(char *data, int size);
     static bool IsAudioSeqenceHeader(char *data, int size);
+    static bool IsH264(char *data, int size);
+    static bool IsAAC(char *data, int size);
+    static bool IsKeyFrame(char *data, int size);
     int DemuxAudio(char *data, int size, CodecSample *sample);
 
 private:
-    static bool is_h264(char *data, int size);
-    static bool is_aac(char *data, int size);
     int aac_sequence_header_demux(char *data, int size);
     bool is_aac_codec_ok();
 

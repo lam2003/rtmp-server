@@ -129,7 +129,7 @@ Codec::~Codec()
 {
 }
 
-bool Codec::is_h264(char *data, int size)
+bool Codec::IsH264(char *data, int size)
 {
     if (size < 1)
     {
@@ -141,7 +141,7 @@ bool Codec::is_h264(char *data, int size)
     return codec_id == (char)VideoCodecType::AVC;
 }
 
-bool Codec::is_aac(char *data, int size)
+bool Codec::IsAAC(char *data, int size)
 {
     if (size < 1)
     {
@@ -154,9 +154,22 @@ bool Codec::is_aac(char *data, int size)
     return codec_id == (char)AudioCodecType::AAC;
 }
 
+bool Codec::IsKeyFrame(char *data, int size)
+{
+    if (size < 1)
+    {
+        return false;
+    }
+
+    char frame_type = data[0];
+    frame_type = (frame_type >> 4) & 0x0F;
+
+    return frame_type == (char)VideoFrameType::KEY_FRAME;
+}
+
 bool Codec::IsVideoSeqenceHeader(char *data, int size)
 {
-    if (!is_h264(data, size))
+    if (!IsH264(data, size))
     {
         return false;
     }
@@ -177,7 +190,7 @@ bool Codec::IsVideoSeqenceHeader(char *data, int size)
 
 bool Codec::IsAudioSeqenceHeader(char *data, int size)
 {
-    if (!is_aac(data, size))
+    if (!IsAAC(data, size))
     {
         return false;
     }
