@@ -1,12 +1,11 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 13:14:31
- * @LastEditTime : 2020-02-10 18:16:53
+ * @LastEditTime : 2020-02-12 10:25:51
  */
 #include <app/dvr.hpp>
 #include <common/config.hpp>
-#include <protocol/rtmp_amf0.hpp>
-#include <protocol/av.hpp>
+#include <protocol/amf0.hpp>
 
 FlvSegment::FlvSegment(DvrPlan *plan)
 {
@@ -210,8 +209,8 @@ int FlvSegment::UpdateFlvMetadata()
         return ret;
     }
 
-    rtmp::AMF0Any *size = rtmp::AMF0Any::Number((double)cur);
-    rs_auto_free(rtmp::AMF0Any, size);
+    AMF0Any *size = AMF0Any::Number((double)cur);
+    rs_auto_free(AMF0Any, size);
 
     if ((ret = size->Write(&manager)) != ERROR_SUCCESS)
     {
@@ -224,8 +223,8 @@ int FlvSegment::UpdateFlvMetadata()
         return ret;
     }
 
-    rtmp::AMF0Any *dur = rtmp::AMF0Any::Number((double)duration_ / 1000.0);
-    rs_auto_free(rtmp::AMF0Any, dur);
+    AMF0Any *dur = AMF0Any::Number((double)duration_ / 1000.0);
+    rs_auto_free(AMF0Any, dur);
 
     manager.Skip(-1 * manager.Pos());
     if ((ret = dur->Write(&manager)) != ERROR_SUCCESS)
@@ -262,29 +261,29 @@ int FlvSegment::WriteMetadata(rtmp::SharedPtrMessage *shared_metadata)
         return ret;
     }
 
-    rtmp::AMF0Any *name = rtmp::AMF0Any::String();
-    rs_auto_free(rtmp::AMF0Any, name);
+    AMF0Any *name = AMF0Any::String();
+    rs_auto_free(AMF0Any, name);
 
     if ((ret = name->Read(&manager)) != ERROR_SUCCESS)
     {
         return ret;
     }
 
-    rtmp::AMF0Any *object = rtmp::AMF0Any::Object();
-    rs_auto_free(rtmp::AMF0Any, object);
+    AMF0Any *object = AMF0Any::Object();
+    rs_auto_free(AMF0Any, object);
 
     if ((ret = object->Read(&manager)) != ERROR_SUCCESS)
     {
         return ret;
     }
 
-    rtmp::AMF0Object *obj = object->ToObject();
+    AMF0Object *obj = object->ToObject();
     obj->Set("filesize", nullptr);
     obj->Set("duration", nullptr);
 
-    obj->Set("service", rtmp::AMF0Any::String(SIG_RS_SERVER));
-    obj->Set("filesize", rtmp::AMF0Any::Number(0));
-    obj->Set("duration", rtmp::AMF0Any::Number(0));
+    obj->Set("service", AMF0Any::String(SIG_RS_SERVER));
+    obj->Set("filesize", AMF0Any::Number(0));
+    obj->Set("duration", AMF0Any::Number(0));
 
     int size = name->TotalSize() + obj->TotalSize();
     char *payload = new char[size];
@@ -357,8 +356,8 @@ int FlvSegment::WriteVideo(rtmp::SharedPtrMessage *shared_video)
     char *payload = video->payload;
     int size = video->size;
 
-    bool is_sequence_header = av::Codec::IsVideoSeqenceHeader(payload, size);
-    bool is_keyframe = av::Codec::IsH264(payload, size) && av::Codec::IsKeyFrame(payload, size) && !is_sequence_header;
+    bool is_sequence_header = flv::Codec::IsVideoSeqenceHeader(payload, size);
+    bool is_keyframe = flv::Codec::IsH264(payload, size) && flv::Codec::IsKeyFrame(payload, size) && !is_sequence_header;
 
     if (is_keyframe)
     {
@@ -637,7 +636,7 @@ int DvrSegmentPlan::update_duration(rtmp::SharedPtrMessage *msg)
         {
             char *payload = msg->payload;
             int size = msg->size;
-            bool is_keyframe = av::Codec::IsH264(payload, size) && av::Codec::IsKeyFrame(payload, size) && !av::Codec::IsVideoSeqenceHeader(payload, size);
+            bool is_keyframe = flv::Codec::IsH264(payload, size) && flv::Codec::IsKeyFrame(payload, size) && !flv::Codec::IsVideoSeqenceHeader(payload, size);
             if (!is_keyframe)
             {
                 return ret;

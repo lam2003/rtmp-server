@@ -1,6 +1,6 @@
 #include <protocol/rtmp_source.hpp>
 #include <protocol/rtmp_consts.hpp>
-#include <protocol/av.hpp>
+#include <protocol/flv.hpp>
 #include <common/config.hpp>
 #include <common/file.hpp>
 #include <app/dvr.hpp>
@@ -353,13 +353,13 @@ void MessageQueue::Shrink()
     {
         SharedPtrMessage *msg = msgs_.At(i);
 
-        if (msg->IsAudio() && av::Codec::IsAudioSeqenceHeader(msg->payload, msg->size))
+        if (msg->IsAudio() && flv::Codec::IsAudioSeqenceHeader(msg->payload, msg->size))
         {
             rs_freep(audio_sh);
             audio_sh = msg;
             continue;
         }
-        if (msg->IsVideo() && av::Codec::IsVideoSeqenceHeader(msg->payload, msg->size))
+        if (msg->IsVideo() && flv::Codec::IsVideoSeqenceHeader(msg->payload, msg->size))
         {
             rs_freep(video_sh);
             video_sh = msg;
@@ -643,7 +643,7 @@ int Source::on_video_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
-    bool is_sequence_hander = av::Codec::IsVideoSeqenceHeader(msg->payload, msg->size);
+    bool is_sequence_hander = flv::Codec::IsVideoSeqenceHeader(msg->payload, msg->size);
 
     bool drop_for_reduce = false;
     if (is_sequence_hander && cache_sh_video_ && _config->GetReduceSequenceHeader(request_->host))
@@ -655,6 +655,12 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         }
     }
 
+    if (is_sequence_hander)
+    {
+        rs_freep(cache_sh_video_);
+        cache_sh_video_ = msg->Copy();
+    }
+
     return ret;
 }
 
@@ -662,7 +668,7 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
-    bool is_aac_sequence_header = av::Codec::IsAudioSeqenceHeader(msg->payload, msg->size);
+    bool is_aac_sequence_header = flv::Codec::IsAudioSeqenceHeader(msg->payload, msg->size);
     bool is_sequence_header = is_aac_sequence_header;
 
     bool drop_for_reduce = false;
@@ -677,8 +683,8 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
 
     if (is_aac_sequence_header)
     {
-        av::Codec codec;
-        av::CodecSample sample;
+        flv::Codec codec;
+        flv::CodecSample sample;
 
         if ((ret = codec.DemuxAudio(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
         {
@@ -692,7 +698,7 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
 
         rs_trace("%dB audio sh, codec(%d, profile=%s, %dHz, %dbits, %dchannels) flv(%dHz)", msg->size,
                  codec.audio_codec_id,
-                 av::AACProfile2Str(codec.aac_object_type).c_str(),
+                 flv::AACProfile2Str(codec.aac_object_type).c_str(),
                  sample.aac_sample_rate,
                  sample_sizes[(int)sample.sound_size],
                  sound_types[(int)sample.sound_type],
@@ -775,7 +781,7 @@ int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
     int ret = ERROR_SUCCESS;
 
     //when exists the duration, remove it to make ExoPlayer happy.
-    rtmp::AMF0Any *prop = NULL;
+    AMF0Any *prop = NULL;
     if (pkt->metadata->GetValue("duration") != NULL)
     {
         pkt->metadata->Remove("duration");

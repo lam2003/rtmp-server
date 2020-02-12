@@ -1,3 +1,8 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-11 20:15:08
+ * @LastEditTime: 2020-02-12 10:31:04
+ */
 #ifndef RS_CONSTS_H
 #define RS_CONSTS_H
 
@@ -69,28 +74,7 @@
 #define RTMP_AMF0_COMMAND_ON_FC_UNPUBLISH "onFCUnpublish"
 #define RTMP_AMF0_COMMAND_ON_METADATA "onMetaData"
 #define RTMP_AMF0_COMMAND_SET_DATAFRAME "@setDataFrame"
-//amf0 marker
-#define RTMP_AMF0_NUMBER 0x00
-#define RTMP_AMF0_BOOLEAN 0x01
-#define RTMP_AMF0_STRING 0x02
-#define RTMP_AMF0_OBJECT 0x03
-#define RTMP_AMF0_MOVIE_CLIP 0x04
-#define RTMP_AMF0_NULL 0x05
-#define RTMP_AMF0_UNDEFINED 0x06
-#define RTMP_AMF0_REFENERCE 0x07
-#define RTMP_AMF0_ECMA_ARRAY 0x08
-#define RTMP_AMF0_ObJECT_END 0x09
-#define RTMP_AMF0_STRICT_ARRAY 0x0a
-#define RTMP_AMF0_DATE 0x0b
-#define RTMP_AMF0_LONG_STRING 0x0c
-#define RTMP_AMF0_UNSUPPORTED 0x0d
-#define RTMP_AMF0_RECORD_SET 0x0e
-#define RTMP_AMF0_XML_DOCUMENT 0x0f
-#define RTMP_AMF0_TYPED_OBJECT 0x10
-//may be is amf3
-#define RTMP_AMF0_AVM_PLUS_OBJECT 0x11
-#define RTMP_AMF0_ORIGIN_STRICT_ARRAY 0x20
-#define RTMP_AMF0_INVALID 0x3f
+
 
 //rtmp perf
 #define RTMP_PERF_MW_MSGS 128

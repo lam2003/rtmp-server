@@ -7,7 +7,7 @@
 #include <common/error.hpp>
 #include <common/log.hpp>
 #include <common/utils.hpp>
-#include <protocol/rtmp_amf0.hpp>
+#include <protocol/amf0.hpp>
 
 #include <map>
 

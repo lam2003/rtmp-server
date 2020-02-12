@@ -56,7 +56,7 @@ int RTMPServer::ConnectApp(rtmp::Request *req)
     rs_auto_free(rtmp::CommonMessage, msg);
     rs_auto_free(rtmp::ConnectAppPacket, pkt);
 
-    rtmp::AMF0Any *p = nullptr;
+    AMF0Any *p = nullptr;
 
     if ((p = pkt->command_object->EnsurePropertyString("tcUrl")) == nullptr)
     {
@@ -153,18 +153,18 @@ int RTMPServer::ResponseConnectApp(rtmp::Request *req, const std::string &local_
 
     rtmp::ConnectAppResPacket *pkt = new rtmp::ConnectAppResPacket;
 
-    pkt->props->Set("fmsVer", rtmp::AMF0Any::String("FMS/3,5,3,888"));
-    pkt->props->Set("capabilities", rtmp::AMF0Any::Number(127));
-    pkt->props->Set("mode", rtmp::AMF0Any::Number(1));
-    pkt->props->Set("level", rtmp::AMF0Any::String("status"));
-    pkt->props->Set("code", rtmp::AMF0Any::String("NetConnection.Connect.Success"));
-    pkt->props->Set("description", rtmp::AMF0Any::String("Connection succeeded"));
-    pkt->props->Set("objectEncoding", rtmp::AMF0Any::Number(req->object_encoding));
+    pkt->props->Set("fmsVer", AMF0Any::String("FMS/3,5,3,888"));
+    pkt->props->Set("capabilities", AMF0Any::Number(127));
+    pkt->props->Set("mode", AMF0Any::Number(1));
+    pkt->props->Set("level", AMF0Any::String("status"));
+    pkt->props->Set("code", AMF0Any::String("NetConnection.Connect.Success"));
+    pkt->props->Set("description", AMF0Any::String("Connection succeeded"));
+    pkt->props->Set("objectEncoding", AMF0Any::Number(req->object_encoding));
 
-    rtmp::AMF0EcmaArray *ecma_array = rtmp::AMF0Any::EcmaArray();
+    AMF0EcmaArray *ecma_array = AMF0Any::EcmaArray();
     pkt->props->Set("data", ecma_array);
 
-    ecma_array->Set("version", rtmp::AMF0Any::String("3,5,3,888"));
+    ecma_array->Set("version", AMF0Any::String("3,5,3,888"));
 
     if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
     {
@@ -310,8 +310,8 @@ int RTMPServer::StartFmlePublish(int stream_id)
     {
         rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
         pkt->command_name = RTMP_AMF0_COMMAND_ON_FC_PUBLISH;
-        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Publish.Start"));
-        pkt->data->Set("description", rtmp::AMF0Any::String("Started publishing stream"));
+        pkt->data->Set("code", AMF0Any::String("NetStream.Publish.Start"));
+        pkt->data->Set("description", AMF0Any::String("Started publishing stream"));
 
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
         {
@@ -322,10 +322,10 @@ int RTMPServer::StartFmlePublish(int stream_id)
     }
     {
         rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
-        pkt->data->Set("level", rtmp::AMF0Any::String("status"));
-        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Publish.Start"));
-        pkt->data->Set("description", rtmp::AMF0Any::String("Started publishing stream"));
-        pkt->data->Set("clientid", rtmp::AMF0Any::String("ASAICiss"));
+        pkt->data->Set("level", AMF0Any::String("status"));
+        pkt->data->Set("code", AMF0Any::String("NetStream.Publish.Start"));
+        pkt->data->Set("description", AMF0Any::String("Started publishing stream"));
+        pkt->data->Set("clientid", AMF0Any::String("ASAICiss"));
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
         {
             rs_error("send onStatus(NetStream.Publish.Start) message failed,ret=%d", ret);
@@ -363,8 +363,8 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
     {
         rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
         pkt->command_name = RTMP_AMF0_COMMAND_ON_FC_UNPUBLISH;
-        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Unpublish.Success"));
-        pkt->data->Set("description", rtmp::AMF0Any::String("Stop publishing stream"));
+        pkt->data->Set("code", AMF0Any::String("NetStream.Unpublish.Success"));
+        pkt->data->Set("description", AMF0Any::String("Stop publishing stream"));
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
         {
             if (!IsSystemControlError(ret) && !IsClientGracefullyClose(ret))
@@ -389,10 +389,10 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
     }
     {
         rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
-        pkt->data->Set("level", rtmp::AMF0Any::String("status"));
-        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Unpublish.Success"));
-        pkt->data->Set("description", rtmp::AMF0Any::String("Stream is now unpublished"));
-        pkt->data->Set("clientid", rtmp::AMF0Any::String("ASAICiss"));
+        pkt->data->Set("level", AMF0Any::String("status"));
+        pkt->data->Set("code", AMF0Any::String("NetStream.Unpublish.Success"));
+        pkt->data->Set("description", AMF0Any::String("Stream is now unpublished"));
+        pkt->data->Set("clientid", AMF0Any::String("ASAICiss"));
 
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
         {
