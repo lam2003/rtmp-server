@@ -796,13 +796,13 @@ int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
     {
         oss << ", height=" << (int)prop->ToNumber();
     }
-    if ((prop = pkt->metadata->EnsurePropertyNumber("videocodecid")) != nullptr)
+    if ((prop = pkt->metadata->EnsurePropertyString("videocodecid")) != nullptr)
     {
-        oss << ", vcodec=" << (int)prop->ToNumber();
+        oss << ", vcodec=" << prop->ToString();
     }
-    if ((prop = pkt->metadata->EnsurePropertyNumber("audiocodecid")) != nullptr)
+    if ((prop = pkt->metadata->EnsurePropertyString("audiocodecid")) != nullptr)
     {
-        oss << ", acodec=" << (int)prop->ToNumber();
+        oss << ", acodec=" << prop->ToString();
     }
 
     rs_trace("got metadata%s", oss.str().c_str());

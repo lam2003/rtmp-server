@@ -3,6 +3,7 @@ add_library(protocol
     amf0.cpp
     rtmp_source.cpp
     rtmp_edge.cpp
+    rtmp_packet.cpp
     flv.cpp
 )
 
