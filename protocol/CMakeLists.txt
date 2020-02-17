@@ -4,6 +4,7 @@ add_library(protocol
     rtmp_source.cpp
     rtmp_edge.cpp
     rtmp_packet.cpp
+    rtmp_message.cpp
     flv.cpp
 )
 

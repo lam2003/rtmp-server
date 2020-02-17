@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 13:14:31
- * @LastEditTime : 2020-02-12 10:25:51
+ * @LastEditTime : 2020-02-13 14:05:23
  */
 #include <app/dvr.hpp>
 #include <common/config.hpp>
@@ -281,7 +281,7 @@ int FlvSegment::WriteMetadata(rtmp::SharedPtrMessage *shared_metadata)
     obj->Set("filesize", nullptr);
     obj->Set("duration", nullptr);
 
-    obj->Set("service", AMF0Any::String(SIG_RS_SERVER));
+    obj->Set("service", AMF0Any::String(RS_SERVER));
     obj->Set("filesize", AMF0Any::Number(0));
     obj->Set("duration", AMF0Any::Number(0));
 

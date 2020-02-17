@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 14:08:50
- * @LastEditTime : 2020-02-12 10:23:46
+ * @LastEditTime: 2020-02-17 13:30:08
  */
 #include <protocol/flv.hpp>
 #include <common/utils.hpp>
@@ -21,9 +21,9 @@ Encoder::Encoder()
 }
 Encoder::~Encoder()
 {
-    rs_freep(iovss_cache_);
-    rs_freep(ppts_);
-    rs_freep(tag_headers_);
+    rs_freepa(iovss_cache_);
+    rs_freepa(ppts_);
+    rs_freepa(tag_headers_);
 }
 
 int Encoder::Initialize(FileWriter *writer)

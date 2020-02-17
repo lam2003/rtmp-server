@@ -6,9 +6,9 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define LOG_MAX_SIZE 4096
-#define LOG_TAIL '\n'
-#define LOG_TAIL_SIZE 1
+#define RS_LOG_MAX_SIZE 4096
+#define RS_LOG_TAIL '\n'
+#define RS_LOG_TAIL_SIZE 1
 
 ILog::ILog()
 {
@@ -70,7 +70,7 @@ FastLog::FastLog()
     fd_ = -1;
     log_to_file_tank_ = false;
     utc_ = false;
-    log_data_ = new char[LOG_MAX_SIZE];
+    log_data_ = new char[RS_LOG_MAX_SIZE];
     level_ = LogLevel::INFO;
 }
 
@@ -93,7 +93,7 @@ void FastLog::Verbose(const char *tag, int32_t context_id, const char *fmt, ...)
         return;
     va_list ap;
     va_start(ap, fmt);
-    size += vsnprintf(log_data_ + size, LOG_MAX_SIZE - size, fmt, ap);
+    size += vsnprintf(log_data_ + size, RS_LOG_MAX_SIZE - size, fmt, ap);
     va_end(ap);
     WriteLog(fd_, log_data_, size, LogLevel::VERBOSE);
 }
@@ -106,7 +106,7 @@ void FastLog::Info(const char *tag, int32_t context_id, const char *fmt, ...)
         return;
     va_list ap;
     va_start(ap, fmt);
-    size += vsnprintf(log_data_ + size, LOG_MAX_SIZE - size, fmt, ap);
+    size += vsnprintf(log_data_ + size, RS_LOG_MAX_SIZE - size, fmt, ap);
     va_end(ap);
     WriteLog(fd_, log_data_, size, LogLevel::INFO);
 }
@@ -119,7 +119,7 @@ void FastLog::Trace(const char *tag, int32_t context_id, const char *fmt, ...)
         return;
     va_list ap;
     va_start(ap, fmt);
-    size += vsnprintf(log_data_ + size, LOG_MAX_SIZE - size, fmt, ap);
+    size += vsnprintf(log_data_ + size, RS_LOG_MAX_SIZE - size, fmt, ap);
     va_end(ap);
     WriteLog(fd_, log_data_, size, LogLevel::TRACE);
 }
@@ -132,7 +132,7 @@ void FastLog::Warn(const char *tag, int32_t context_id, const char *fmt, ...)
         return;
     va_list ap;
     va_start(ap, fmt);
-    size += vsnprintf(log_data_ + size, LOG_MAX_SIZE - size, fmt, ap);
+    size += vsnprintf(log_data_ + size, RS_LOG_MAX_SIZE - size, fmt, ap);
     va_end(ap);
     WriteLog(fd_, log_data_, size, LogLevel::WARN);
 }
@@ -145,10 +145,10 @@ void FastLog::Error(const char *tag, int32_t context_id, const char *fmt, ...)
         return;
     va_list ap;
     va_start(ap, fmt);
-    size += vsnprintf(log_data_ + size, LOG_MAX_SIZE - size, fmt, ap);
+    size += vsnprintf(log_data_ + size, RS_LOG_MAX_SIZE - size, fmt, ap);
     va_end(ap);
-    if (errno != 0 && size < LOG_MAX_SIZE)
-        size += snprintf(log_data_ + size, LOG_MAX_SIZE - size, "(%s)", strerror(errno));
+    if (errno != 0 && size < RS_LOG_MAX_SIZE)
+        size += snprintf(log_data_ + size, RS_LOG_MAX_SIZE - size, "(%s)", strerror(errno));
     WriteLog(fd_, log_data_, size, LogLevel::ERROR);
 }
 
@@ -193,14 +193,14 @@ bool FastLog::GenerateHeader(bool error, const char *tag, int32_t context_id, co
     {
         if (tag)
         {
-            log_header_size = snprintf(log_data_, LOG_MAX_SIZE,
+            log_header_size = snprintf(log_data_, RS_LOG_MAX_SIZE,
                                        "[%d-%02d-%02d %02d:%02d:%02d.%03d][%s][%s][%d][%d][%d]",
                                        1900 + tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int32_t)(tv.tv_usec / 1000),
                                        level_name, tag, getpid(), context_id, errno);
         }
         else
         {
-            log_header_size = snprintf(log_data_, LOG_MAX_SIZE,
+            log_header_size = snprintf(log_data_, RS_LOG_MAX_SIZE,
                                        "[%d-%02d-%02d %02d:%02d:%02d.%03d][%s][%d][%d][%d]",
                                        1900 + tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int32_t)(tv.tv_usec / 1000),
                                        level_name, getpid(), context_id, errno);
@@ -210,14 +210,14 @@ bool FastLog::GenerateHeader(bool error, const char *tag, int32_t context_id, co
     {
         if (tag)
         {
-            log_header_size = snprintf(log_data_, LOG_MAX_SIZE,
+            log_header_size = snprintf(log_data_, RS_LOG_MAX_SIZE,
                                        "[%d-%02d-%02d %02d:%02d:%02d.%03d][%s][%s][%d][%d] ",
                                        1900 + tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int32_t)(tv.tv_usec / 1000),
                                        level_name, tag, getpid(), context_id);
         }
         else
         {
-            log_header_size = snprintf(log_data_, LOG_MAX_SIZE,
+            log_header_size = snprintf(log_data_, RS_LOG_MAX_SIZE,
                                        "[%d-%02d-%02d %02d:%02d:%02d.%03d][%s][%d][%d] ",
                                        1900 + tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int32_t)(tv.tv_usec / 1000),
                                        level_name, getpid(), context_id);
@@ -225,13 +225,13 @@ bool FastLog::GenerateHeader(bool error, const char *tag, int32_t context_id, co
     }
     if (log_header_size == -1)
         return false;
-    *header_size = rs_min(log_header_size, LOG_MAX_SIZE - 1);
+    *header_size = rs_min(log_header_size, RS_LOG_MAX_SIZE - RS_LOG_TAIL_SIZE);
     return true;
 }
 void FastLog::WriteLog(int32_t &fd_, char *str_log, int32_t size, int32_t level)
 {
-    size = rs_min(LOG_MAX_SIZE - 1, size);
-    str_log[size++] = LOG_TAIL;
+    size = rs_min(RS_LOG_MAX_SIZE - RS_LOG_TAIL_SIZE, size);
+    str_log[size++] = RS_LOG_TAIL;
     if (!log_to_file_tank_)
     {
         if (level == LogLevel::VERBOSE)

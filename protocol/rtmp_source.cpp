@@ -30,7 +30,7 @@ IWakeable::~IWakeable()
 FastVector::FastVector()
 {
     count_ = 0;
-    nb_msgs_ = RTMP_PERF_MW_MSGS * 8;
+    nb_msgs_ = RTMP_MR_MSGS * 8;
     msgs_ = new SharedPtrMessage *[nb_msgs_];
 }
 
@@ -277,7 +277,7 @@ void Consumer::Wait(int nb_msgs, int duration)
 {
     if (pause_)
     {
-        st_usleep(RTMP_PULSE_TIMEOUT_US);
+        st_usleep(-1);
         return;
     }
 
@@ -824,7 +824,7 @@ int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
     if ((ret = pkt->Encode(size, payload)) != ERROR_SUCCESS)
     {
         rs_error("encode metadata error. ret=%d", ret);
-        rs_freep(payload);
+        rs_freepa(payload);
         return ret;
     }
 

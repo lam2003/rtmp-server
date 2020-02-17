@@ -1,30 +1,38 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-11 20:15:08
- * @LastEditTime: 2020-02-12 10:31:04
+ * @LastEditTime: 2020-02-17 12:45:40
  */
 #ifndef RS_CONSTS_H
 #define RS_CONSTS_H
 
-#define RTMP_ST_NO_TIMEOUT (int64_t)(-1LL)
 #define RTMP_SEND_TIMEOUT_US (int64_t)(30 * 1000 * 1000LL)
 #define RTMP_RECV_TIMEOUT_US (int64_t)(30 * 1000 * 1000LL)
-//the timeout to wait for client control message
-#define RTMP_PULSE_TIMEOUT_US (int64_t)(500 * 1000LL)
+
 #define RTMP_DEFAULT_WINDOW_ACK_SIZE (2.5 * 1000 * 1000)
 #define RTMP_DEFAULT_PEER_BAND_WIDTH (2.5 * 1000 * 1000)
-//rtmp default port
+
 #define RTMP_DEFAULT_PORT "1935"
-//rtmp default vhost
 #define RTMP_DEFAULT_VHOST_PARAM "?vhost=__defaultVhost__"
 #define RTMP_DEFAULT_VHOST "__defaultVhost__"
-#define RTMP_PROTOCOL_CHUNK_SIZE 128
+
+//rtmp chunk size
+#define RTMP_DEFAULT_CHUNK_SIZE 128
 #define RTMP_MIN_CHUNK_SIZE 128
 #define RTMP_MAX_CHUNK_SIZE 65535
 //rtmp chunk stream cache num
 #define RTMP_CHUNK_STREAM_CHCAHE 16
 //rtmp fmt0 header size(max base header)
 #define RTMP_FMT0_HEADER_SIZE 16
+//rtmp timestamp_delta when extended timestamp enabled
+#define RTMP_EXTENDED_TIMESTAMP 0xffffff
+//rtmp jitter duration
+#define RTMP_MAX_JITTER_MS 250
+#define RTMP_MAX_JITTER_MS_NEG -250
+#define RTMP_DEFAULT_FRAME_TIME_MS 10
+//rtmp marge read small bytes
+#define RTMP_MR_SMALL_BYTES 4096
+#define RTMP_MR_MSGS 128
 
 //rtmp message header type
 #define RTMP_FMT_TYPE0 0
@@ -38,9 +46,6 @@
 #define RTMP_CID_OVER_CONNECTION2 0x04
 #define RTMP_CID_VIDEO 0x06
 #define RTMP_CID_AUDIO 0x07
-
-//rtmp timestamp_delta when extended timestamp enabled
-#define RTMP_EXTENDED_TIMESTAMP 0xffffff
 
 //rtmp message type
 #define RTMP_MSG_SET_CHUNK_SIZE 0x01
@@ -75,16 +80,5 @@
 #define RTMP_AMF0_COMMAND_ON_METADATA "onMetaData"
 #define RTMP_AMF0_COMMAND_SET_DATAFRAME "@setDataFrame"
 
-
-//rtmp perf
-#define RTMP_PERF_MW_MSGS 128
-
-//rtmp jitter duration
-#define RTMP_MAX_JITTER_MS 250
-#define RTMP_MAX_JITTER_MS_NEG -250
-#define RTMP_DEFAULT_FRAME_TIME_MS 10
-
-//rtmp marge read small bytes
-#define RTMP_MR_SMALL_BYTES 4096
 
 #endif

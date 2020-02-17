@@ -86,7 +86,7 @@ void RTMPRecvThread::OnThreadStop()
 void RTMPRecvThread::OnThreadStart()
 {
     //set never timeout can improve 33% performance
-    rtmp_->SetRecvTimeout(RTMP_ST_NO_TIMEOUT);
+    rtmp_->SetRecvTimeout(-1);
     handler_->OnThreadStart();
 }
 
