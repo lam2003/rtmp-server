@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-17 12:57:29
- * @LastEditTime: 2020-02-17 13:26:53
+ * @LastEditTime: 2020-02-18 12:54:40
  */
 #include <protocol/rtmp_message.hpp>
 #include <protocol/rtmp_consts.hpp>
@@ -213,6 +213,19 @@ void CommonMessage::CreatePayload(int32_t size)
 {
     rs_freepa(payload);
     payload = new char[size];
+}
+
+ChunkStream::ChunkStream(int cid)
+{
+    this->cid = cid;
+    fmt = 0;
+    msg = nullptr;
+    extended_timestamp = false;
+    msg_count = 0;
+}
+
+ChunkStream::~ChunkStream()
+{
 }
 
 /**

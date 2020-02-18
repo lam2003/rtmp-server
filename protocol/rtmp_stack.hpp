@@ -10,11 +10,19 @@
 #include <protocol/amf0.hpp>
 #include <protocol/rtmp_packet.hpp>
 #include <protocol/rtmp_message.hpp>
+#include <protocol/rtmp_handshake.hpp>
 
 #include <map>
 
 namespace rtmp
 {
+
+enum class ConnType
+{
+    UNKNOW = 0,
+    PLAY = 1,
+    FMLE_PUBLISH = 2,
+};
 
 extern void DiscoveryTcUrl(const std::string &tc_url,
                            std::string &schema,
@@ -24,14 +32,6 @@ extern void DiscoveryTcUrl(const std::string &tc_url,
                            std::string &stream,
                            std::string &port,
                            std::string &param);
-
-enum class ConnType
-{
-    UNKNOW = 0,
-    PLAY = 1,
-    FMLE_PUBLISH = 2,
-};
-
 
 class IMessageHandler
 {
@@ -45,59 +45,6 @@ public:
     virtual void OnRecvError(int32_t ret) = 0;
     virtual void OnThreadStart() = 0;
     virtual void OnThreadStop() = 0;
-};
-
-class ChunkStream
-{
-public:
-    ChunkStream(int cid);
-    virtual ~ChunkStream();
-
-public:
-    int cid;
-    char fmt;
-    CommonMessage *msg;
-    bool extended_timestamp;
-    int msg_count;
-    MessageHeader header;
-};
-
-
-
-class Client
-{
-};
-
-class HandshakeBytes
-{
-public:
-    HandshakeBytes();
-    virtual ~HandshakeBytes();
-
-    virtual int32_t ReadC0C1(IProtocolReaderWriter *rw);
-    virtual int32_t ReadS0S1S2(IProtocolReaderWriter *rw);
-    virtual int32_t ReadC2(IProtocolReaderWriter *rw);
-    virtual int32_t CreateC0C1();
-    virtual int32_t CreateS0S1S2(const char *c1 = NULL);
-    virtual int32_t CreateC2();
-
-public:
-    //1+1536
-    char *c0c1;
-    //1+1536+1536
-    char *s0s1s2;
-    //1536
-    char *c2;
-};
-
-class SimpleHandshake
-{
-public:
-    SimpleHandshake();
-    virtual ~SimpleHandshake();
-
-public:
-    virtual int32_t HandshakeWithClient(HandshakeBytes *handshake_bytes, IProtocolReaderWriter *rw);
 };
 
 class Request

@@ -24,14 +24,14 @@ int BufferManager::Initialize(char *b, int32_t nb)
     if (!b)
     {
         ret = ERROR_KERNEL_STREAM_INIT;
-        rs_error("buffer initialize with null b,ret=%d", ret);
+        rs_error("buffer initialize with null b. ret=%d", ret);
         return ret;
     }
 
     if (nb <= 0)
     {
         ret = ERROR_KERNEL_STREAM_INIT;
-        rs_error("buffer initialize with nb <= 0,ret=%d", ret);
+        rs_error("buffer initialize with nb <= 0. ret=%d", ret);
         return ret;
     }
 
@@ -291,11 +291,9 @@ int FastBuffer::Grow(IBufferReader *r, int required_size)
 
     if (free_space < required_size - used_space)
     {
-        rs_verbose("move fast buffer %d bytes", used_space);
         if (!used_space)
         {
             start_ = end_ = buf_;
-            rs_verbose("all consumed,reset fast buffer");
         }
         else if (used_space < capacity_ && start_ > buf_)
         {
@@ -310,7 +308,7 @@ int FastBuffer::Grow(IBufferReader *r, int required_size)
         if (free_space < required_size - used_space)
         {
             ret = ERROR_READER_BUFFER_OVERFLOW;
-            rs_error("buffer overflow,required=%d,max=%d,left=%d,ret=%d",
+            rs_error("buffer overflow, required=%d, max=%d, left=%d, ret=%d",
                      required_size, capacity_, free_space, ret);
             return ret;
         }

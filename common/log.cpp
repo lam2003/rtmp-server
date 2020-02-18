@@ -71,7 +71,7 @@ FastLog::FastLog()
     log_to_file_tank_ = false;
     utc_ = false;
     log_data_ = new char[RS_LOG_MAX_SIZE];
-    level_ = LogLevel::INFO;
+    level_ = LogLevel::VERBOSE;
 }
 
 FastLog::~FastLog()

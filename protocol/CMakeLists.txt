@@ -5,6 +5,7 @@ add_library(protocol
     rtmp_edge.cpp
     rtmp_packet.cpp
     rtmp_message.cpp
+    rtmp_handshake.cpp
     flv.cpp
 )
 

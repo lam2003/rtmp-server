@@ -1,3 +1,8 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-18 12:52:35
+ * @LastEditTime: 2020-02-18 13:03:16
+ */
 #ifndef RS_RTMP_EDGE_HPP
 #define RS_RTMP_EDGE_HPP
 
@@ -54,7 +59,6 @@ private:
     st_netfd_t stfd_;
     IProtocolReaderWriter *rw_;
     Kbps *kbps_;
-    Client *client_;
     int origin_index_;
 };
 

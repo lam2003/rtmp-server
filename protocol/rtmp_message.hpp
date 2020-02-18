@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-17 12:54:14
- * @LastEditTime: 2020-02-17 13:22:47
+ * @LastEditTime: 2020-02-18 12:53:05
  */
 
 #ifndef RS_RTMP_MESSAGE_HPP
@@ -64,6 +64,21 @@ public:
 public:
     int32_t size;
     char *payload;
+    MessageHeader header;
+};
+
+class ChunkStream
+{
+public:
+    ChunkStream(int cid);
+    virtual ~ChunkStream();
+
+public:
+    int cid;
+    char fmt;
+    CommonMessage *msg;
+    bool extended_timestamp;
+    int msg_count;
     MessageHeader header;
 };
 
