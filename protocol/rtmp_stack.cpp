@@ -920,7 +920,7 @@ int Protocol::OnRecvMessage(CommonMessage *msg)
         return ret;
     }
 
-    //only handle rtmp control message,but not rtmp command message
+    //only handle rtmp control message, but not rtmp command message
     Packet *packet = nullptr;
     switch (msg->header.message_type)
     {

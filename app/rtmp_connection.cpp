@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime : 2020-02-10 17:41:39
+ * @LastEditTime: 2020-02-21 13:07:28
  */
 
 #include <app/rtmp_connection.hpp>
@@ -45,13 +45,13 @@ int32_t RTMPConnection::DoCycle()
 
     if ((ret = rtmp_->Handshake()) != ERROR_SUCCESS)
     {
-        rs_error("rtmp handshake failed,ret=%d", ret);
+        rs_error("rtmp handshake failed. ret=%d", ret);
         return ret;
     }
 
     if ((ret = rtmp_->ConnectApp(request_)) != ERROR_SUCCESS)
     {
-        rs_error("rtmp connect app failed,ret=%d", ret);
+        rs_error("rtmp connect app failed. ret=%d", ret);
         return ret;
     }
 
@@ -70,7 +70,7 @@ int32_t RTMPConnection::StreamServiceCycle()
 
     if ((ret = rtmp_->IdentifyClient(response_->stream_id, type, request_->stream, request_->duration)) != ERROR_SUCCESS)
     {
-        rs_error("identify client failed,ret=%d");
+        rs_error("identify client failed. ret=%d");
         return ret;
     }
 
@@ -87,20 +87,14 @@ int32_t RTMPConnection::StreamServiceCycle()
     if (request_->schema.empty() || request_->vhost.empty() || request_->port.empty() || request_->app.empty())
     {
         ret = ERROR_RTMP_REQ_TCURL;
-        rs_error("discovery tcUrl failed,tcUrl=%s,schema=%s,vhost=%s,port=%s,app=%s,ret=%d",
-                 request_->tc_url.c_str(),
-                 request_->schema.c_str(),
-                 request_->vhost.c_str(),
-                 request_->port.c_str(),
-                 request_->app.c_str(),
-                 ret);
+        rs_error("discovery tcUrl failed. ret=%d",ret);
         return ret;
     }
 
     if (request_->stream.empty())
     {
         ret = ERROR_RTMP_STREAM_NAME_EMPTY;
-        rs_error("rtmp:empty stream name is not allowed,ret=%d", ret);
+        rs_error("empty stream name is not allowed, ret=%d", ret);
         return ret;
     }
 
@@ -114,10 +108,9 @@ int32_t RTMPConnection::StreamServiceCycle()
     switch (type)
     {
     case rtmp::ConnType::FMLE_PUBLISH:
-        rs_info("FMLE start to publish stream %s", request_->stream.c_str());
         if ((ret = rtmp_->StartFmlePublish(response_->stream_id)) != ERROR_SUCCESS)
         {
-            rs_error("start to publish stream failed,ret=%d", ret);
+            rs_error("start to publish stream failed. ret=%d", ret);
             return ret;
         }
         return Publishing(source);
@@ -139,8 +132,6 @@ int32_t RTMPConnection::Publishing(rtmp::Source *source)
     {
         PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ != rtmp::ConnType::FMLE_PUBLISH, vhost_is_edge);
 
-        rs_info("start to publish stream %s success.", request_->stream.c_str());
-
         ret = do_publishing(source, &recv_thread);
 
         recv_thread.Stop();
@@ -155,13 +146,13 @@ int32_t RTMPConnection::ServiceCycle()
 
     if ((ret = rtmp_->SetWindowAckSize((int)RTMP_DEFAULT_WINDOW_ACK_SIZE)) != ERROR_SUCCESS)
     {
-        rs_error("set window ackowledgement size failed,ret=%d", ret);
+        rs_error("set window ackowledgement size failed. ret=%d", ret);
         return ret;
     }
 
     if ((ret = rtmp_->SetPeerBandwidth((int)RTMP_DEFAULT_PEER_BAND_WIDTH, (int)rtmp::PeerBandwidthType::DYNAMIC)) != ERROR_SUCCESS)
     {
-        rs_error("set peer bandwidth failed,ret=%d", ret);
+        rs_error("set peer bandwidth failed. ret=%d", ret);
         return ret;
     }
 
@@ -170,13 +161,13 @@ int32_t RTMPConnection::ServiceCycle()
     int chunk_size = _config->GetChunkSize(request_->vhost);
     if ((ret = rtmp_->SetChunkSize(chunk_size)) != ERROR_SUCCESS)
     {
-        rs_error("set chunk size failed,ret=%d", ret);
+        rs_error("set chunk size failed. ret=%d", ret);
         return ret;
     }
 
     if ((ret = rtmp_->ResponseConnectApp(request_, local_ip)) != ERROR_SUCCESS)
     {
-        rs_error("response connect app failed,ret=%d");
+        rs_error("response connect app failed. ret=%d");
         return ret;
     }
 
@@ -230,7 +221,7 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
         rtmp::Packet *packet = nullptr;
         if ((ret = rtmp_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
         {
-            rs_error("decode onMetaData message failed. ret=%d", ret);
+            rs_error("decode on_metadata message failed. ret=%d", ret);
             return ret;
         }
         rs_auto_free(rtmp::Packet, packet);
@@ -260,7 +251,7 @@ int RTMPConnection::handle_publish_message(rtmp::Source *source, rtmp::CommonMes
         rtmp::Packet *packet = nullptr;
         if ((ret = rtmp_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
         {
-            rs_error("fmle decode unpublish message failed. ret=%d", ret);
+            rs_error("FMLE decode unpublish message failed. ret=%d", ret);
             return ret;
         }
 
@@ -319,7 +310,7 @@ void RTMPConnection::set_socket_option()
         }
 
         getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nv, &nb_v);
-        rs_trace("set socket TCP_NODELAY=%d success. %d=>%d", tcp_nodelay_, ov, nv);
+        rs_trace("set socket TCP_NODELAY=%d success. %d => %d", tcp_nodelay_, ov, nv);
     }
 }
 
@@ -404,7 +395,7 @@ int RTMPConnection::do_publishing(rtmp::Source *source, PublishRecvThread *recv_
         if (recv_thread->GetMsgNum() <= nb_msgs)
         {
             ret = ERROR_SOCKET_TIMEOUT;
-            rs_warn("publish timeout %dms, nb_msgs=%lld, ret=%d.", nb_msgs ? publish_normal_pkt_timeout_ : publish_first_pkt_timeout_, nb_msgs, ret);
+            rs_warn("publish timeout %dms, nb_msgs=%lld, ret=%d", nb_msgs ? publish_normal_pkt_timeout_ : publish_first_pkt_timeout_, nb_msgs, ret);
             break;
         }
 

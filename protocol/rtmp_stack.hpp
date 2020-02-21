@@ -124,7 +124,7 @@ public:
             {
                 if (!IsClientGracefullyClose(ret))
                 {
-                    rs_error("recv message failed,ret=%d", ret);
+                    rs_error("recv message failed. ret=%d", ret);
                 }
                 return ret;
             }
@@ -132,7 +132,7 @@ public:
             Packet *packet = nullptr;
             if ((ret = DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
             {
-                rs_error("decode message failed,ret=%d", ret);
+                rs_error("decode message failed. ret=%d", ret);
                 rs_freep(msg);
                 rs_freep(packet);
                 return ret;
@@ -141,7 +141,6 @@ public:
             T *pkt = dynamic_cast<T *>(packet);
             if (!pkt)
             {
-                rs_warn("drop message(type=%d,size=%d,time=%lld,sid=%d)", msg->header.message_type, msg->header.payload_length, msg->header.timestamp, msg->header.stream_id);
                 rs_freep(msg);
                 rs_freep(packet);
                 continue;
