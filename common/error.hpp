@@ -257,6 +257,8 @@
 #define ERROR_SOURCE_NOT_FOUND 9002
 #define ERROR_USER_END 9999
 
+#define ERROR_DECODE_FLV_FAILED 10000
+#define ERROR_DECODE_H264_FAILED 10001
 extern bool IsClientGracefullyClose(int32_t err_code);
 extern bool IsSystemControlError(int err_code);
 #endif

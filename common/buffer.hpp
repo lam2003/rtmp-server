@@ -1,3 +1,8 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-21 12:51:16
+ * @LastEditTime: 2020-02-21 17:56:49
+ */
 #ifndef RS_BUFFER_HPP
 #define RS_BUFFER_HPP
 
@@ -43,6 +48,23 @@ private:
     char *buf_;
     char *ptr_;
     int32_t size_;
+};
+
+class BitBufferManager
+{
+public:
+    BitBufferManager();
+    virtual ~BitBufferManager();
+
+public:
+    virtual int Initialize(BufferManager *manager);
+    virtual bool Empty();
+    virtual int8_t ReadBit();
+
+private:
+    int8_t cb_;
+    uint8_t cb_left_;
+    BufferManager *manager_;
 };
 
 class FastBuffer

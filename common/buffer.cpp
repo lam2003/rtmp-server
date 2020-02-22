@@ -214,6 +214,47 @@ void BufferManager::WriteBytes(char *data, int32_t size)
     ptr_ += size;
 }
 
+BitBufferManager::BitBufferManager()
+{
+    cb_ = 0;
+    cb_left_ = 0;
+    manager_ = nullptr;
+}
+
+BitBufferManager::~BitBufferManager()
+{
+}
+
+int BitBufferManager::Initialize(BufferManager *manager)
+{
+    manager_ = manager;
+    return ERROR_SUCCESS;
+}
+
+bool BitBufferManager::Empty()
+{
+    if (cb_left_)
+    {
+        return false;
+    }
+
+    return manager_->Empty();
+}
+
+int8_t BitBufferManager::ReadBit()
+{
+    if (!cb_left_)
+    {
+        rs_assert(!manager_->Empty());
+        cb_ = manager_->Read1Bytes();
+        cb_left_ = 8;
+    }
+
+    int8_t v = (cb_ >> (cb_left_ - 1)) & 0x01;
+    cb_left_--;
+    return v;
+}
+
 FastBuffer::FastBuffer() : merged_read_(false),
                            mr_handler_(nullptr)
 {

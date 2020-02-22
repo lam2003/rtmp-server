@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime: 2020-02-21 13:07:28
+ * @LastEditTime: 2020-02-21 13:16:37
  */
 
 #include <app/rtmp_connection.hpp>
@@ -87,7 +87,7 @@ int32_t RTMPConnection::StreamServiceCycle()
     if (request_->schema.empty() || request_->vhost.empty() || request_->port.empty() || request_->app.empty())
     {
         ret = ERROR_RTMP_REQ_TCURL;
-        rs_error("discovery tcUrl failed. ret=%d",ret);
+        rs_error("discovery tcUrl failed. ret=%d", ret);
         return ret;
     }
 
@@ -212,6 +212,15 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
         if ((ret = source->OnAudio(msg)) != ERROR_SUCCESS)
         {
             rs_error("source process audio message failed. ret=%d", ret);
+            return ret;
+        }
+    }
+
+    if (msg->header.IsVideo())
+    {
+        if ((ret = source->OnVideo(msg)) != ERROR_SUCCESS)
+        {
+            rs_error("source process video message failed. ret=%d", ret);
             return ret;
         }
     }

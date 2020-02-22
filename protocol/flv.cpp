@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 14:08:50
- * @LastEditTime: 2020-02-17 13:30:08
+ * @LastEditTime: 2020-02-21 16:38:54
  */
 #include <protocol/flv.hpp>
 #include <common/utils.hpp>
@@ -477,7 +477,7 @@ int Codec::DemuxAudio(char *data, int size, CodecSample *sample)
     sample->acodec = (AudioCodecType)audio_codec_id;
     sample->sound_type = (AudioSoundType)sound_type;
     sample->sound_size = (AudioSampleSize)sound_size;
-    sample->flv_sample_rate = (FLVSampleRate)sound_rate;
+    sample->flv_sample_rate = (AudioSampleRate)sound_rate;
 
     if (audio_codec_id == (int)AudioCodecType::MP3)
     {
@@ -547,13 +547,13 @@ int Codec::DemuxAudio(char *data, int size, CodecSample *sample)
         switch (aac_sample_rates[sample_rate])
         {
         case 11025:
-            sample->flv_sample_rate = FLVSampleRate::SAMPLE_RATE_11025;
+            sample->flv_sample_rate = AudioSampleRate::SAMPLE_RATE_11025;
             break;
         case 22050:
-            sample->flv_sample_rate = FLVSampleRate::SAMPLE_RATE_22050;
+            sample->flv_sample_rate = AudioSampleRate::SAMPLE_RATE_22050;
             break;
         case 44100:
-            sample->flv_sample_rate = FLVSampleRate::SAMPLE_RATE_44100;
+            sample->flv_sample_rate = AudioSampleRate::SAMPLE_RATE_44100;
             break;
         default:
             break;
@@ -595,84 +595,5 @@ std::string AACProfile2Str(AACObjectType object_type)
     }
 }
 
-CodecSampleUnit::CodecSampleUnit()
-{
-    size = 0;
-    bytes = nullptr;
-}
-
-CodecSampleUnit::~CodecSampleUnit()
-{
-}
-
-CodecSample::CodecSample()
-{
-    Clear();
-}
-
-CodecSample::~CodecSample()
-{
-}
-
-void CodecSample::Clear()
-{
-    is_video = false;
-    acodec = AudioCodecType::UNKNOW;
-    flv_sample_rate = FLVSampleRate::UNKNOW;
-    aac_sample_rate = 0;
-    sound_size = AudioSampleSize::UNKNOW;
-    sound_type = AudioSoundType::UNKNOW;
-    aac_packet_type = AudioPacketType::UNKNOW;
-    nb_sample_units = 0;
-    cts = 0;
-    has_idr = false;
-    has_sps_pps = false;
-    has_aud = false;
-    first_nalu_type = AVCNaluType::UNKNOW;
-}
-
-int CodecSample::AddSampleUnit(char *bytes, int size)
-{
-    int ret = ERROR_SUCCESS;
-
-    if (nb_sample_units >= MAX_CODEC_SAMPLE)
-    {
-        ret = ERROR_SAMPLE_EXCEED;
-        rs_error("codec sample exceed the max count: %d. ret=%d", MAX_CODEC_SAMPLE, ret);
-        return ret;
-    }
-
-    CodecSampleUnit *sample_unit = &sample_units[nb_sample_units++];
-    sample_unit->bytes = bytes;
-    sample_unit->size = size;
-
-    if (is_video)
-    {
-        AVCNaluType nalu_type = (AVCNaluType)(bytes[0] & 0x1f);
-        if (nalu_type == AVCNaluType::IDR)
-        {
-            has_idr = true;
-        }
-        else if (nalu_type == AVCNaluType::SPS || nalu_type == AVCNaluType::PPS)
-        {
-            has_sps_pps = true;
-        }
-        else if (nalu_type == AVCNaluType::ACCESS_UNIT_DELIMITER)
-        {
-            has_aud = true;
-        }
-        else
-        {
-            //ignore
-        }
-
-        if (first_nalu_type == AVCNaluType::UNKNOW)
-        {
-            first_nalu_type = nalu_type;
-        }
-    }
-
-    return ret;
-}
 
 } // namespace flv

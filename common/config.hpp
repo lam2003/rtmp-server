@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 11:59:08
- * @LastEditTime : 2020-02-10 16:26:59
+ * @LastEditTime: 2020-02-21 13:38:28
  */
 #ifndef RS_CONFIG_HPP
 #define RS_CONFIG_HPP
@@ -53,6 +53,7 @@ public:
     virtual int GetDrvDuration(const std::string &vhost);
     virtual bool GetDvrEnbaled(const std::string &vhost);
     virtual bool GetATCAuto(const std::string &vhost);
+    virtual bool GetParseSPS(const std::string &vhost);
 };
 
 extern Config *_config;

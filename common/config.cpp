@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 13:11:52
- * @LastEditTime : 2020-02-10 17:29:52
+ * @LastEditTime: 2020-02-21 16:30:14
  */
 #include <common/config.hpp>
 
@@ -111,6 +111,11 @@ int Config::GetDrvDuration(const std::string &vhost)
 }
 
 bool Config::GetDvrEnbaled(const std::string &vhost)
+{
+    return true;
+}
+
+bool Config::GetParseSPS(const std::string &vhost)
 {
     return true;
 }
