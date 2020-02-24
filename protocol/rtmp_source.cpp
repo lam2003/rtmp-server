@@ -504,7 +504,7 @@ SharedPtrMessage *MixQueue::Pop()
     {
         mix_ok = true;
     }
-    if (nb_audios_ > MIX_CORRECT_PURE_AV && nb_videos_ == 0)
+    if (nb_audios_ >= MIX_CORRECT_PURE_AV && nb_videos_ == 0)
     {
         mix_ok = true;
     }
@@ -645,7 +645,7 @@ int Source::on_video_impl(SharedPtrMessage *msg)
 
     bool is_sequence_hander = flv::Codec::IsVideoSeqenceHeader(msg->payload, msg->size);
     bool drop_for_reduce = false;
-    
+
     if (is_sequence_hander && cache_sh_video_ && _config->GetReduceSequenceHeader(request_->host))
     {
         if (cache_sh_video_->size == msg->size)
@@ -659,11 +659,16 @@ int Source::on_video_impl(SharedPtrMessage *msg)
     {
         rs_freep(cache_sh_video_);
         cache_sh_video_ = msg->Copy();
-    
+
         flv::AVInfo info;
         info.avc_parse_sps = _config->GetParseSPS(request_->vhost);
-        
-        
+
+        flv::CodecSample sample;
+        if ((ret = info.AVCDemux(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
+        {
+            rs_error("source codec demux avc failed. ret=%d", ret);
+            return ret;
+        }
     }
 
     return ret;
@@ -783,6 +788,49 @@ int Source::OnAudio(CommonMessage *msg)
 int Source::OnVideo(CommonMessage *msg)
 {
     int ret = ERROR_SUCCESS;
+
+    if (!mix_correct_ && is_monotonically_increase_)
+    {
+        if (last_packet_time_ > 0 && msg->header.timestamp < last_packet_time_)
+        {
+            is_monotonically_increase_ = false;
+            rs_warn("VIDEO: stream not monotonically increase, please open mix_correct.");
+        }
+    }
+
+    last_packet_time_ = msg->header.timestamp;
+
+    SharedPtrMessage shared_msg;
+    if ((shared_msg.Create(msg)) != ERROR_SUCCESS)
+    {
+        rs_error("initialize the video failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (!mix_correct_)
+    {
+        return on_video_impl(&shared_msg);
+    }
+
+    mix_queue_->Push(shared_msg.Copy());
+
+    SharedPtrMessage *m = mix_queue_->Pop();
+    if (!m)
+    {
+        return ret;
+    }
+
+    if (m->IsAudio())
+    {
+        on_audio_impl(m);
+    }
+    else
+    {
+        on_video_impl(m);
+    }
+
+    rs_freep(m);
+
     return ret;
 }
 

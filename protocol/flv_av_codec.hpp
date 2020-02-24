@@ -10,6 +10,7 @@
 #include <common/buffer.hpp>
 
 #define MAX_CODEC_SAMPLE 128
+#define AAC_SAMPLE_RATE_UNSET 15
 
 namespace flv
 {
@@ -230,6 +231,7 @@ public:
 private:
     int avc_demux_sequence_header(BufferManager *manager);
     int avc_demux_sps();
+    int avc_demux_sps_rbsp(char *rbsp, int nb_rbsp);
 
 public:
     int duration;

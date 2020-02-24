@@ -320,7 +320,7 @@ bool Codec::IsH264(char *data, int size)
         return false;
     }
 
-    char codec_id = data[0];
+    char codec_id = data[0] & 0x0f;
 
     return codec_id == (char)VideoCodecType::AVC;
 }
@@ -594,6 +594,5 @@ std::string AACProfile2Str(AACObjectType object_type)
         return "Other";
     }
 }
-
 
 } // namespace flv
