@@ -259,7 +259,7 @@
 
 #define ERROR_DECODE_FLV_FAILED 10000
 #define ERROR_DECODE_H264_FAILED 10001
-
+#define ERROR_AVC_TRY_OTHERS 10002
 
 #define ERROR_BIT_BUFFER_MANAGER_EMPTY 20000
 extern bool IsClientGracefullyClose(int32_t err_code);

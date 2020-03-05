@@ -229,9 +229,14 @@ public:
     int AVCDemux(char *data, int size, CodecSample *sample);
 
 private:
-    int avc_demux_sequence_header(BufferManager *manager);
+    int avc_demux_sps_pps(BufferManager *manager);
     int avc_demux_sps();
     int avc_demux_sps_rbsp(char *rbsp, int nb_rbsp);
+    int avc_demux_nalu(BufferManager *manager, CodecSample *sample);
+    int avc_demux_annexb_format(BufferManager *manager, CodecSample *sample);
+    int avc_demux_ibmf_format(BufferManager *manager, CodecSample *sample);
+    bool avc_start_with_annexb(BufferManager *manager, int *pnb_start_code);
+    bool avc_has_sequence_header();
 
 public:
     int duration;

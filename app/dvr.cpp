@@ -7,6 +7,10 @@
 #include <common/config.hpp>
 #include <protocol/amf0.hpp>
 
+//48kHz/1024=46.875fps
+//46.875fps*10s=468.75
+#define NUM_TO_JUDGE_DVR_ONLY_HAS_AUDIO 500
+
 FlvSegment::FlvSegment(DvrPlan *plan)
 {
     request_ = nullptr;
@@ -361,7 +365,7 @@ int FlvSegment::WriteVideo(rtmp::SharedPtrMessage *shared_video)
 
     if (is_keyframe)
     {
-        is_keyframe = true;
+        has_keyframe_ = true;
         if ((ret = plan_->on_keyframe()) != ERROR_SUCCESS)
         {
             return ret;
@@ -530,14 +534,6 @@ DvrPlan *DvrPlan::CreatePlan(const std::string &vhost)
     {
         return new DvrSegmentPlan;
     }
-    else if (rs_config_dvr_is_plan_append(plan))
-    {
-        return new DvrAppendPlan;
-    }
-    else if (rs_config_dvr_is_plan_session(plan))
-    {
-        return new DvrSessionPlan;
-    }
     else
     {
         rs_error("invalid dvr plan=%s, vhost=%s", plan.c_str(), vhost.c_str());
@@ -549,6 +545,7 @@ DvrSegmentPlan::DvrSegmentPlan()
 {
     segment_duration_ = -1;
     sh_video_ = sh_audio_ = metadata_ = nullptr;
+    audio_num_before_segment_ = 0;
 }
 
 DvrSegmentPlan::~DvrSegmentPlan()
@@ -568,7 +565,7 @@ int DvrSegmentPlan::Initialize(rtmp::Request *request)
 
     segment_duration_ = _config->GetDrvDuration(request->vhost);
     segment_duration_ *= 1000;
-    
+
     return ret;
 }
 
@@ -631,7 +628,7 @@ int DvrSegmentPlan::update_duration(rtmp::SharedPtrMessage *msg)
 
     if (_config->GetDvrWaitKeyFrame(request_->vhost))
     {
-        //sometime we only has audio
+
         if (msg->IsVideo())
         {
             char *payload = msg->payload;
@@ -641,6 +638,13 @@ int DvrSegmentPlan::update_duration(rtmp::SharedPtrMessage *msg)
             {
                 return ret;
             }
+            audio_num_before_segment_ = 0;
+        }
+
+        if (audio_num_before_segment_ < NUM_TO_JUDGE_DVR_ONLY_HAS_AUDIO && msg->IsAudio())
+        {
+            audio_num_before_segment_++;
+            return ret;
         }
     }
 
@@ -676,6 +680,12 @@ int DvrSegmentPlan::OnAudio(rtmp::SharedPtrMessage *shared_audio)
 {
     int ret = ERROR_SUCCESS;
 
+    if (flv::Codec::IsAudioSeqenceHeader(shared_audio->payload, shared_audio->size))
+    {
+        rs_freep(sh_audio_);
+        sh_audio_ = shared_audio->Copy();
+    }
+
     if ((ret = update_duration(shared_audio)) != ERROR_SUCCESS)
     {
         return ret;
@@ -693,6 +703,12 @@ int DvrSegmentPlan::OnVideo(rtmp::SharedPtrMessage *shared_video)
 {
     int ret = ERROR_SUCCESS;
 
+    if (flv::Codec::IsVideoSeqenceHeader(shared_video->payload, shared_video->size))
+    {
+        rs_freep(sh_video_);
+        sh_video_ = shared_video->Copy();
+    }
+
     if ((ret = update_duration(shared_video)) != ERROR_SUCCESS)
     {
         return ret;
@@ -704,40 +720,6 @@ int DvrSegmentPlan::OnVideo(rtmp::SharedPtrMessage *shared_video)
     }
 
     return ret;
-}
-
-DvrAppendPlan::DvrAppendPlan()
-{
-}
-DvrAppendPlan::~DvrAppendPlan()
-{
-}
-
-int DvrAppendPlan::OnPublish()
-{
-    int ret = ERROR_SUCCESS;
-    return ret;
-}
-
-void DvrAppendPlan::OnUnpublish()
-{
-}
-
-DvrSessionPlan::DvrSessionPlan()
-{
-}
-DvrSessionPlan::~DvrSessionPlan()
-{
-}
-
-int DvrSessionPlan::OnPublish()
-{
-    int ret = ERROR_SUCCESS;
-    return ret;
-}
-
-void DvrSessionPlan::OnUnpublish()
-{
 }
 
 Dvr::Dvr()

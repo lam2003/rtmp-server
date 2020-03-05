@@ -16,14 +16,6 @@ inline bool rs_config_dvr_is_plan_segment(const std::string &plan)
 {
     return plan == RS_CONFIG_NVR_PLAN_SEGMENT;
 }
-inline bool rs_config_dvr_is_plan_append(const std::string &plan)
-{
-    return plan == RS_CONFIG_NVR_PLAN_APPEND;
-}
-inline bool rs_config_dvr_is_plan_session(const std::string &plan)
-{
-    return plan == RS_CONFIG_NVR_PLAN_SESSION;
-}
 
 class Config
 {

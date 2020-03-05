@@ -8,6 +8,7 @@
 
 #include <common/core.hpp>
 #include <common/file.hpp>
+#include <common/queue.hpp>
 #include <protocol/flv.hpp>
 #include <protocol/rtmp_source.hpp>
 
@@ -104,28 +105,7 @@ private:
     rtmp::SharedPtrMessage *sh_video_;
     rtmp::SharedPtrMessage *sh_audio_;
     rtmp::SharedPtrMessage *metadata_;
-};
-
-class DvrAppendPlan : public DvrPlan
-{
-public:
-    DvrAppendPlan();
-    virtual ~DvrAppendPlan();
-
-public:
-    virtual int OnPublish() override;
-    virtual void OnUnpublish() override;
-};
-
-class DvrSessionPlan : public DvrPlan
-{
-public:
-    DvrSessionPlan();
-    virtual ~DvrSessionPlan();
-
-public:
-    virtual int OnPublish() override;
-    virtual void OnUnpublish() override;
+    int audio_num_before_segment_;
 };
 
 class Dvr

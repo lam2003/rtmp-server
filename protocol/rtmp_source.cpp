@@ -27,94 +27,6 @@ IWakeable::~IWakeable()
 {
 }
 
-FastVector::FastVector()
-{
-    count_ = 0;
-    nb_msgs_ = RTMP_MR_MSGS * 8;
-    msgs_ = new SharedPtrMessage *[nb_msgs_];
-}
-
-FastVector::~FastVector()
-{
-    Free();
-    rs_freepa(msgs_);
-}
-
-int FastVector::Size()
-{
-    return count_;
-}
-
-int FastVector::Begin()
-{
-    return 0;
-}
-
-int FastVector::End()
-{
-    return count_;
-}
-
-SharedPtrMessage **FastVector::Data()
-{
-    return msgs_;
-}
-
-SharedPtrMessage *FastVector::At(int index)
-{
-    return msgs_[index];
-}
-
-void FastVector::Free()
-{
-    for (int i = 0; i < count_; i++)
-    {
-        SharedPtrMessage *msg = msgs_[i];
-        rs_freep(msg);
-    }
-    count_ = 0;
-}
-
-void FastVector::Clear()
-{
-    count_ = 0;
-}
-
-void FastVector::Erase(int begin, int end)
-{
-    for (int i = begin; i < end; i++)
-    {
-        SharedPtrMessage *msg = msgs_[i];
-        rs_freep(msg);
-    }
-
-    for (int i = 0; i < count_ - end; i++)
-    {
-        msgs_[begin + i] = msgs_[end + i];
-    }
-
-    count_ -= (end - begin);
-}
-
-void FastVector::PushBack(SharedPtrMessage *msg)
-{
-    if (count_ >= nb_msgs_)
-    {
-        int size = nb_msgs_ * 2;
-
-        SharedPtrMessage **buf = new SharedPtrMessage *[size];
-        for (int i = 0; i < nb_msgs_; i++)
-        {
-            buf[i] = msgs_[i];
-        }
-
-        rs_warn("fast vector incrase %d=>%d", nb_msgs_, size);
-        rs_freepa(msgs_);
-        msgs_ = buf;
-        nb_msgs_ = size;
-    }
-    msgs_[count_++] = msg;
-}
 
 Jitter::Jitter()
 {
@@ -670,6 +582,14 @@ int Source::on_video_impl(SharedPtrMessage *msg)
             return ret;
         }
     }
+
+   if ((ret = dvr_->OnVideo(msg)) != ERROR_SUCCESS)
+    {
+        rs_warn("dvr process video message failed, ignore and disable dvr. ret=%d", ret);
+        dvr_->OnUnpubish();
+        ret = ERROR_SUCCESS;
+    }
+
 
     return ret;
 }
