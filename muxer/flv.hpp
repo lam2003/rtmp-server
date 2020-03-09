@@ -14,7 +14,7 @@
 
 namespace flv
 {
-    
+
 enum class VideoCodecType
 {
     UNKNOW = 0,
@@ -36,7 +36,7 @@ enum class VideoFrameType
     VIDEO_INFO_FRAME = 5
 };
 
-enum class VideoPacketType
+enum class AVCPacketType
 {
     SEQUENCE_HEADER = 0,
     NALU = 1,
@@ -122,6 +122,8 @@ public:
     flv::AACPacketType aac_pkt_type;
     flv::VideoCodecType vcodec_type;
     flv::VideoFrameType frame_type;
+    flv::AVCPacketType avc_pkt_type;
+    int32_t composition_time;
     bool has_print;
 };
 

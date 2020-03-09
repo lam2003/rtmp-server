@@ -33,7 +33,7 @@ public:
 public:
     virtual bool HasSequenceHeader() override;
     virtual int DecodeSequenceHeader(BufferManager *manager) override;
-    virtual int DecodeRawData(BufferManager *manager) override;
+    virtual int DecodeRawData(BufferManager *manager, CodecSample *sample) override;
 
 public:
     int extradata_size;

@@ -37,8 +37,10 @@ enum class Level
     LEVEL_32 = 32,
     LEVEL_4 = 40,
     LEVEL_41 = 41,
+    LEVEL_42 = 42,
     LEVEL_5 = 50,
-    LEVEL_51 = 51
+    LEVEL_51 = 51,
+    LEVEL_52 = 52
 };
 
 enum class PayloadFormat
@@ -72,6 +74,8 @@ enum class NaluType
 
 extern std::string profile_to_str(Profile profile);
 extern std::string level_to_str(Level level);
+extern int read_bit(BitBufferManager *manager, int8_t &v);
+extern int read_uev(BitBufferManager *manager, int32_t &v);
 } // namespace avc
 
 class AVCCodec : public VCodec
@@ -86,12 +90,11 @@ public:
     virtual int DecodecNalu(BufferManager *manager, CodecSample *sample) override;
 
 private:
-    int avc_demux_sps();
-    int avc_demux_sps_rbsp(char *rbsp, int nb_rbsp);
-    int avc_demux_annexb_format(BufferManager *manager, CodecSample *sample);
-    int avc_demux_ibmf_format(BufferManager *manager, CodecSample *sample);
-    bool avc_start_with_annexb(BufferManager *manager, int *pnb_start_code);
-    bool avc_has_sequence_header();
+    int demux_sps_rbsp(char *rbsp, int nb_rbsp);
+    int demux_sps();
+    int demux_annexb_format(BufferManager *manager, CodecSample *sample);
+    int demux_ibmf_format(BufferManager *manager, CodecSample *sample);
+    bool start_with_annexb(BufferManager *manager, int *pnb_start_code);
 
 public:
     avc::Profile profile;

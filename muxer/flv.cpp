@@ -388,33 +388,14 @@ int FlvDemuxer::demux_aac(BufferManager *manager, FlvCodecSample *sample)
     switch (sample->aac_pkt_type)
     {
     case flv::AACPacketType::SEQUENCE_HEADER:
-    {
-        aac_codec->DecodeSequenceHeader(manager);
-        break;
-    }
+        return aac_codec->DecodeSequenceHeader(manager);
     case flv::AACPacketType::RAW_DATA:
-    {
-        if (!aac_codec->HasSequenceHeader())
-        {
-            rs_warn("aac ignore type=%d for no sequence header. ret=%d", sample->aac_pkt_type, ret);
-            return ret;
-        }
-
-        if ((ret = sample->AddSampleUnit(manager->Data() + manager->Pos(), manager->Size() - manager->Pos())) != ERROR_SUCCESS)
-        {
-            rs_error("add aac sample failed. ret=%d", ret);
-            return ret;
-        }
-        break;
-    }
-
+        return aac_codec->DecodeRawData(manager, sample);
     default:
         ret = ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED;
         rs_error("flv aac_packet_type error. ret=%d", ret);
         return ret;
     }
-
-    return ret;
 }
 
 int FlvDemuxer::demux_avc(BufferManager *manager, FlvCodecSample *sample)
@@ -434,7 +415,35 @@ int FlvDemuxer::demux_avc(BufferManager *manager, FlvCodecSample *sample)
         return ret;
     }
 
-    return ret;
+    if (!manager->Require(1))
+    {
+        ret = ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED;
+        rs_error("decode avc_packet_type failed. ret=%d", ret);
+        return ret;
+    }
+
+    sample->avc_pkt_type = (flv::AVCPacketType)manager->Read1Bytes();
+
+    if (!manager->Require(3))
+    {
+        ret = ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED;
+        rs_error("decode composition_time failed. ret=%d", ret);
+        return ret;
+    }
+
+    sample->composition_time = manager->Read3Bytes();
+
+    switch (sample->avc_pkt_type)
+    {
+    case flv::AVCPacketType::SEQUENCE_HEADER:
+        return vcodec->DecodeSequenceHeader(manager);
+    case flv::AVCPacketType::NALU:
+        return vcodec->DecodecNalu(manager, sample);
+    default:
+        ret = ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED;
+        rs_error("flv avc_packet_type error. ret=%d", ret);
+        return ret;
+    }
 }
 
 int FlvDemuxer::DemuxVideo(char *data, int size, CodecSample *s)
@@ -593,7 +602,7 @@ bool FlvDemuxer::IsAVCSequenceHeader(char *data, int size)
     char packet_type = data[1];
 
     return frame_type == (char)flv::VideoFrameType::KEY_FRAME &&
-           packet_type == (char)flv::VideoPacketType::SEQUENCE_HEADER;
+           packet_type == (char)flv::AVCPacketType::SEQUENCE_HEADER;
 }
 
 bool FlvDemuxer::IsAACSequenceHeader(char *data, int size)

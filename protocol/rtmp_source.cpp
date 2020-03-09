@@ -571,15 +571,13 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         rs_freep(cache_sh_video_);
         cache_sh_video_ = msg->Copy();
 
-        // AvcCodec *avc_codec;
-
-
-        // flv::CodecSample sample;
-        // if ((ret = info.AVCDemux(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
-        // {
-        //     rs_error("source codec demux avc failed. ret=%d", ret);
-        //     return ret;
-        // }
+        FlvCodecSample flv_sample;
+        FlvDemuxer demuxer;
+        if ((ret = demuxer.DemuxVideo(msg->payload, msg->size, &flv_sample)) != ERROR_SUCCESS)
+        {
+            rs_error("source codec demux video failed. ret=%d", ret);
+            return ret;
+        }
     }
 
     if ((ret = dvr_->OnVideo(msg)) != ERROR_SUCCESS)
@@ -587,6 +585,19 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         rs_warn("dvr process video message failed, ignore and disable dvr. ret=%d", ret);
         dvr_->OnUnpubish();
         ret = ERROR_SUCCESS;
+    }
+
+    if (!drop_for_reduce)
+    {
+        for (int i = 0; i < (int)consumers_.size(); i++)
+        {
+            Consumer *consumer = consumers_.at(i);
+            if ((ret = consumer->Enqueue(msg, atc_, jitter_algorithm_)) != ERROR_SUCCESS)
+            {
+                rs_error("dispatch video failed. ret=%d", ret);
+                return ret;
+            }
+        }
     }
 
     return ret;
@@ -618,18 +629,6 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
             rs_error("flvdemuxer dumux aac failed. ret=%d", ret);
             return ret;
         }
-
-        static int sample_sizes[] = {8, 16, 0};
-        static int sound_types[] = {1, 2, 0};
-        static int flv_sample_rates[] = {5512, 11025, 22050, 44100, 0};
-
-        // rs_trace("%dB audio sh, codec(%d, profile=%s, %dHz, %dbits, %dchannels) flv(%dHz)", msg->size,
-        //          codec.audio_codec_id,
-        //          flv::AACProfile2Str(codec.aac_object_type).c_str(),
-        //          sample.aac_sample_rate,
-        //          sample_sizes[(int)sample.sound_size],
-        //          sound_types[(int)sample.sound_type],
-        //          flv_sample_rates[(int)sample.flv_sample_rate]);
     }
 
     if ((ret = dvr_->OnAudio(msg)) != ERROR_SUCCESS)
@@ -810,12 +809,12 @@ int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
         return ret;
     }
 
-    bool drop_for_reduce = false;
-    if (cache_metadata_ && _config->GetReduceSequenceHeader(request_->vhost))
-    {
-        drop_for_reduce = true;
-        rs_warn("drop for reduce sh metadata, size=%d", msg->size);
-    }
+    // bool drop_for_reduce = false;
+    // if (cache_metadata_ && _config->GetReduceSequenceHeader(request_->vhost))
+    // {
+    //     drop_for_reduce = true;
+    //     rs_warn("drop for reduce sh metadata, size=%d", msg->size);
+    // }
 
     rs_freep(cache_metadata_);
     cache_metadata_ = new rtmp::SharedPtrMessage;

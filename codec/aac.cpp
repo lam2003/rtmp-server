@@ -121,9 +121,21 @@ int AACCodec::DecodeSequenceHeader(BufferManager *manager)
     return ret;
 }
 
-int AACCodec::DecodeRawData(BufferManager *manager)
+int AACCodec::DecodeRawData(BufferManager *manager, CodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
+    if (!HasSequenceHeader())
+    {
+        rs_warn("aac ignore raw data before sequence header");
+        return ret;
+    }
+
+    if ((ret = sample->AddSampleUnit(manager->Data() + manager->Pos(), manager->Size() - manager->Pos())) != ERROR_SUCCESS)
+    {
+        rs_error("add aac sample failed. ret=%d", ret);
+        return ret;
+    }
+    
     return ret;
 }
