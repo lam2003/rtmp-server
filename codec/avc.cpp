@@ -1,16 +1,8 @@
-/*
- * @Author: linmin
- * @Date: 2020-02-21 16:28:32
- * @LastEditTime: 2020-02-21 18:29:36
- */
-#include <protocol/flv_av_codec.hpp>
+#include <codec/avc.hpp>
 #include <common/error.hpp>
 #include <common/log.hpp>
-#include <common/config.hpp>
+#include <common/buffer.hpp>
 #include <common/utils.hpp>
-
-namespace flv
-{
 
 static int avc_read_uev(BitBufferManager *manager, int32_t &v)
 {
@@ -57,131 +49,11 @@ static int avc_read_bit(BitBufferManager *manager, int8_t &v)
     return ret;
 }
 
-CodecSampleUnit::CodecSampleUnit()
-{
-    size = 0;
-    bytes = nullptr;
-}
-
-CodecSampleUnit::~CodecSampleUnit()
-{
-}
-
-CodecSample::CodecSample()
-{
-    Clear();
-}
-
-CodecSample::~CodecSample()
-{
-}
-
-void CodecSample::Clear()
-{
-    is_video = false;
-    acodec = AudioCodecType::UNKNOW;
-    flv_sample_rate = AudioSampleRate::UNKNOW;
-    aac_sample_rate = 0;
-    sound_size = AudioSampleSize::UNKNOW;
-    sound_type = AudioSoundType::UNKNOW;
-    aac_packet_type = AudioPacketType::UNKNOW;
-    nb_sample_units = 0;
-    cts = 0;
-    has_idr = false;
-    has_sps_pps = false;
-    has_aud = false;
-    first_nalu_type = AVCNaluType::UNKNOW;
-    frame_type = VideoFrameType::UNKNOW;
-    avc_packet_type = VideoPacketType::UNKNOW;
-}
-
-int CodecSample::AddSampleUnit(char *bytes, int size)
+// for SPS, 7.3.2.1.1 Sequence parameter set data syntax
+// H.264-AVC-ISO_IEC_14496-10-2012.pdf, page 62.
+int AVCCodec::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
 {
     int ret = ERROR_SUCCESS;
-
-    if (nb_sample_units >= MAX_CODEC_SAMPLE)
-    {
-        ret = ERROR_SAMPLE_EXCEED;
-        rs_error("codec sample exceed the max count: %d. ret=%d", MAX_CODEC_SAMPLE, ret);
-        return ret;
-    }
-
-    CodecSampleUnit *sample_unit = &sample_units[nb_sample_units++];
-    sample_unit->bytes = bytes;
-    sample_unit->size = size;
-
-    if (is_video)
-    {
-        AVCNaluType nalu_type = (AVCNaluType)(bytes[0] & 0x1f);
-        if (nalu_type == AVCNaluType::IDR)
-        {
-            has_idr = true;
-        }
-        else if (nalu_type == AVCNaluType::SPS || nalu_type == AVCNaluType::PPS)
-        {
-            has_sps_pps = true;
-        }
-        else if (nalu_type == AVCNaluType::ACCESS_UNIT_DELIMITER)
-        {
-            has_aud = true;
-        }
-        else
-        {
-            //ignore
-        }
-
-        if (first_nalu_type == AVCNaluType::UNKNOW)
-        {
-            first_nalu_type = nalu_type;
-        }
-    }
-
-    return ret;
-}
-
-AVInfo::AVInfo()
-{
-    duration = 0;
-    width = 0;
-    height = 0;
-    frame_rate = 0;
-    video_codec_id = 0;
-    video_data_rate = 0;
-    audio_codec_id = 0;
-    audio_data_rate = 0;
-    avc_profile = AVCProfile::UNKNOW;
-    avc_level = AVCLevel::UNKNOW;
-    nalu_unit_length = 0;
-    sps_length = 0;
-    sps = nullptr;
-    pps_length = 0;
-    pps = nullptr;
-    payload_format = AVCPayloadFormat::GUESS;
-    aac_obj_type = AACObjectType::UNKNOW;
-    aac_sample_rate = AAC_SAMPLE_RATE_UNSET;
-    aac_channels = 0;
-    avc_extra_size = 0;
-    avc_extra_data = nullptr;
-    aac_extra_size = 0;
-    aac_extra_data = nullptr;
-    avc_parse_sps = true;
-}
-
-AVInfo::~AVInfo()
-{
-}
-
-int AVInfo::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
-{
-    // for SPS, 7.3.2.1.1 Sequence parameter set data syntax
-    // H.264-AVC-ISO_IEC_14496-10-2012.pdf, page 62.
-
-    int ret = ERROR_SUCCESS;
-
-    if (!avc_parse_sps)
-    {
-        return ret;
-    }
 
     BufferManager manager;
     if (manager.Initialize(rbsp, nb_rbsp) != ERROR_SUCCESS)
@@ -191,7 +63,7 @@ int AVInfo::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
 
     if (!manager.Require(3))
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sps_rbsp failed. ret=%d", ret);
         return ret;
     }
@@ -199,7 +71,7 @@ int AVInfo::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
     uint8_t profile_idc = manager.Read1Bytes();
     if (!profile_idc)
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sps_rbsp failed. ret=%d", ret);
         return ret;
     }
@@ -207,7 +79,7 @@ int AVInfo::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
     uint8_t flags = manager.Read1Bytes();
     if (flags & 0x03)
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sps_rbsp failed. ret=%d", ret);
         return ret;
     }
@@ -215,7 +87,7 @@ int AVInfo::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
     uint8_t level_idc = manager.Read1Bytes();
     if (!level_idc)
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sps_rbsp failed. ret=%d", ret);
         return ret;
     }
@@ -234,7 +106,7 @@ int AVInfo::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
 
     if (seq_parameter_set_id < 0)
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sps_rbsp failed. ret=%d", ret);
         return ret;
     }
@@ -349,7 +221,7 @@ int AVInfo::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
         }
         if (num_ref_frames_in_pic_order_cnt_cycle < 0)
         {
-            ret = ERROR_DECODE_H264_FAILED;
+            ret = ERROR_CODEC_DECODE_AVC_FAILED;
             rs_error("decode sps_rbsp failed. ret=%d", ret);
             return ret;
         }
@@ -470,7 +342,7 @@ int AVInfo::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
     return ret;
 }
 
-int AVInfo::avc_demux_sps()
+int AVCCodec::avc_demux_sps()
 {
     int ret = ERROR_SUCCESS;
 
@@ -487,7 +359,7 @@ int AVInfo::avc_demux_sps()
 
     if (!manager.Require(1))
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sps failed. ret=%d", ret);
         return ret;
     }
@@ -497,7 +369,7 @@ int AVInfo::avc_demux_sps()
     AVCNaluType nal_unit_type = AVCNaluType(nutv & 0x1f);
     if (nal_unit_type != AVCNaluType::SPS)
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sps failed. ret=%d", ret);
         return ret;
     }
@@ -528,45 +400,52 @@ int AVInfo::avc_demux_sps()
     return avc_demux_sps_rbsp((char *)rbsp, nb_rbsp);
 }
 
-int AVInfo::avc_demux_sps_pps(BufferManager *manager)
+int AVCCodec::DecodeSequenceHeader(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
 
-    avc_extra_size = manager->Size() - manager->Pos();
+    extradata_size = manager->Size() - manager->Pos();
 
-    if (avc_extra_size > 0)
+    if (extradata_size > 0)
     {
-        rs_freepa(avc_extra_data);
-        avc_extra_data = new char[avc_extra_size];
-        memcpy(avc_extra_data, manager->Data() + manager->Pos(), avc_extra_size);
+        rs_freepa(extradata);
+        extradata = new char[extradata_size];
+        memcpy(extradata, manager->Data() + manager->Pos(), extradata_size);
     }
 
     if (!manager->Require(6))
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sequence header failed. ret=%d", ret);
         return ret;
     }
 
+    // H.264-AVC-ISO_IEC_14496-15.pdf page16
+    // avc sequence header
     manager->Read1Bytes();
-    avc_profile = (AVCProfile)manager->Read1Bytes();
+    profile = (AVCProfile)manager->Read1Bytes();
     manager->Read1Bytes();
-    avc_level = (AVCLevel)manager->Read1Bytes();
+    level = (AVCLevel)manager->Read1Bytes();
 
     int8_t length_size_minus_one = manager->Read1Bytes();
     length_size_minus_one &= 0x03;
 
-    nalu_unit_length = length_size_minus_one;
-    if (nalu_unit_length == 2)
+    // lengthSizeMinusOne indicates the length in bytes of the NALUnitLength field in an AVC video
+    // sample or AVC parameter set sample of the associated stream minus one. For example, a size of one
+    // byte is indicated with a value of 0. The value of this field shall be one of 0, 1, or 3 corresponding to a
+    // length encoded with 1, 2, or 4 bytes, respectively.
+
+    length_size_minus_one = length_size_minus_one;
+    if (length_size_minus_one == 2)
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("seqence should never be 2. ret=%d", ret);
         return ret;
     }
 
     if (!manager->Require(1))
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sequence header failed. ret=%d", ret);
         return ret;
     }
@@ -576,14 +455,14 @@ int AVInfo::avc_demux_sps_pps(BufferManager *manager)
 
     if (num_of_sps != 1)
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sequence header failed. ret=%d", ret);
         return ret;
     }
 
     if (!manager->Require(2))
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sequence header failed. ret=%d", ret);
         return ret;
     }
@@ -591,7 +470,7 @@ int AVInfo::avc_demux_sps_pps(BufferManager *manager)
     sps_length = manager->Read2Bytes();
     if (!manager->Require(sps_length))
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sequence header failed. ret=%d", ret);
         return ret;
     }
@@ -605,7 +484,7 @@ int AVInfo::avc_demux_sps_pps(BufferManager *manager)
 
     if (!manager->Require(1))
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sequence header failed. ret=%d", ret);
         return ret;
     }
@@ -615,7 +494,7 @@ int AVInfo::avc_demux_sps_pps(BufferManager *manager)
 
     if (num_of_pps != 1)
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sequence header failed. ret=%d", ret);
         return ret;
     }
@@ -623,7 +502,7 @@ int AVInfo::avc_demux_sps_pps(BufferManager *manager)
     pps_length = manager->Read2Bytes();
     if (!manager->Require(pps_length))
     {
-        ret = ERROR_DECODE_H264_FAILED;
+        ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sequence header failed. ret=%d", ret);
         return ret;
     }
@@ -638,12 +517,12 @@ int AVInfo::avc_demux_sps_pps(BufferManager *manager)
     return avc_demux_sps();
 }
 
-bool AVInfo::avc_has_sequence_header()
+bool AVCCodec::avc_has_sequence_header()
 {
-    return avc_extra_size > 0 && avc_extra_data;
+    return extradata_size > 0 && extradata;
 }
 
-bool AVInfo::avc_start_with_annexb(BufferManager *manager, int *pnb_start_code)
+bool AVCCodec::avc_start_with_annexb(BufferManager *manager, int *pnb_start_code)
 {
     char *bytes = manager->Data() + manager->Pos();
     char *p = bytes;
@@ -675,13 +554,13 @@ bool AVInfo::avc_start_with_annexb(BufferManager *manager, int *pnb_start_code)
     return false;
 }
 
-int AVInfo::avc_demux_annexb_format(BufferManager *manager, CodecSample *sample)
+int AVCCodec::avc_demux_annexb_format(BufferManager *manager, CodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
     if (!avc_start_with_annexb(manager, nullptr))
     {
-        return ERROR_AVC_TRY_OTHERS;
+        return ERROR_CODEC_AVC_TRY_OTHERS;
     }
 
     while (!manager->Empty())
@@ -726,7 +605,7 @@ int AVInfo::avc_demux_annexb_format(BufferManager *manager, CodecSample *sample)
     return ret;
 }
 
-int AVInfo::avc_demux_ibmf_format(BufferManager *manager, CodecSample *sample)
+int AVCCodec::avc_demux_ibmf_format(BufferManager *manager, CodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
@@ -734,61 +613,61 @@ int AVInfo::avc_demux_ibmf_format(BufferManager *manager, CodecSample *sample)
 
     for (int i = 0; i < picture_length; i++)
     {
-        if (!manager->Require(nalu_unit_length + 1))
+        if (!manager->Require(length_size_minus_one + 1))
         {
-            ret = ERROR_DECODE_H264_FAILED;
+            ret = ERROR_CODEC_DECODE_AVC_FAILED;
             rs_error("avc decode nalu size failed. ret=%d", ret);
             return ret;
         }
 
-        int32_t length = 0;
+        int32_t nalu_unit_length = 0;
 
-        if (nalu_unit_length == 3)
+        if (length_size_minus_one == 3)
         {
-            length = manager->Read4Bytes();
+            nalu_unit_length = manager->Read4Bytes();
         }
-        else if (nalu_unit_length == 1)
+        else if (length_size_minus_one == 1)
         {
-            length = manager->Read2Bytes();
+            nalu_unit_length = manager->Read2Bytes();
         }
         else
         {
-            length = manager->Read1Bytes();
+            nalu_unit_length = manager->Read1Bytes();
         }
 
-        if (length < 0)
+        if (nalu_unit_length < 0)
         {
-            ret = ERROR_DECODE_H264_FAILED;
+            ret = ERROR_CODEC_DECODE_AVC_FAILED;
             rs_error("maybe stream is annexb format. ret=%d", ret);
             return ret;
         }
 
-        if (!manager->Require(length))
+        if (!manager->Require(nalu_unit_length))
         {
-            ret = ERROR_AVC_TRY_OTHERS;
+            ret = ERROR_CODEC_AVC_TRY_OTHERS;
             return ret;
         }
 
-        if ((ret = sample->AddSampleUnit(manager->Data() + manager->Pos(), length)) != ERROR_SUCCESS)
+        if ((ret = sample->AddSampleUnit(manager->Data() + manager->Pos(), nalu_unit_length)) != ERROR_SUCCESS)
         {
             rs_error("avc add video sample failed. ret=%d", ret);
         }
 
-        manager->Skip(length);
+        manager->Skip(nalu_unit_length);
 
-        i += nalu_unit_length + 1 + length;
+        i += length_size_minus_one + 1 + nalu_unit_length;
     }
 
     return ret;
 }
 
-int AVInfo::avc_demux_nalu(BufferManager *manager, CodecSample *sample)
+int AVCCodec::DecodecNalu(BufferManager *manager, CodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
     if (avc_has_sequence_header())
     {
-        rs_warn("avc ignore type=%d for no sequence header", (int8_t)VideoPacketType::NALU);
+        rs_warn("avc ignore type=%d for no sequence header", (int8_t)AVCNaluType::NON_IDR);
         return ret;
     }
 
@@ -796,7 +675,7 @@ int AVInfo::avc_demux_nalu(BufferManager *manager, CodecSample *sample)
     {
         if ((ret = avc_demux_annexb_format(manager, sample)) != ERROR_SUCCESS)
         {
-            if (ret != ERROR_AVC_TRY_OTHERS)
+            if (ret != ERROR_CODEC_AVC_TRY_OTHERS)
             {
                 rs_error("avc demux annexb failed. ret=%d", ret);
                 return ret;
@@ -804,9 +683,9 @@ int AVInfo::avc_demux_nalu(BufferManager *manager, CodecSample *sample)
 
             if ((ret = avc_demux_ibmf_format(manager, sample)) != ERROR_SUCCESS)
             {
-                if (ret == ERROR_AVC_TRY_OTHERS)
+                if (ret == ERROR_CODEC_AVC_TRY_OTHERS)
                 {
-                    ret = ERROR_DECODE_H264_FAILED;
+                    ret = ERROR_CODEC_DECODE_AVC_FAILED;
                 }
                 rs_error("avc decode nalu failed. ret=%d", ret);
                 return ret;
@@ -825,16 +704,16 @@ int AVInfo::avc_demux_nalu(BufferManager *manager, CodecSample *sample)
     {
         if ((ret = avc_demux_ibmf_format(manager, sample)) != ERROR_SUCCESS)
         {
-            if (ret != ERROR_AVC_TRY_OTHERS)
+            if (ret != ERROR_CODEC_AVC_TRY_OTHERS)
             {
                 rs_error("avc demux ibmf failed. ret=%d", ret);
                 return ret;
             }
             if ((ret = avc_demux_annexb_format(manager, sample)) != ERROR_SUCCESS)
             {
-                if (ret == ERROR_AVC_TRY_OTHERS)
+                if (ret == ERROR_CODEC_AVC_TRY_OTHERS)
                 {
-                    ret = ERROR_DECODE_H264_FAILED;
+                    ret = ERROR_CODEC_DECODE_AVC_FAILED;
                 }
                 rs_error("avc decode nalu failed. ret=%d", ret);
                 return ret;
@@ -853,83 +732,25 @@ int AVInfo::avc_demux_nalu(BufferManager *manager, CodecSample *sample)
     return ret;
 }
 
-int AVInfo::AVCDemux(char *data, int size, CodecSample *sample)
+AVCCodec::AVCCodec()
 {
-    int ret = ERROR_SUCCESS;
-
-    sample->is_video = true;
-
-    if (!data || size <= 0)
-    {
-        return ret;
-    }
-
-    BufferManager manager;
-    if ((ret = manager.Initialize(data, size)) != ERROR_SUCCESS)
-    {
-        return ret;
-    }
-
-    if (!manager.Require(1))
-    {
-        ret = ERROR_DECODE_FLV_FAILED;
-        rs_error("decode frame_type failed. ret=%d", ret);
-        return ret;
-    }
-
-    int8_t frame_type = manager.Read1Bytes();
-    int8_t codec_id = frame_type & 0x0f;
-    frame_type = (frame_type >> 4) & 0x0f;
-
-    sample->frame_type = (VideoFrameType)frame_type;
-
-    if (sample->frame_type == VideoFrameType::VIDEO_INFO_FRAME)
-    {
-        rs_warn("ignore the info frame");
-        return ret;
-    }
-
-    if (codec_id != (int8_t)VideoCodecType::AVC)
-    {
-        ret = ERROR_DECODE_FLV_FAILED;
-        rs_error("only support avc codec. actual=%d, ret=%d", codec_id, ERROR_DECODE_FLV_FAILED);
-        return ret;
-    }
-
-    video_codec_id = codec_id;
-    if (!manager.Require(4))
-    {
-        ret = ERROR_DECODE_FLV_FAILED;
-        rs_error("decode avc_packet_type failed. ret=%d", ret);
-        return ret;
-    }
-
-    int8_t avc_packet_type = manager.Read1Bytes();
-    int32_t composition_time = manager.Read3Bytes();
-
-    sample->cts = composition_time;
-    sample->avc_packet_type = (VideoPacketType)avc_packet_type;
-
-    if (avc_packet_type == (int8_t)VideoPacketType::SEQUENCE_HEADER)
-    {
-        if ((ret = avc_demux_sps_pps(&manager)) != ERROR_SUCCESS)
-        {
-            return ret;
-        }
-    }
-    else if (avc_packet_type == (int8_t)VideoPacketType::NALU)
-    {
-        if ((ret = avc_demux_nalu(&manager, sample)) != ERROR_SUCCESS)
-        {
-            return ret;
-        }
-    }
-    else
-    {
-        //ignore
-    }
-
-    return ret;
+    profile = AVCProfile::UNKNOW;
+    level = AVCLevel::UNKNOW;
+    payload_format = AVCPayloadFormat::GUESS;
+    extradata_size = 0;
+    extradata = nullptr;
+    sps_length = 0;
+    sps = nullptr;
+    pps_length = 0;
+    pps = nullptr;
+    width = 0;
+    height = 0;
+    length_size_minus_one = 0;
 }
 
-} // namespace flv
+AVCCodec::~AVCCodec()
+{
+    rs_freepa(extradata);
+    rs_freepa(sps);
+    rs_freepa(pps);
+}

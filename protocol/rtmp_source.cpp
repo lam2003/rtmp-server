@@ -1,9 +1,9 @@
 #include <protocol/rtmp_source.hpp>
 #include <protocol/rtmp_consts.hpp>
-#include <protocol/flv.hpp>
 #include <common/config.hpp>
 #include <common/file.hpp>
 #include <app/dvr.hpp>
+#include <muxer/flv.hpp>
 
 #include <sstream>
 
@@ -265,13 +265,13 @@ void MessageQueue::Shrink()
     {
         SharedPtrMessage *msg = msgs_.At(i);
 
-        if (msg->IsAudio() && flv::Codec::IsAudioSeqenceHeader(msg->payload, msg->size))
+        if (msg->IsAudio() && FlvDemuxer::IsAACSequenceHeader(msg->payload, msg->size))
         {
             rs_freep(audio_sh);
             audio_sh = msg;
             continue;
         }
-        if (msg->IsVideo() && flv::Codec::IsVideoSeqenceHeader(msg->payload, msg->size))
+        if (msg->IsVideo() &&FlvDemuxer::IsAVCSequenceHeader(msg->payload, msg->size))
         {
             rs_freep(video_sh);
             video_sh = msg;
@@ -555,7 +555,7 @@ int Source::on_video_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
-    bool is_sequence_hander = flv::Codec::IsVideoSeqenceHeader(msg->payload, msg->size);
+    bool is_sequence_hander =FlvDemuxer::IsAVCSequenceHeader(msg->payload, msg->size);
     bool drop_for_reduce = false;
 
     if (is_sequence_hander && cache_sh_video_ && _config->GetReduceSequenceHeader(request_->host))
@@ -572,15 +572,15 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         rs_freep(cache_sh_video_);
         cache_sh_video_ = msg->Copy();
 
-        flv::AVInfo info;
-        info.avc_parse_sps = _config->GetParseSPS(request_->vhost);
+        // flv::AVInfo info;
+        // info.avc_parse_sps = _config->GetParseSPS(request_->vhost);
 
-        flv::CodecSample sample;
-        if ((ret = info.AVCDemux(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
-        {
-            rs_error("source codec demux avc failed. ret=%d", ret);
-            return ret;
-        }
+        // flv::CodecSample sample;
+        // if ((ret = info.AVCDemux(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
+        // {
+        //     rs_error("source codec demux avc failed. ret=%d", ret);
+        //     return ret;
+        // }
     }
 
    if ((ret = dvr_->OnVideo(msg)) != ERROR_SUCCESS)
@@ -598,7 +598,7 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
-    bool is_sequence_header = flv::Codec::IsAudioSeqenceHeader(msg->payload, msg->size);
+    bool is_sequence_header = FlvDemuxer::IsAACSequenceHeader(msg->payload, msg->size);
     bool drop_for_reduce = false;
 
     if (is_sequence_header && cache_sh_audio_ && _config->GetReduceSequenceHeader(request_->vhost))
@@ -612,12 +612,12 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
 
     if (is_sequence_header)
     {
-        flv::Codec codec;
-        flv::CodecSample sample;
+        FlvDemuxer demuxer;
+        FlvCodecSample sample;
 
-        if ((ret = codec.DemuxAudio(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
+        if ((ret = demuxer.DemuxAudio(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
         {
-            rs_error("source codec demux audio failed. ret=%d", ret);
+            rs_error("flvdemuxer dumux aac failed. ret=%d", ret);
             return ret;
         }
 
@@ -625,13 +625,13 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
         static int sound_types[] = {1, 2, 0};
         static int flv_sample_rates[] = {5512, 11025, 22050, 44100, 0};
 
-        rs_trace("%dB audio sh, codec(%d, profile=%s, %dHz, %dbits, %dchannels) flv(%dHz)", msg->size,
-                 codec.audio_codec_id,
-                 flv::AACProfile2Str(codec.aac_object_type).c_str(),
-                 sample.aac_sample_rate,
-                 sample_sizes[(int)sample.sound_size],
-                 sound_types[(int)sample.sound_type],
-                 flv_sample_rates[(int)sample.flv_sample_rate]);
+        // rs_trace("%dB audio sh, codec(%d, profile=%s, %dHz, %dbits, %dchannels) flv(%dHz)", msg->size,
+        //          codec.audio_codec_id,
+        //          flv::AACProfile2Str(codec.aac_object_type).c_str(),
+        //          sample.aac_sample_rate,
+        //          sample_sizes[(int)sample.sound_size],
+        //          sound_types[(int)sample.sound_type],
+        //          flv_sample_rates[(int)sample.flv_sample_rate]);
     }
 
     if ((ret = dvr_->OnAudio(msg)) != ERROR_SUCCESS)

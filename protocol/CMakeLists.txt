@@ -6,8 +6,6 @@ add_library(protocol
     rtmp_packet.cpp
     rtmp_message.cpp
     rtmp_handshake.cpp
-    flv.cpp
-    flv_av_codec.cpp
 )
 
 add_dependencies(protocol

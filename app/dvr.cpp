@@ -15,7 +15,7 @@ FlvSegment::FlvSegment(DvrPlan *plan)
 {
     request_ = nullptr;
     plan_ = plan;
-    enc_ = new flv::Encoder;
+    muxer_ = new FlvMuxer;
     jitter_ = nullptr;
     jitter_algorithm_ = rtmp::JitterAlgorithm::OFF;
     writer_ = new FileWriter;
@@ -35,7 +35,7 @@ FlvSegment::~FlvSegment()
 {
     rs_freep(writer_);
     rs_freep(jitter_);
-    rs_freep(enc_);
+    rs_freep(muxer_);
 }
 
 int FlvSegment::Initialize(rtmp::Request *request)
@@ -172,7 +172,7 @@ int FlvSegment::Open(bool use_temp_file)
         }
     }
 
-    if ((ret = enc_->Initialize(writer_)) != ERROR_SUCCESS)
+    if ((ret = muxer_->Initialize(writer_)) != ERROR_SUCCESS)
     {
         rs_error("initialize enc by writer for file %s failed. ret=%d", temp_flv_file_.c_str(), ret);
         return ret;
@@ -180,7 +180,7 @@ int FlvSegment::Open(bool use_temp_file)
 
     if (new_flv_file)
     {
-        if ((ret = enc_->WriteFlvHeader()) != ERROR_SUCCESS)
+        if ((ret = muxer_->WriteMuxerHeader()) != ERROR_SUCCESS)
         {
             rs_error("write flv header for file %s failed. ret=%d", temp_flv_file_.c_str(), ret);
             return ret;
@@ -313,7 +313,7 @@ int FlvSegment::WriteMetadata(rtmp::SharedPtrMessage *shared_metadata)
         return ret;
     }
 
-    if ((ret = enc_->WriteMetadata(payload, size)) != ERROR_SUCCESS)
+    if ((ret = muxer_->WriteMetadata(payload, size)) != ERROR_SUCCESS)
     {
         return ret;
     }
@@ -337,7 +337,7 @@ int FlvSegment::WriteAudio(rtmp::SharedPtrMessage *shared_audio)
     int size = audio->size;
 
     int64_t timestamp = plan_->filter_timestamp(audio->timestamp);
-    if ((ret = enc_->WriteAudio(timestamp, payload, size)) != ERROR_SUCCESS)
+    if ((ret = muxer_->WriteAudio(timestamp, payload, size)) != ERROR_SUCCESS)
     {
         return ret;
     }
@@ -360,8 +360,8 @@ int FlvSegment::WriteVideo(rtmp::SharedPtrMessage *shared_video)
     char *payload = video->payload;
     int size = video->size;
 
-    bool is_sequence_header = flv::Codec::IsVideoSeqenceHeader(payload, size);
-    bool is_keyframe = flv::Codec::IsH264(payload, size) && flv::Codec::IsKeyFrame(payload, size) && !is_sequence_header;
+    bool is_sequence_header = FlvDemuxer::IsAVCSequenceHeader(payload, size);
+    bool is_keyframe = FlvDemuxer::IsAVC(payload, size) && FlvDemuxer::IsKeyFrame(payload, size) && !is_sequence_header;
 
     if (is_keyframe)
     {
@@ -387,7 +387,7 @@ int FlvSegment::WriteVideo(rtmp::SharedPtrMessage *shared_video)
     }
 
     int64_t timestamp = plan_->filter_timestamp(video->timestamp);
-    if ((ret = enc_->WriteVideo(timestamp, payload, size)) != ERROR_SUCCESS)
+    if ((ret = muxer_->WriteVideo(timestamp, payload, size)) != ERROR_SUCCESS)
     {
         return ret;
     }
@@ -633,7 +633,7 @@ int DvrSegmentPlan::update_duration(rtmp::SharedPtrMessage *msg)
         {
             char *payload = msg->payload;
             int size = msg->size;
-            bool is_keyframe = flv::Codec::IsH264(payload, size) && flv::Codec::IsKeyFrame(payload, size) && !flv::Codec::IsVideoSeqenceHeader(payload, size);
+            bool is_keyframe = FlvDemuxer::IsAVC(payload, size) && FlvDemuxer::IsKeyFrame(payload, size) && !FlvDemuxer::IsAVCSequenceHeader(payload, size);
             if (!is_keyframe)
             {
                 return ret;
@@ -680,7 +680,7 @@ int DvrSegmentPlan::OnAudio(rtmp::SharedPtrMessage *shared_audio)
 {
     int ret = ERROR_SUCCESS;
 
-    if (flv::Codec::IsAudioSeqenceHeader(shared_audio->payload, shared_audio->size))
+    if (FlvDemuxer::IsAACSequenceHeader(shared_audio->payload, shared_audio->size))
     {
         rs_freep(sh_audio_);
         sh_audio_ = shared_audio->Copy();
@@ -703,7 +703,7 @@ int DvrSegmentPlan::OnVideo(rtmp::SharedPtrMessage *shared_video)
 {
     int ret = ERROR_SUCCESS;
 
-    if (flv::Codec::IsVideoSeqenceHeader(shared_video->payload, shared_video->size))
+    if (FlvDemuxer::IsAVCSequenceHeader(shared_video->payload, shared_video->size))
     {
         rs_freep(sh_video_);
         sh_video_ = shared_video->Copy();

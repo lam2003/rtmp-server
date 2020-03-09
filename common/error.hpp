@@ -207,9 +207,6 @@
 #define ERROR_DECODE_AAC_EXTRA_DATA_FAILED 3068
 #define ERROR_ACODEC_NOT_SUPPORT 3069
 #define ERROR_SAMPLE_EXCEED 3070
-#define ERROR_DECODE_AAC_FAILED 3071
-#define ERROR_ACODEC_TRY_MP3 3072
-
 ///////////////////////////////////////////////////////
 // HTTP/StreamCaster protocol error.
 ///////////////////////////////////////////////////////
@@ -257,11 +254,18 @@
 #define ERROR_SOURCE_NOT_FOUND 9002
 #define ERROR_USER_END 9999
 
-#define ERROR_DECODE_FLV_FAILED 10000
-#define ERROR_DECODE_H264_FAILED 10001
-#define ERROR_AVC_TRY_OTHERS 10002
+//muxer
+#define ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED 20000
+//codec
+#define ERROR_CODEC_AVC_TRY_OTHERS 30001
+#define ERROR_CODEC_SAMPLE_TYPE_ERROR 30002
+#define ERROR_CODEC_DECODE_AVC_FAILED 30003
+#define ERROR_CODEC_UNSUPPORT 30004
+#define ERROR_CODEC_DECODE_AAC_FAILED 30005
+#define ERROR_CODEC_ACODEC_TYPE_ERROR 30006
+#define ERROR_CODEC_AAC_DECODE_EXTRADATA_FAILED 30007
 
-#define ERROR_BIT_BUFFER_MANAGER_EMPTY 20000
+#define ERROR_BIT_BUFFER_MANAGER_EMPTY 40000
 extern bool IsClientGracefullyClose(int32_t err_code);
 extern bool IsSystemControlError(int err_code);
 #endif

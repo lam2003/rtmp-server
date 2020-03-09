@@ -21,7 +21,9 @@
 #define RS_KEY "RS"
 #define RS_CODE "ppking"
 
-#define RS_VERSION RS_XSTR(RS_VERSION_MAJOR) "." RS_XSTR(RS_VERSION_MINOR) "." RS_XSTR(RS_VERSION_REVISION) 
+#define RS_VERSION            \
+    RS_XSTR(RS_VERSION_MAJOR) \
+    "." RS_XSTR(RS_VERSION_MINOR) "." RS_XSTR(RS_VERSION_REVISION)
 #define RS_SERVER RS_KEY "/" RS_VERSION "(" RS_CODE ")"
 
-#endif 
+#endif

@@ -9,8 +9,8 @@
 #include <common/core.hpp>
 #include <common/file.hpp>
 #include <common/queue.hpp>
-#include <protocol/flv.hpp>
 #include <protocol/rtmp_source.hpp>
+#include <muxer/flv.hpp>
 
 class DvrPlan;
 
@@ -39,7 +39,7 @@ private:
 private:
     rtmp::Request *request_;
     DvrPlan *plan_;
-    flv::Encoder *enc_;
+    FlvMuxer *muxer_;
     rtmp::Jitter *jitter_;
     rtmp::JitterAlgorithm jitter_algorithm_;
     FileWriter *writer_;
