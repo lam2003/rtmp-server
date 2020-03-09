@@ -3,8 +3,9 @@
 
 #include <common/core.hpp>
 #include <codec/codec.hpp>
-
-enum class AVCProfile
+namespace avc
+{
+enum class Profile
 {
     UNKNOW = 0,
     BASELINE = 66,
@@ -21,7 +22,7 @@ enum class AVCProfile
     HIGH_444_INTRA = 2192
 };
 
-enum class AVCLevel
+enum class Level
 {
     UNKNOW = 0,
     LEVEL_1 = 10,
@@ -40,14 +41,14 @@ enum class AVCLevel
     LEVEL_51 = 51
 };
 
-enum class AVCPayloadFormat
+enum class PayloadFormat
 {
     GUESS = 0,
     ANNEXB = 1,
     IBMF = 2
 };
 
-enum class AVCNaluType
+enum class NaluType
 {
     UNKNOW = 0,
     NON_IDR = 1,
@@ -69,6 +70,10 @@ enum class AVCNaluType
     CODECD_SLICE_EXT = 20
 };
 
+extern std::string profile_to_str(Profile profile);
+extern std::string level_to_str(Level level);
+} // namespace avc
+
 class AVCCodec : public VCodec
 {
 public:
@@ -76,6 +81,7 @@ public:
     virtual ~AVCCodec();
 
 public:
+    virtual bool HasSequenceHeader() override;
     virtual int DecodeSequenceHeader(BufferManager *manager) override;
     virtual int DecodecNalu(BufferManager *manager, CodecSample *sample) override;
 
@@ -88,9 +94,9 @@ private:
     bool avc_has_sequence_header();
 
 public:
-    AVCProfile profile;
-    AVCLevel level;
-    AVCPayloadFormat payload_format;
+    avc::Profile profile;
+    avc::Level level;
+    avc::PayloadFormat payload_format;
     int extradata_size;
     char *extradata;
     uint16_t sps_length;

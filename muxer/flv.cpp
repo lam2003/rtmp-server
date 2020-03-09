@@ -59,9 +59,9 @@ std::string sound_type_to_str(AudioSoundType sound_type)
     switch (sound_type)
     {
     case AudioSoundType::MONO:
-        return "Mono";
+        return "1";
     case AudioSoundType::STEREO:
-        return "Stereo";
+        return "2";
     default:
         return "Unkonw";
     }
@@ -72,9 +72,49 @@ std::string sound_size_to_str(AudioSoundSize sound_size)
     switch (sound_size)
     {
     case AudioSoundSize::BIT_DEPTH_16BIT:
-        return "16Bit";
+        return "16";
     case AudioSoundSize::BIT_DEPTH_8BIT:
-        return "8Bit";
+        return "8";
+    default:
+        return "Unknow";
+    }
+}
+
+std::string video_codec_type_to_str(VideoCodecType codec_type)
+{
+    switch (codec_type)
+    {
+    case VideoCodecType::SORENSON_H263:
+        return "SORENSON_H263";
+    case VideoCodecType::SCREEN_VIDEO:
+        return "SCREEN_VIDEO";
+    case VideoCodecType::ON2_VP6:
+        return "ON2_VP6";
+    case VideoCodecType::ON3_VP6_WITH_ALPHA_CHANNEL:
+        return "ON3_VP6_WITH_ALPHA_CHANNEL";
+    case VideoCodecType::SCREEN_VIDEO_VERSION2:
+        return "SCREEN_VIDEO_VERSION2";
+    case VideoCodecType::AVC:
+        return "AVC";
+    default:
+        return "Unknow";
+    }
+}
+
+std::string frame_type_to_str(VideoFrameType frame_type)
+{
+    switch (frame_type)
+    {
+    case VideoFrameType::KEY_FRAME:
+        return "KEY_FRAME";
+    case VideoFrameType::INTER_FRAME:
+        return "INTER_FRAME";
+    case VideoFrameType::DISPOSABLE_INTER_FRAME:
+        return "DISPOSABLE_INTER_FRAME";
+    case VideoFrameType::GENERATED_KEY_FRAME:
+        return "GENERATED_KEY_FRAME";
+    case VideoFrameType::VIDEO_INFO_FRAME:
+        return "VIDEO_INFO_FRAME";
     default:
         return "Unknow";
     }
@@ -324,6 +364,7 @@ int FlvDemuxer::demux_aac(BufferManager *manager, FlvCodecSample *sample)
 
     if (!acodec)
     {
+        acodec_type = flv::AudioCodecType::AAC;
         rs_freep(acodec);
         acodec = new AACCodec;
     }
@@ -348,14 +389,7 @@ int FlvDemuxer::demux_aac(BufferManager *manager, FlvCodecSample *sample)
     {
     case flv::AACPacketType::SEQUENCE_HEADER:
     {
-        aac_codec->extradata_size = manager->Size() - manager->Pos();
-        if (aac_codec->extradata_size > 0)
-        {
-            rs_freepa(aac_codec->extradata);
-            aac_codec->extradata = new char[aac_codec->extradata_size];
-            memcpy(aac_codec->extradata, manager->Data() + manager->Pos(), aac_codec->extradata_size);
-        }
-        aac_codec->DecodeSequenceHeader();
+        aac_codec->DecodeSequenceHeader(manager);
         break;
     }
     case flv::AACPacketType::RAW_DATA:
@@ -383,10 +417,78 @@ int FlvDemuxer::demux_aac(BufferManager *manager, FlvCodecSample *sample)
     return ret;
 }
 
+int FlvDemuxer::demux_avc(BufferManager *manager, FlvCodecSample *sample)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!vcodec)
+    {
+        vcodec_type = flv::VideoCodecType::AVC;
+        rs_freep(vcodec);
+        vcodec = new AVCCodec;
+    }
+
+    if (sample->frame_type == flv::VideoFrameType::VIDEO_INFO_FRAME)
+    {
+        rs_warn("ignore video info frame");
+        return ret;
+    }
+
+    return ret;
+}
+
 int FlvDemuxer::DemuxVideo(char *data, int size, CodecSample *s)
 {
     int ret = ERROR_SUCCESS;
-    return ret;
+
+    if (!data || size <= 0)
+    {
+        // video has not data
+        return ret;
+    }
+
+    if (!dynamic_cast<FlvCodecSample *>(s))
+    {
+        ret = ERROR_CODEC_SAMPLE_TYPE_ERROR;
+        rs_error("codec sample type is not FlvCodecSample. ret=%d", ret);
+        return ret;
+    }
+
+    BufferManager manager;
+    if ((ret = manager.Initialize(data, size)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+    if (!manager.Require(1))
+    {
+        ret = ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED;
+        rs_error("flv deocde audio sound_size failed. ret=%d", ret);
+        return ret;
+    }
+
+    int8_t temp = manager.Read1Bytes();
+
+    FlvCodecSample *sample = dynamic_cast<FlvCodecSample *>(s);
+    sample->vcodec_type = (flv::VideoCodecType)(temp & 0x0f);
+    sample->frame_type = (flv::VideoFrameType)((temp >> 4) & 0x0f);
+
+    if (!sample->has_print)
+    {
+        sample->has_print = true;
+        rs_trace("flv video data parsed. codec=%s, frame_type=%s",
+                 flv::video_codec_type_to_str(sample->vcodec_type).c_str(),
+                 flv::frame_type_to_str(sample->frame_type).c_str());
+    }
+
+    switch (sample->vcodec_type)
+    {
+    case flv::VideoCodecType::AVC:
+        return demux_avc(&manager, sample);
+    default:
+        ret = ERROR_CODEC_UNSUPPORT;
+        rs_error("codec %s is not support yet. ret=%d", flv::video_codec_type_to_str(sample->vcodec_type).c_str(), ret);
+        return ret;
+    }
 }
 
 int FlvDemuxer::DemuxAudio(char *data, int size, CodecSample *s)
@@ -419,22 +521,18 @@ int FlvDemuxer::DemuxAudio(char *data, int size, CodecSample *s)
     }
 
     int temp = manager.Read1Bytes();
-    int sound_type = temp & 0x01;
-    int sound_size = (temp >> 1) & 0x01;
-    int sample_rate = (temp >> 2) & 0x03;
-    acodec_type = (flv::AudioCodecType)((temp >> 4) & 0x0f);
 
     FlvCodecSample *sample = dynamic_cast<FlvCodecSample *>(s);
     sample->is_video = false;
-    sample->acodec_type = acodec_type;
-    sample->sound_type = (flv::AudioSoundType)sound_type;
-    sample->sound_size = (flv::AudioSoundSize)sound_size;
-    sample->sample_rate = (flv::AudioSampleRate)sample_rate;
+    sample->acodec_type = (flv::AudioCodecType)((temp >> 4) & 0x0f);
+    sample->sound_type = (flv::AudioSoundType)(temp & 0x01);
+    sample->sound_size = (flv::AudioSoundSize)((temp >> 1) & 0x01);
+    sample->sample_rate = (flv::AudioSampleRate)((temp >> 2) & 0x03);
 
     if (!sample->has_print)
     {
         sample->has_print = true;
-        rs_trace("flv audio data parsed. codec=%s, sound_type=%s, sound_size=%s, sample_rate=%s",
+        rs_trace("flv audio data parsed. codec=%s, sound_type=%s, sound_size=%sbits, sample_rate=%sHz",
                  flv::audio_codec_type_to_str(sample->acodec_type).c_str(),
                  flv::sound_type_to_str(sample->sound_type).c_str(),
                  flv::sound_size_to_str(sample->sound_size).c_str(),

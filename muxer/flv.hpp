@@ -14,6 +14,7 @@
 
 namespace flv
 {
+    
 enum class VideoCodecType
 {
     UNKNOW = 0,
@@ -101,6 +102,9 @@ extern std::string sample_rate_to_str(AudioSampleRate sample_rate);
 extern std::string audio_codec_type_to_str(AudioCodecType code_type);
 extern std::string sound_type_to_str(AudioSoundType sound_type);
 extern std::string sound_size_to_str(AudioSoundSize sound_size);
+extern std::string video_codec_type_to_str(VideoCodecType codec_type);
+extern std::string frame_type_to_str(VideoFrameType frame_type);
+
 } // namespace flv
 
 class FlvCodecSample : public CodecSample
@@ -116,6 +120,8 @@ public:
     flv::AudioSoundSize sound_size;
     flv::AudioSampleRate sample_rate;
     flv::AACPacketType aac_pkt_type;
+    flv::VideoCodecType vcodec_type;
+    flv::VideoFrameType frame_type;
     bool has_print;
 };
 

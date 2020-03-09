@@ -27,7 +27,6 @@ IWakeable::~IWakeable()
 {
 }
 
-
 Jitter::Jitter()
 {
     last_pkt_time_ = 0;
@@ -271,7 +270,7 @@ void MessageQueue::Shrink()
             audio_sh = msg;
             continue;
         }
-        if (msg->IsVideo() &&FlvDemuxer::IsAVCSequenceHeader(msg->payload, msg->size))
+        if (msg->IsVideo() && FlvDemuxer::IsAVCSequenceHeader(msg->payload, msg->size))
         {
             rs_freep(video_sh);
             video_sh = msg;
@@ -555,7 +554,7 @@ int Source::on_video_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
-    bool is_sequence_hander =FlvDemuxer::IsAVCSequenceHeader(msg->payload, msg->size);
+    bool is_sequence_hander = FlvDemuxer::IsAVCSequenceHeader(msg->payload, msg->size);
     bool drop_for_reduce = false;
 
     if (is_sequence_hander && cache_sh_video_ && _config->GetReduceSequenceHeader(request_->host))
@@ -572,8 +571,8 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         rs_freep(cache_sh_video_);
         cache_sh_video_ = msg->Copy();
 
-        // flv::AVInfo info;
-        // info.avc_parse_sps = _config->GetParseSPS(request_->vhost);
+        // AvcCodec *avc_codec;
+
 
         // flv::CodecSample sample;
         // if ((ret = info.AVCDemux(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
@@ -583,13 +582,12 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         // }
     }
 
-   if ((ret = dvr_->OnVideo(msg)) != ERROR_SUCCESS)
+    if ((ret = dvr_->OnVideo(msg)) != ERROR_SUCCESS)
     {
         rs_warn("dvr process video message failed, ignore and disable dvr. ret=%d", ret);
         dvr_->OnUnpubish();
         ret = ERROR_SUCCESS;
     }
-
 
     return ret;
 }

@@ -4,6 +4,79 @@
 #include <common/buffer.hpp>
 #include <common/utils.hpp>
 
+namespace avc
+{
+std::string profile_to_str(Profile profile)
+{
+    switch (profile)
+    {
+    case Profile::BASELINE:
+        return "Baseline";
+    case Profile::CONSTRAINED_BASELINE:
+        return "Constrained Baseline";
+    case Profile::MAIN:
+        return "Main";
+    case Profile::EXTENDED:
+        return "Extended";
+    case Profile::HIGH:
+        return "High";
+    case Profile::HIGH_10:
+        return "High10";
+    case Profile::HIGH_10_INTRA:
+        return "High10 Intra";
+    case Profile::HIGH_422:
+        return "High422";
+    case Profile::HIGH_422_INTRA:
+        return "High422 Intra";
+    case Profile::HIGH_444:
+        return "High444";
+    case Profile::HIGH_444_PREDICTIVE:
+        return "High444 Predictive";
+    case Profile::HIGH_444_INTRA:
+        return "High444 Intra";
+    default:
+        return "Unknow";
+    }
+}
+
+std::string level_to_str(Level level)
+{
+    switch (level)
+    {
+    case Level::LEVEL_1:
+        return "Level 1";
+    case Level::LEVEL_11:
+        return "Level 1.1";
+    case Level::LEVEL_12:
+        return "Level 1.2";
+    case Level::LEVEL_13:
+        return "Level 1.3";
+    case Level::LEVEL_2:
+        return "Level 2";
+    case Level::LEVEL_21:
+        return "Level 2.1";
+    case Level::LEVEL_22:
+        return "Level 2.2";
+    case Level::LEVEL_3:
+        return "Level 2.3";
+    case Level::LEVEL_31:
+        return "Level 3.1";
+    case Level::LEVEL_32:
+        return "Level 3.2";
+    case Level::LEVEL_4:
+        return "Level 4";
+    case Level::LEVEL_41:
+        return "Level 4.1";
+    case Level::LEVEL_5:
+        return "Level 5";
+    case Level::LEVEL_51:
+        return "Level 5.1";
+    default:
+        return "Unknow";
+    }
+}
+} // namespace avc
+
 static int avc_read_uev(BitBufferManager *manager, int32_t &v)
 {
     int ret = ERROR_SUCCESS;
@@ -366,8 +439,8 @@ int AVCCodec::avc_demux_sps()
 
     int8_t nutv = manager.Read1Bytes();
 
-    AVCNaluType nal_unit_type = AVCNaluType(nutv & 0x1f);
-    if (nal_unit_type != AVCNaluType::SPS)
+    avc::NaluType nal_unit_type = avc::NaluType(nutv & 0x1f);
+    if (nal_unit_type != avc::NaluType::SPS)
     {
         ret = ERROR_CODEC_DECODE_AVC_FAILED;
         rs_error("decode sps failed. ret=%d", ret);
@@ -400,6 +473,11 @@ int AVCCodec::avc_demux_sps()
     return avc_demux_sps_rbsp((char *)rbsp, nb_rbsp);
 }
 
+bool AVCCodec::HasSequenceHeader()
+{
+    return extradata_size > 0 && extradata;
+}
+
 int AVCCodec::DecodeSequenceHeader(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
@@ -423,9 +501,9 @@ int AVCCodec::DecodeSequenceHeader(BufferManager *manager)
     // H.264-AVC-ISO_IEC_14496-15.pdf page16
     // avc sequence header
     manager->Read1Bytes();
-    profile = (AVCProfile)manager->Read1Bytes();
+    profile = (avc::Profile)manager->Read1Bytes();
     manager->Read1Bytes();
-    level = (AVCLevel)manager->Read1Bytes();
+    level = (avc::Level)manager->Read1Bytes();
 
     int8_t length_size_minus_one = manager->Read1Bytes();
     length_size_minus_one &= 0x03;
@@ -513,6 +591,12 @@ int AVCCodec::DecodeSequenceHeader(BufferManager *manager)
         pps = new char[pps_length];
         manager->ReadBytes(pps, pps_length);
     }
+
+    rs_trace("avc extradata parsed. profile=%s, level=%s, width=%d, height=%d",
+             avc::profile_to_str(profile).c_str(),
+             avc::level_to_str(level).c_str(),
+             width,
+             height);
 
     return avc_demux_sps();
 }
@@ -667,11 +751,11 @@ int AVCCodec::DecodecNalu(BufferManager *manager, CodecSample *sample)
 
     if (avc_has_sequence_header())
     {
-        rs_warn("avc ignore type=%d for no sequence header", (int8_t)AVCNaluType::NON_IDR);
+        rs_warn("avc ignore type=%d for no sequence header", (int8_t)avc::NaluType::NON_IDR);
         return ret;
     }
 
-    if (payload_format == AVCPayloadFormat::GUESS || payload_format == AVCPayloadFormat::ANNEXB)
+    if (payload_format == avc::PayloadFormat::GUESS || payload_format == avc::PayloadFormat::ANNEXB)
     {
         if ((ret = avc_demux_annexb_format(manager, sample)) != ERROR_SUCCESS)
         {
@@ -692,12 +776,12 @@ int AVCCodec::DecodecNalu(BufferManager *manager, CodecSample *sample)
             }
             else
             {
-                payload_format = AVCPayloadFormat::IBMF;
+                payload_format = avc::PayloadFormat::IBMF;
             }
         }
         else
         {
-            payload_format = AVCPayloadFormat::ANNEXB;
+            payload_format = avc::PayloadFormat::ANNEXB;
         }
     }
     else
@@ -720,12 +804,12 @@ int AVCCodec::DecodecNalu(BufferManager *manager, CodecSample *sample)
             }
             else
             {
-                payload_format = AVCPayloadFormat::ANNEXB;
+                payload_format = avc::PayloadFormat::ANNEXB;
             }
         }
         else
         {
-            payload_format = AVCPayloadFormat::IBMF;
+            payload_format = avc::PayloadFormat::IBMF;
         }
     }
 
@@ -734,9 +818,9 @@ int AVCCodec::DecodecNalu(BufferManager *manager, CodecSample *sample)
 
 AVCCodec::AVCCodec()
 {
-    profile = AVCProfile::UNKNOW;
-    level = AVCLevel::UNKNOW;
-    payload_format = AVCPayloadFormat::GUESS;
+    profile = avc::Profile::UNKNOW;
+    level = avc::Level::UNKNOW;
+    payload_format = avc::PayloadFormat::GUESS;
     extradata_size = 0;
     extradata = nullptr;
     sps_length = 0;

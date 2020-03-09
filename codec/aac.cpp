@@ -2,6 +2,7 @@
 #include <common/log.hpp>
 #include <common/buffer.hpp>
 #include <common/error.hpp>
+#include <common/utils.hpp>
 
 namespace aac
 {
@@ -46,9 +47,9 @@ std::string channel_to_str(int channel)
     switch (channel)
     {
     case 1:
-        return "Mono";
+        return "1";
     case 2:
-        return "Stereo";
+        return "2";
     case 3:
         return "3";
     case 4:
@@ -56,9 +57,9 @@ std::string channel_to_str(int channel)
     case 5:
         return "5";
     case 6:
-        return "5+1";
+        return "5.1";
     case 7:
-        return "7+1";
+        return "7.1";
     default:
         return "Unknow";
     }
@@ -69,10 +70,14 @@ AACCodec::AACCodec()
 {
     extradata_size = 0;
     extradata = nullptr;
+    channels = -1;
+    sample_rate = -1;
+    object_type = aac::ObjectType::UNKNOW;
 }
 
 AACCodec::~AACCodec()
 {
+    rs_freepa(extradata);
 }
 
 bool AACCodec::HasSequenceHeader()
@@ -82,30 +87,33 @@ bool AACCodec::HasSequenceHeader()
 
 // support mpeg4-aac
 // 1.6.2.1 AudioSpecificConfig, in aac-mp4a-format-ISO_IEC_14496-3+2001.pdf, page 33.
-int AACCodec::DecodeSequenceHeader()
+int AACCodec::DecodeSequenceHeader(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
 
-    BufferManager manager;
-    if ((ret = manager.Initialize(extradata, extradata_size)) != ERROR_SUCCESS)
+    extradata_size = manager->Size() - manager->Pos();
+    if (extradata_size > 0)
     {
-        return ret;
+        rs_freepa(extradata);
+        extradata = new char[extradata_size];
+        memcpy(extradata, manager->Data() + manager->Pos(), extradata_size);
     }
-    if (!manager.Require(2))
+
+    if (!manager->Require(2))
     {
         ret = ERROR_CODEC_AAC_DECODE_EXTRADATA_FAILED;
         rs_error("aac decode extradata failed. ret=%d", ret);
         return ret;
     }
 
-    uint8_t temp1 = manager.Read1Bytes();
-    uint8_t temp2 = manager.Read1Bytes();
+    uint8_t temp1 = manager->Read1Bytes();
+    uint8_t temp2 = manager->Read1Bytes();
 
     channels = (temp2 >> 3) & 0x0f;
     sample_rate = ((temp1 & 0x07) << 1) | ((temp2 >> 7) & 0x01);
     object_type = (aac::ObjectType)((temp1 >> 3) & 0x1f);
 
-    rs_trace("aac extradata parsed. profile=%s, sample_rate=%s, channel=%s",
+    rs_trace("aac extradata parsed. profile=%s, sample_rate=%sHz, channel=%s",
              aac::object_type_to_str(object_type).c_str(),
              aac::sample_rate_to_str(sample_rate).c_str(),
              aac::channel_to_str(channels).c_str());
