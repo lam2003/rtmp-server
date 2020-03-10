@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 19:10:29
- * @LastEditTime : 2020-02-10 15:27:22
+ * @LastEditTime: 2020-03-10 15:49:17
  */
 #ifndef RS_DVR_HPP
 #define RS_DVR_HPP
@@ -12,6 +12,9 @@
 #include <protocol/rtmp/source.hpp>
 #include <muxer/flv.hpp>
 
+namespace rtmp
+{
+
 class DvrPlan;
 
 class FlvSegment
@@ -21,27 +24,27 @@ public:
     virtual ~FlvSegment();
 
 public:
-    virtual int Initialize(rtmp::Request *request);
+    virtual int Initialize(Request *request);
     virtual bool IsOverflow(int64_t max_duration);
     virtual int Open(bool use_temp_file = true);
     virtual int Close();
-    virtual int WriteMetadata(rtmp::SharedPtrMessage *shared_metadata);
-    virtual int WriteAudio(rtmp::SharedPtrMessage *shared_audio);
-    virtual int WriteVideo(rtmp::SharedPtrMessage *shared_video);
+    virtual int WriteMetadata(SharedPtrMessage *shared_metadata);
+    virtual int WriteAudio(SharedPtrMessage *shared_audio);
+    virtual int WriteVideo(SharedPtrMessage *shared_video);
     virtual int UpdateFlvMetadata();
     virtual std::string GetPath();
 
 private:
     std::string generate_path();
     int create_jitter(bool new_flv_file);
-    int on_update_duration(rtmp::SharedPtrMessage *msg);
+    int on_update_duration(SharedPtrMessage *msg);
 
 private:
-    rtmp::Request *request_;
+    Request *request_;
     DvrPlan *plan_;
     flv::Muxer *muxer_;
-    rtmp::Jitter *jitter_;
-    rtmp::JitterAlgorithm jitter_algorithm_;
+    Jitter *jitter_;
+    JitterAlgorithm jitter_algorithm_;
     FileWriter *writer_;
     int64_t duration_offset_;
     int64_t filesize_offset_;
@@ -65,12 +68,12 @@ public:
 
 public:
     static DvrPlan *CreatePlan(const std::string &vhost);
-    virtual int Initialize(rtmp::Request *request);
+    virtual int Initialize(Request *request);
     virtual int OnPublish() = 0;
     virtual void OnUnpublish() = 0;
-    virtual int OnMetadata(rtmp::SharedPtrMessage *shared_metadata);
-    virtual int OnAudio(rtmp::SharedPtrMessage *shared_audio);
-    virtual int OnVideo(rtmp::SharedPtrMessage *shared_video);
+    virtual int OnMetadata(SharedPtrMessage *shared_metadata);
+    virtual int OnAudio(SharedPtrMessage *shared_audio);
+    virtual int OnVideo(SharedPtrMessage *shared_video);
 
 protected:
     virtual int on_keyframe();
@@ -78,7 +81,7 @@ protected:
     virtual int64_t filter_timestamp(int64_t timestamp);
 
 protected:
-    rtmp::Request *request_;
+    Request *request_;
     bool dvr_enabled_;
     FlvSegment *segment_;
 };
@@ -90,21 +93,21 @@ public:
     virtual ~DvrSegmentPlan();
 
 public:
-    virtual int Initialize(rtmp::Request *request) override;
+    virtual int Initialize(Request *request) override;
     virtual int OnPublish() override;
     virtual void OnUnpublish() override;
-    virtual int OnMetadata(rtmp::SharedPtrMessage *shared_metadata) override;
-    virtual int OnAudio(rtmp::SharedPtrMessage *shared_audio) override;
-    virtual int OnVideo(rtmp::SharedPtrMessage *shared_video) override;
+    virtual int OnMetadata(SharedPtrMessage *shared_metadata) override;
+    virtual int OnAudio(SharedPtrMessage *shared_audio) override;
+    virtual int OnVideo(SharedPtrMessage *shared_video) override;
 
 private:
-    int update_duration(rtmp::SharedPtrMessage *msg);
+    int update_duration(SharedPtrMessage *msg);
 
 private:
     int segment_duration_;
-    rtmp::SharedPtrMessage *sh_video_;
-    rtmp::SharedPtrMessage *sh_audio_;
-    rtmp::SharedPtrMessage *metadata_;
+    SharedPtrMessage *sh_video_;
+    SharedPtrMessage *sh_audio_;
+    SharedPtrMessage *metadata_;
     int audio_num_before_segment_;
 };
 
@@ -115,16 +118,18 @@ public:
     virtual ~Dvr();
 
 public:
-    virtual int Initialize(rtmp::Source *source, rtmp::Request *request);
-    virtual int OnPublish(rtmp::Request *request);
+    virtual int Initialize(Source *source, Request *request);
+    virtual int OnPublish(Request *request);
     virtual void OnUnpubish();
-    virtual int OnMetadata(rtmp::SharedPtrMessage *shared_metadata);
-    virtual int OnAudio(rtmp::SharedPtrMessage *shared_audio);
-    virtual int OnVideo(rtmp::SharedPtrMessage *shared_video);
+    virtual int OnMetadata(SharedPtrMessage *shared_metadata);
+    virtual int OnAudio(SharedPtrMessage *shared_audio);
+    virtual int OnVideo(SharedPtrMessage *shared_video);
 
 private:
-    rtmp::Source *source_;
+    Source *source_;
     DvrPlan *plan_;
 };
+
+} // namespace rtmp
 
 #endif

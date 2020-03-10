@@ -35,24 +35,24 @@ public:
 protected:
     virtual int32_t StreamServiceCycle();
     virtual int32_t ServiceCycle();
-    virtual int32_t Publishing(rtmp::Source *source);
+    virtual int32_t Publishing(Source *source);
     //IConnection
     virtual int32_t DoCycle() override;
 
 private:
-    int handle_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_fmle, bool is_edge);
-    int process_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_edge);
-    int do_publishing(rtmp::Source *source, PublishRecvThread *recv_thread);
+    int handle_publish_message(Source *source, CommonMessage *msg, bool is_fmle, bool is_edge);
+    int process_publish_message(Source *source, CommonMessage *msg, bool is_edge);
+    int do_publishing(Source *source, PublishRecvThread *recv_thread);
     void set_socket_option();
-    int acquire_publish(rtmp::Source *source, bool is_edge);
+    int acquire_publish(Source *source, bool is_edge);
 
 private:
     Server *server_;
     StSocket *socket_;
     RTMPServer *rtmp_;
-    rtmp::Request *request_;
-    rtmp::Response *response_;
-    rtmp::ConnType type_;
+    Request *request_;
+    Response *response_;
+    ConnType type_;
     bool tcp_nodelay_;
 
     int publish_first_pkt_timeout_;

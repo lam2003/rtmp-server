@@ -2,7 +2,6 @@ add_executable(rtmp_server EXCLUDE_FROM_ALL
     main.cpp
     server.cpp
     rtmp_server.cpp
-    dvr.cpp
 )
 
 add_dependencies(rtmp_server

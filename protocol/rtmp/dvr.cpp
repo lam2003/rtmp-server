@@ -1,9 +1,9 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 13:14:31
- * @LastEditTime : 2020-02-13 14:05:23
+ * @LastEditTime: 2020-03-10 15:49:30
  */
-#include <app/dvr.hpp>
+#include <protocol/rtmp/dvr.hpp>
 #include <common/config.hpp>
 #include <protocol/amf/amf0.hpp>
 
@@ -11,13 +11,16 @@
 //46.875fps*10s=468.75
 #define NUM_TO_JUDGE_DVR_ONLY_HAS_AUDIO 500
 
+namespace rtmp
+{
+
 FlvSegment::FlvSegment(DvrPlan *plan)
 {
     request_ = nullptr;
     plan_ = plan;
     muxer_ = new flv::Muxer;
     jitter_ = nullptr;
-    jitter_algorithm_ = rtmp::JitterAlgorithm::OFF;
+    jitter_algorithm_ = JitterAlgorithm::OFF;
     writer_ = new FileWriter;
     duration_offset_ = 0;
     filesize_offset_ = 0;
@@ -38,12 +41,12 @@ FlvSegment::~FlvSegment()
     rs_freep(muxer_);
 }
 
-int FlvSegment::Initialize(rtmp::Request *request)
+int FlvSegment::Initialize(Request *request)
 {
     int ret = ERROR_SUCCESS;
 
     request_ = request;
-    jitter_algorithm_ = (rtmp::JitterAlgorithm)_config->GetDvrTimeJitter(request->vhost);
+    jitter_algorithm_ = (JitterAlgorithm)_config->GetDvrTimeJitter(request->vhost);
 
     return ret;
 }
@@ -70,7 +73,7 @@ std::string FlvSegment::generate_path()
     return flv_path;
 }
 
-int FlvSegment::on_update_duration(rtmp::SharedPtrMessage *msg)
+int FlvSegment::on_update_duration(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
@@ -99,7 +102,7 @@ int FlvSegment::create_jitter(bool new_flv_file)
     if (new_flv_file)
     {
         rs_freep(jitter_);
-        jitter_ = new rtmp::Jitter;
+        jitter_ = new Jitter;
 
         start_time_ = -1;
         stream_previous_pkt_time_ = -1;
@@ -116,7 +119,7 @@ int FlvSegment::create_jitter(bool new_flv_file)
         return ret;
     }
 
-    jitter_ = new rtmp::Jitter;
+    jitter_ = new Jitter;
 
     return ret;
 }
@@ -247,12 +250,12 @@ int FlvSegment::UpdateFlvMetadata()
     return ret;
 }
 
-int FlvSegment::WriteMetadata(rtmp::SharedPtrMessage *shared_metadata)
+int FlvSegment::WriteMetadata(SharedPtrMessage *shared_metadata)
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::SharedPtrMessage *metadata = shared_metadata->Copy();
-    rs_auto_free(rtmp::SharedPtrMessage, metadata);
+    SharedPtrMessage *metadata = shared_metadata->Copy();
+    rs_auto_free(SharedPtrMessage, metadata);
 
     if (duration_offset_ || filesize_offset_)
     {
@@ -321,12 +324,12 @@ int FlvSegment::WriteMetadata(rtmp::SharedPtrMessage *shared_metadata)
     return ret;
 }
 
-int FlvSegment::WriteAudio(rtmp::SharedPtrMessage *shared_audio)
+int FlvSegment::WriteAudio(SharedPtrMessage *shared_audio)
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::SharedPtrMessage *audio = shared_audio->Copy();
-    rs_auto_free(rtmp::SharedPtrMessage, audio);
+    SharedPtrMessage *audio = shared_audio->Copy();
+    rs_auto_free(SharedPtrMessage, audio);
 
     if (jitter_->Correct(audio, jitter_algorithm_) != ERROR_SUCCESS)
     {
@@ -350,12 +353,12 @@ int FlvSegment::WriteAudio(rtmp::SharedPtrMessage *shared_audio)
     return ret;
 }
 
-int FlvSegment::WriteVideo(rtmp::SharedPtrMessage *shared_video)
+int FlvSegment::WriteVideo(SharedPtrMessage *shared_video)
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::SharedPtrMessage *video = shared_video->Copy();
-    rs_auto_free(rtmp::SharedPtrMessage, video);
+    SharedPtrMessage *video = shared_video->Copy();
+    rs_auto_free(SharedPtrMessage, video);
 
     char *payload = video->payload;
     int size = video->size;
@@ -447,7 +450,7 @@ DvrPlan::~DvrPlan()
     rs_freep(segment_);
 }
 
-int DvrPlan::Initialize(rtmp::Request *request)
+int DvrPlan::Initialize(Request *request)
 {
     int ret = ERROR_SUCCESS;
 
@@ -461,7 +464,7 @@ int DvrPlan::Initialize(rtmp::Request *request)
     return ret;
 }
 
-int DvrPlan::OnAudio(rtmp::SharedPtrMessage *shared_audio)
+int DvrPlan::OnAudio(SharedPtrMessage *shared_audio)
 {
     int ret = ERROR_SUCCESS;
 
@@ -478,7 +481,7 @@ int DvrPlan::OnAudio(rtmp::SharedPtrMessage *shared_audio)
     return ret;
 }
 
-int DvrPlan::OnVideo(rtmp::SharedPtrMessage *shared_video)
+int DvrPlan::OnVideo(SharedPtrMessage *shared_video)
 {
     int ret = ERROR_SUCCESS;
 
@@ -495,7 +498,7 @@ int DvrPlan::OnVideo(rtmp::SharedPtrMessage *shared_video)
     return ret;
 }
 
-int DvrPlan::OnMetadata(rtmp::SharedPtrMessage *shared_metadata)
+int DvrPlan::OnMetadata(SharedPtrMessage *shared_metadata)
 {
     int ret = ERROR_SUCCESS;
 
@@ -555,7 +558,7 @@ DvrSegmentPlan::~DvrSegmentPlan()
     rs_freep(metadata_);
 }
 
-int DvrSegmentPlan::Initialize(rtmp::Request *request)
+int DvrSegmentPlan::Initialize(Request *request)
 {
     int ret = ERROR_SUCCESS;
     if ((ret = DvrPlan::Initialize(request)) != ERROR_SUCCESS)
@@ -602,7 +605,7 @@ void DvrSegmentPlan::OnUnpublish()
 {
 }
 
-int DvrSegmentPlan::OnMetadata(rtmp::SharedPtrMessage *shared_metadata)
+int DvrSegmentPlan::OnMetadata(SharedPtrMessage *shared_metadata)
 {
     int ret = ERROR_SUCCESS;
 
@@ -617,7 +620,7 @@ int DvrSegmentPlan::OnMetadata(rtmp::SharedPtrMessage *shared_metadata)
     return ret;
 }
 
-int DvrSegmentPlan::update_duration(rtmp::SharedPtrMessage *msg)
+int DvrSegmentPlan::update_duration(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
@@ -676,7 +679,7 @@ int DvrSegmentPlan::update_duration(rtmp::SharedPtrMessage *msg)
     return ret;
 }
 
-int DvrSegmentPlan::OnAudio(rtmp::SharedPtrMessage *shared_audio)
+int DvrSegmentPlan::OnAudio(SharedPtrMessage *shared_audio)
 {
     int ret = ERROR_SUCCESS;
 
@@ -699,7 +702,7 @@ int DvrSegmentPlan::OnAudio(rtmp::SharedPtrMessage *shared_audio)
     return ret;
 }
 
-int DvrSegmentPlan::OnVideo(rtmp::SharedPtrMessage *shared_video)
+int DvrSegmentPlan::OnVideo(SharedPtrMessage *shared_video)
 {
     int ret = ERROR_SUCCESS;
 
@@ -733,7 +736,7 @@ Dvr::~Dvr()
     rs_freep(plan_);
 }
 
-int Dvr::Initialize(rtmp::Source *source, rtmp::Request *request)
+int Dvr::Initialize(Source *source, Request *request)
 {
     int ret = ERROR_SUCCESS;
     rs_freep(plan_);
@@ -753,7 +756,7 @@ int Dvr::Initialize(rtmp::Source *source, rtmp::Request *request)
     return ret;
 }
 
-int Dvr::OnPublish(rtmp::Request *request)
+int Dvr::OnPublish(Request *request)
 {
     int ret = ERROR_SUCCESS;
 
@@ -770,7 +773,7 @@ void Dvr::OnUnpubish()
     plan_->OnUnpublish();
 }
 
-int Dvr::OnMetadata(rtmp::SharedPtrMessage *shared_metadata)
+int Dvr::OnMetadata(SharedPtrMessage *shared_metadata)
 {
     int ret = ERROR_SUCCESS;
 
@@ -782,7 +785,7 @@ int Dvr::OnMetadata(rtmp::SharedPtrMessage *shared_metadata)
     return ret;
 }
 
-int Dvr::OnAudio(rtmp::SharedPtrMessage *shared_audio)
+int Dvr::OnAudio(SharedPtrMessage *shared_audio)
 {
     int ret = ERROR_SUCCESS;
 
@@ -794,7 +797,7 @@ int Dvr::OnAudio(rtmp::SharedPtrMessage *shared_audio)
     return ret;
 }
 
-int Dvr::OnVideo(rtmp::SharedPtrMessage *shared_video)
+int Dvr::OnVideo(SharedPtrMessage *shared_video)
 {
     int ret = ERROR_SUCCESS;
 
@@ -805,3 +808,5 @@ int Dvr::OnVideo(rtmp::SharedPtrMessage *shared_video)
 
     return ret;
 }
+
+} // namespace rtmp

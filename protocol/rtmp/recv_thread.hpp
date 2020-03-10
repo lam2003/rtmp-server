@@ -18,7 +18,7 @@ class Connection;
 class RecvThread : virtual public internal::IThreadHandler
 {
 public:
-    RecvThread(rtmp::IMessageHandler *handler, RTMPServer *rtmp, int32_t timeout_ms);
+    RecvThread(IMessageHandler *handler, RTMPServer *rtmp, int32_t timeout_ms);
     virtual ~RecvThread();
 
 public:
@@ -34,22 +34,22 @@ public:
 
 private:
     internal::Thread *thread_;
-    rtmp::IMessageHandler *handler_;
+    IMessageHandler *handler_;
     RTMPServer *rtmp_;
     int32_t timeout_;
 };
 
-class PublishRecvThread : virtual public rtmp::IMessageHandler,
+class PublishRecvThread : virtual public IMessageHandler,
                           virtual public IMergeReadHandler,
                           virtual public IReloadHandler
 {
 public:
     PublishRecvThread(RTMPServer *rtmp,
-                      rtmp::Request *request,
+                      Request *request,
                       int mr_socket_fd,
                       int timeout_ms,
-                      rtmp::Connection *conn,
-                      rtmp::Source *source,
+                      Connection *conn,
+                      Source *source,
                       bool is_fmle,
                       bool is_edge);
     virtual ~PublishRecvThread();
@@ -63,11 +63,11 @@ public:
     virtual void SetCID(int cid);
     virtual int ErrorCode();
     virtual int64_t GetMsgNum();
-    //rtmp::IMessageHandler
+    //IMessageHandler
     virtual void OnThreadStart() override;
     virtual void OnThreadStop() override;
     virtual void OnRead(ssize_t nread) override;
-    virtual int Handle(rtmp::CommonMessage *msg) override;
+    virtual int Handle(CommonMessage *msg) override;
     virtual void OnRecvError(int32_t ret) override;
 
 private:
@@ -76,7 +76,7 @@ private:
 private:
     RecvThread *thread_;
     RTMPServer *rtmp_;
-    rtmp::Request *request_;
+    Request *request_;
     int64_t nb_msgs_;
     uint64_t video_frames_;
     bool mr_;
@@ -84,8 +84,8 @@ private:
     int mr_sleep_;
     bool real_time_;
     int recv_error_code_;
-    rtmp::Connection *conn_;
-    rtmp::Source *source_;
+    Connection *conn_;
+    Source *source_;
     bool is_fmle_;
     bool is_edge_;
     st_cond_t error_;

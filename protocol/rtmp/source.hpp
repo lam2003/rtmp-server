@@ -7,11 +7,10 @@
 #include <protocol/rtmp/stack.hpp>
 #include <protocol/rtmp/jitter.hpp>
 
-class Dvr;
-
 namespace rtmp
 {
 
+class Dvr;
 class Source;
 class MessageQueue;
 

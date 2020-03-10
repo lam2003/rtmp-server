@@ -2,7 +2,7 @@
 #include <protocol/rtmp/defines.hpp>
 #include <common/config.hpp>
 #include <common/file.hpp>
-#include <app/dvr.hpp>
+#include <protocol/rtmp/dvr.hpp>
 #include <muxer/flv.hpp>
 
 #include <sstream>

@@ -7,7 +7,7 @@
 namespace rtmp
 {
 
-RecvThread::RecvThread(rtmp::IMessageHandler *handler,
+RecvThread::RecvThread(IMessageHandler *handler,
                        RTMPServer *rtmp,
                        int32_t timeout_ms)
 {
@@ -56,7 +56,7 @@ int32_t RecvThread::Cycle()
             continue;
         }
 
-        rtmp::CommonMessage *msg = nullptr;
+        CommonMessage *msg = nullptr;
 
         if ((ret = rtmp_->RecvMessage(&msg)) != ERROR_SUCCESS)
         {
@@ -94,11 +94,11 @@ void RecvThread::OnThreadStart()
 }
 
 PublishRecvThread::PublishRecvThread(RTMPServer *rtmp,
-                                     rtmp::Request *request,
+                                     Request *request,
                                      int mr_socket_fd,
                                      int timeout_ms,
-                                     rtmp::Connection *conn,
-                                     rtmp::Source *source,
+                                     Connection *conn,
+                                     Source *source,
                                      bool is_fmle,
                                      bool is_edge)
 {
@@ -219,7 +219,7 @@ void PublishRecvThread::OnRead(ssize_t nread)
     }
 }
 
-int PublishRecvThread::Handle(rtmp::CommonMessage *msg)
+int PublishRecvThread::Handle(CommonMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 

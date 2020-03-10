@@ -9,6 +9,7 @@ add_library(protocol
     rtmp/jitter.cpp
     rtmp/connection.cpp
     rtmp/recv_thread.cpp
+    rtmp/dvr.cpp
 )
 
 add_dependencies(protocol

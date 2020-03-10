@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime: 2020-03-10 15:35:41
+ * @LastEditTime: 2020-03-10 15:51:30
  */
 
 #include <protocol/rtmp/connection.hpp>
@@ -25,9 +25,9 @@ Connection::Connection(Server *server, st_netfd_t stfd) : IConnection(server, st
     server_ = server;
     socket_ = new StSocket(stfd);
     rtmp_ = new RTMPServer(socket_);
-    request_ = new rtmp::Request;
-    response_ = new rtmp::Response;
-    type_ = rtmp::ConnType::UNKNOW;
+    request_ = new Request;
+    response_ = new Response;
+    type_ = ConnType::UNKNOW;
     tcp_nodelay_ = false;
 }
 
@@ -69,7 +69,7 @@ int32_t Connection::StreamServiceCycle()
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::ConnType type;
+    ConnType type;
 
     if ((ret = rtmp_->IdentifyClient(response_->stream_id, type, request_->stream, request_->duration)) != ERROR_SUCCESS)
     {
@@ -77,14 +77,14 @@ int32_t Connection::StreamServiceCycle()
         return ret;
     }
 
-    rtmp::DiscoveryTcUrl(request_->tc_url,
-                         request_->schema,
-                         request_->host,
-                         request_->vhost,
-                         request_->app,
-                         request_->stream,
-                         request_->port,
-                         request_->param);
+    DiscoveryTcUrl(request_->tc_url,
+                   request_->schema,
+                   request_->host,
+                   request_->vhost,
+                   request_->app,
+                   request_->stream,
+                   request_->port,
+                   request_->param);
     request_->Strip();
 
     if (request_->schema.empty() || request_->vhost.empty() || request_->port.empty() || request_->app.empty())
@@ -101,8 +101,8 @@ int32_t Connection::StreamServiceCycle()
         return ret;
     }
 
-    rtmp::Source *source = nullptr;
-    if ((ret = rtmp::Source::FetchOrCreate(request_, server_, &source)) != ERROR_SUCCESS)
+    Source *source = nullptr;
+    if ((ret = Source::FetchOrCreate(request_, server_, &source)) != ERROR_SUCCESS)
     {
         return ret;
     }
@@ -110,30 +110,30 @@ int32_t Connection::StreamServiceCycle()
     type_ = type;
     switch (type)
     {
-    case rtmp::ConnType::FMLE_PUBLISH:
+    case ConnType::FMLE_PUBLISH:
         if ((ret = rtmp_->StartFmlePublish(response_->stream_id)) != ERROR_SUCCESS)
         {
             rs_error("start to publish stream failed. ret=%d", ret);
             return ret;
         }
         return Publishing(source);
-    case rtmp::ConnType::PLAY:
+    case ConnType::PLAY:
         break;
-    case rtmp::ConnType::UNKNOW:
+    case ConnType::UNKNOW:
         break;
     }
 
     return ret;
 }
 
-int32_t Connection::Publishing(rtmp::Source *source)
+int32_t Connection::Publishing(Source *source)
 {
     int ret = ERROR_SUCCESS;
 
     bool vhost_is_edge = _config->GetVhostIsEdge(request_->vhost);
     if ((ret = acquire_publish(source, false)) == ERROR_SUCCESS)
     {
-        PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ != rtmp::ConnType::FMLE_PUBLISH, vhost_is_edge);
+        PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ != ConnType::FMLE_PUBLISH, vhost_is_edge);
 
         ret = do_publishing(source, &recv_thread);
 
@@ -153,7 +153,7 @@ int32_t Connection::ServiceCycle()
         return ret;
     }
 
-    if ((ret = rtmp_->SetPeerBandwidth((int)RTMP_DEFAULT_PEER_BAND_WIDTH, (int)rtmp::PeerBandwidthType::DYNAMIC)) != ERROR_SUCCESS)
+    if ((ret = rtmp_->SetPeerBandwidth((int)RTMP_DEFAULT_PEER_BAND_WIDTH, (int)PeerBandwidthType::DYNAMIC)) != ERROR_SUCCESS)
     {
         rs_error("set peer bandwidth failed. ret=%d", ret);
         return ret;
@@ -202,7 +202,7 @@ void Connection::CleanUp()
 {
 }
 
-int Connection::process_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_edge)
+int Connection::process_publish_message(Source *source, CommonMessage *msg, bool is_edge)
 {
     int ret = ERROR_SUCCESS;
     if (is_edge)
@@ -230,17 +230,17 @@ int Connection::process_publish_message(rtmp::Source *source, rtmp::CommonMessag
 
     if (msg->header.IsAMF0Data() || msg->header.IsAMF3Data())
     {
-        rtmp::Packet *packet = nullptr;
+        Packet *packet = nullptr;
         if ((ret = rtmp_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
         {
             rs_error("decode on_metadata message failed. ret=%d", ret);
             return ret;
         }
-        rs_auto_free(rtmp::Packet, packet);
+        rs_auto_free(Packet, packet);
 
-        if (dynamic_cast<rtmp::OnMetadataPacket *>(packet))
+        if (dynamic_cast<OnMetadataPacket *>(packet))
         {
-            rtmp::OnMetadataPacket *pkt = dynamic_cast<rtmp::OnMetadataPacket *>(packet);
+            OnMetadataPacket *pkt = dynamic_cast<OnMetadataPacket *>(packet);
             if ((ret = source->OnMetadata(msg, pkt)) != ERROR_SUCCESS)
             {
                 rs_error("source process on_metadata message failed. ret=%d", ret);
@@ -254,20 +254,20 @@ int Connection::process_publish_message(rtmp::Source *source, rtmp::CommonMessag
     return ret;
 }
 
-int Connection::handle_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_fmle, bool is_edge)
+int Connection::handle_publish_message(Source *source, CommonMessage *msg, bool is_fmle, bool is_edge)
 {
     int ret = ERROR_SUCCESS;
 
     if (msg->header.IsAMF0Command() || msg->header.IsAMF3Command())
     {
-        rtmp::Packet *packet = nullptr;
+        Packet *packet = nullptr;
         if ((ret = rtmp_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
         {
             rs_error("FMLE decode unpublish message failed. ret=%d", ret);
             return ret;
         }
 
-        rs_auto_free(rtmp::Packet, packet);
+        rs_auto_free(Packet, packet);
 
         if (!is_fmle)
         {
@@ -275,9 +275,9 @@ int Connection::handle_publish_message(rtmp::Source *source, rtmp::CommonMessage
             return ERROR_CONTROL_REPUBLISH;
         }
 
-        if (dynamic_cast<rtmp::FMLEStartPacket *>(packet))
+        if (dynamic_cast<FMLEStartPacket *>(packet))
         {
-            rtmp::FMLEStartPacket *pkt = dynamic_cast<rtmp::FMLEStartPacket *>(packet);
+            FMLEStartPacket *pkt = dynamic_cast<FMLEStartPacket *>(packet);
             if ((ret = rtmp_->FMLEUnPublish(response_->stream_id, pkt->transaction_id)) != ERROR_SUCCESS)
             {
                 return ret;
@@ -326,7 +326,7 @@ void Connection::set_socket_option()
     }
 }
 
-int Connection::acquire_publish(rtmp::Source *source, bool is_edge)
+int Connection::acquire_publish(Source *source, bool is_edge)
 {
     int ret = ERROR_SUCCESS;
 
@@ -352,7 +352,7 @@ int Connection::acquire_publish(rtmp::Source *source, bool is_edge)
     return ret;
 }
 
-int Connection::do_publishing(rtmp::Source *source, PublishRecvThread *recv_thread)
+int Connection::do_publishing(Source *source, PublishRecvThread *recv_thread)
 {
     int ret = ERROR_SUCCESS;
 
