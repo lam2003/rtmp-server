@@ -1,5 +1,5 @@
-#include <protocol/rtmp_source.hpp>
-#include <protocol/rtmp_consts.hpp>
+#include <protocol/rtmp/source.hpp>
+#include <protocol/rtmp/defines.hpp>
 #include <common/config.hpp>
 #include <common/file.hpp>
 #include <app/dvr.hpp>

@@ -10,8 +10,8 @@
 #include <common/thread.hpp>
 #include <common/io.hpp>
 #include <common/kbps.hpp>
-#include <protocol/rtmp_source.hpp>
-#include <protocol/rtmp_stack.hpp>
+#include <protocol/rtmp/source.hpp>
+#include <protocol/rtmp/stack.hpp>
 
 namespace rtmp
 {

@@ -1,8 +1,8 @@
 #include <app/rtmp_server.hpp>
 #include <common/utils.hpp>
 #include <common/error.hpp>
-#include <protocol/rtmp_stack.hpp>
-#include <protocol/rtmp_consts.hpp>
+#include <protocol/rtmp/stack.hpp>
+#include <protocol/rtmp/defines.hpp>
 
 RTMPServer::RTMPServer(IProtocolReaderWriter *rw) : rw_(rw)
 {

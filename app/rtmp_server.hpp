@@ -2,7 +2,7 @@
 #define RS_RTMP_SERVER_HPP
 
 #include <common/core.hpp>
-#include <protocol/rtmp_stack.hpp>
+#include <protocol/rtmp/stack.hpp>
 
 class RTMPServer
 {

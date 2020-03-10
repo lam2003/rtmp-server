@@ -1,12 +1,12 @@
 add_library(protocol
-    rtmp_stack.cpp
-    amf0.cpp
-    rtmp_source.cpp
-    rtmp_edge.cpp
-    rtmp_packet.cpp
-    rtmp_message.cpp
-    rtmp_handshake.cpp
-    rtmp_jitter.cpp
+    rtmp/stack.cpp
+    amf/amf0.cpp
+    rtmp/source.cpp
+    rtmp/edge.cpp
+    rtmp/packet.cpp
+    rtmp/message.cpp
+    rtmp/handshake.cpp
+    rtmp/jitter.cpp
 )
 
 add_dependencies(protocol

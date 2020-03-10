@@ -1,4 +1,4 @@
-#include <protocol/rtmp_edge.hpp>
+#include <protocol/rtmp/edge.hpp>
 
 namespace rtmp
 {

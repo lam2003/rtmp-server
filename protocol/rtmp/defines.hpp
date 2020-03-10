@@ -1,10 +1,5 @@
-/*
- * @Author: linmin
- * @Date: 2020-02-11 20:15:08
- * @LastEditTime: 2020-02-17 12:45:40
- */
-#ifndef RS_CONSTS_H
-#define RS_CONSTS_H
+#ifndef RS_RTMP_DEFINES_H
+#define RS_RTMP_DEFINES_H
 
 #define RTMP_SEND_TIMEOUT_US (int64_t)(30 * 1000 * 1000LL)
 #define RTMP_RECV_TIMEOUT_US (int64_t)(30 * 1000 * 1000LL)

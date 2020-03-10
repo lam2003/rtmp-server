@@ -8,7 +8,7 @@
 
 #include <common/core.hpp>
 #include <common/thread.hpp>
-#include <protocol/rtmp_stack.hpp>
+#include <protocol/rtmp/stack.hpp>
 #include <app/rtmp_connection.hpp>
 #include <app/rtmp_server.hpp>
 

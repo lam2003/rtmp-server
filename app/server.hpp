@@ -4,7 +4,7 @@
 #include <common/core.hpp>
 #include <common/listener.hpp>
 #include <common/connection.hpp>
-#include <protocol/rtmp_source.hpp>
+#include <protocol/rtmp/source.hpp>
 
 #include <string>
 

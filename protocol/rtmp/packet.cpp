@@ -1,5 +1,5 @@
-#include <protocol/rtmp_packet.hpp>
-#include <protocol/rtmp_consts.hpp>
+#include <protocol/rtmp/packet.hpp>
+#include <protocol/rtmp/defines.hpp>
 #include <common/utils.hpp>
 #include <common/log.hpp>
 #include <common/error.hpp>

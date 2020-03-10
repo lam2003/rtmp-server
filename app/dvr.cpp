@@ -5,7 +5,7 @@
  */
 #include <app/dvr.hpp>
 #include <common/config.hpp>
-#include <protocol/amf0.hpp>
+#include <protocol/amf/amf0.hpp>
 
 //48kHz/1024=46.875fps
 //46.875fps*10s=468.75

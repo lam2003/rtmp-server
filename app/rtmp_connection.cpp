@@ -5,9 +5,9 @@
  */
 
 #include <app/rtmp_connection.hpp>
-#include <protocol/rtmp_stack.hpp>
-#include <protocol/rtmp_consts.hpp>
-#include <protocol/rtmp_source.hpp>
+#include <protocol/rtmp/stack.hpp>
+#include <protocol/rtmp/defines.hpp>
+#include <protocol/rtmp/source.hpp>
 #include <common/error.hpp>
 #include <common/config.hpp>
 #include <common/log.hpp>

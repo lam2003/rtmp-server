@@ -7,7 +7,7 @@
 #define RS_RTMP_PACKET_HPP
 
 #include <common/core.hpp>
-#include <protocol/amf0.hpp>
+#include <protocol/amf/amf0.hpp>
 
 namespace rtmp
 {

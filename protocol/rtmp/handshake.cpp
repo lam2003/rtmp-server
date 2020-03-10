@@ -3,7 +3,7 @@
  * @Date: 2020-02-18 12:57:42
  * @LastEditTime: 2020-02-18 13:01:46
  */
-#include <protocol/rtmp_handshake.hpp>
+#include <protocol/rtmp/handshake.hpp>
 #include <common/log.hpp>
 #include <common/error.hpp>
 #include <common/utils.hpp>

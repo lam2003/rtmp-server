@@ -7,10 +7,10 @@
 #include <common/error.hpp>
 #include <common/log.hpp>
 #include <common/utils.hpp>
-#include <protocol/amf0.hpp>
-#include <protocol/rtmp_packet.hpp>
-#include <protocol/rtmp_message.hpp>
-#include <protocol/rtmp_handshake.hpp>
+#include <protocol/amf/amf0.hpp>
+#include <protocol/rtmp/packet.hpp>
+#include <protocol/rtmp/message.hpp>
+#include <protocol/rtmp/handshake.hpp>
 
 #include <map>
 

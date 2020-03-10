@@ -1,5 +1,5 @@
 #include <app/rtmp_recv_thread.hpp>
-#include <protocol/rtmp_consts.hpp>
+#include <protocol/rtmp/defines.hpp>
 #include <common/utils.hpp>
 #include <common/error.hpp>
 #include <common/config.hpp>

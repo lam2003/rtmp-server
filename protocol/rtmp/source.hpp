@@ -4,8 +4,8 @@
 #include <common/core.hpp>
 #include <common/connection.hpp>
 #include <common/queue.hpp>
-#include <protocol/rtmp_stack.hpp>
-#include <protocol/rtmp_jitter.hpp>
+#include <protocol/rtmp/stack.hpp>
+#include <protocol/rtmp/jitter.hpp>
 
 class Dvr;
 

@@ -1,4 +1,4 @@
-#include <protocol/rtmp_jitter.hpp>
+#include <protocol/rtmp/jitter.hpp>
 #include <common/error.hpp>
 #include <common/log.hpp>
 #include <common/utils.hpp>

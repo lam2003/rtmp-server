@@ -3,8 +3,8 @@
  * @Date: 2020-02-17 12:57:29
  * @LastEditTime: 2020-02-18 12:54:40
  */
-#include <protocol/rtmp_message.hpp>
-#include <protocol/rtmp_consts.hpp>
+#include <protocol/rtmp/message.hpp>
+#include <protocol/rtmp/defines.hpp>
 #include <common/utils.hpp>
 #include <common/log.hpp>
 #include <common/error.hpp>

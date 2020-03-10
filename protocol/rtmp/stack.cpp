@@ -1,5 +1,5 @@
-#include <protocol/rtmp_stack.hpp>
-#include <protocol/rtmp_consts.hpp>
+#include <protocol/rtmp/stack.hpp>
+#include <protocol/rtmp/defines.hpp>
 
 namespace rtmp
 {

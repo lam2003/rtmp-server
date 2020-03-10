@@ -9,7 +9,7 @@
 #include <common/core.hpp>
 #include <common/file.hpp>
 #include <common/queue.hpp>
-#include <protocol/rtmp_source.hpp>
+#include <protocol/rtmp/source.hpp>
 #include <muxer/flv.hpp>
 
 class DvrPlan;
