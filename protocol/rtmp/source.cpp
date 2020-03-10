@@ -33,7 +33,7 @@ Consumer::Consumer(Source *s, Connection *c)
     source_ = s;
     conn_ = c;
     pause_ = false;
-    jitter_ = new rtmp::Jitter;
+    jitter_ = new Jitter;
     queue_ = new MessageQueue;
     mw_wait_ = st_cond_new();
     mw_waiting_ = false;
@@ -337,7 +337,7 @@ Source::~Source()
     rs_freep(request_);
 }
 
-int Source::FetchOrCreate(rtmp::Request *r, ISourceHandler *h, Source **pps)
+int Source::FetchOrCreate(Request *r, ISourceHandler *h, Source **pps)
 {
     int ret = ERROR_SUCCESS;
 
@@ -369,7 +369,7 @@ int Source::FetchOrCreate(rtmp::Request *r, ISourceHandler *h, Source **pps)
     return ret;
 }
 
-Source *Source::Fetch(rtmp::Request *r)
+Source *Source::Fetch(Request *r)
 {
     Source *source = nullptr;
 
@@ -387,7 +387,7 @@ Source *Source::Fetch(rtmp::Request *r)
     return source;
 }
 
-int Source::Initialize(rtmp::Request *r, ISourceHandler *h)
+int Source::Initialize(Request *r, ISourceHandler *h)
 {
     int ret = ERROR_SUCCESS;
 
@@ -615,7 +615,7 @@ int Source::OnVideo(CommonMessage *msg)
     return ret;
 }
 
-int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
+int Source::OnMetadata(CommonMessage *msg, OnMetadataPacket *pkt)
 {
     int ret = ERROR_SUCCESS;
 
@@ -681,7 +681,7 @@ int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
     // }
 
     rs_freep(cache_metadata_);
-    cache_metadata_ = new rtmp::SharedPtrMessage;
+    cache_metadata_ = new SharedPtrMessage;
 
     if ((ret = cache_metadata_->Create(&msg->header, payload, size)) != ERROR_SUCCESS)
     {

@@ -21,7 +21,7 @@ public:
     virtual ~Jitter();
 
 public:
-    virtual int Correct(rtmp::SharedPtrMessage *msg, rtmp::JitterAlgorithm ag);
+    virtual int Correct(SharedPtrMessage *msg, JitterAlgorithm ag);
     virtual int GetTime();
 
 private:

@@ -102,7 +102,7 @@ public:
     virtual void OnConsumerDestroy(Consumer *consumer);
     virtual int OnAudio(CommonMessage *msg);
     virtual int OnVideo(CommonMessage *msg);
-    virtual int OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt);
+    virtual int OnMetadata(CommonMessage *msg, OnMetadataPacket *pkt);
     virtual int OnDvrRequestSH();
     virtual int OnPublish();
     virtual void OnUnpublish();

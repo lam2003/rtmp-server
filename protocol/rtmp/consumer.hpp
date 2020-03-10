@@ -38,7 +38,7 @@ private:
     Source *source_;
     Connection *conn_;
     bool pause_;
-    rtmp::Jitter *jitter_;
+    Jitter *jitter_;
     MessageQueue *queue_;
     st_cond_t mw_wait_;
     bool mw_waiting_;
