@@ -172,14 +172,14 @@ public:
     static bool IsKeyFrame(char *data, int size);
 
 private:
-    int demux_aac(BufferManager *manager, CodecSample *sample);
-    int demux_avc(BufferManager *manager, CodecSample *sample);
+    int demux_aac(BufferManager *manager, ICodecSample *s);
+    int demux_avc(BufferManager *manager, ICodecSample *s);
 
 public:
     flv::VideoCodecType vcodec_type;
-    VCodec *vcodec;
+    IVCodec *vcodec;
     flv::AudioCodecType acodec_type;
-    ACodec *acodec;
+    IACodec *acodec;
 };
 
 } // namespace flv

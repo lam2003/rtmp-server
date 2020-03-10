@@ -1,17 +1,17 @@
 #include <codec/codec.hpp>
 
-VCodec::VCodec()
+IVCodec::IVCodec()
 {
 }
 
-VCodec::~VCodec()
+IVCodec::~IVCodec()
 {
 }
 
-ACodec::ACodec()
+IACodec::IACodec()
 {
 }
 
-ACodec::~ACodec()
+IACodec::~IACodec()
 {
 }

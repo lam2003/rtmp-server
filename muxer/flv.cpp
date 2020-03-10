@@ -356,7 +356,7 @@ Demuxer::~Demuxer()
     rs_freep(acodec);
 }
 
-int Demuxer::demux_aac(BufferManager *manager, CodecSample *sample)
+int Demuxer::demux_aac(BufferManager *manager, ICodecSample *s)
 {
     int ret = ERROR_SUCCESS;
 
@@ -364,15 +364,7 @@ int Demuxer::demux_aac(BufferManager *manager, CodecSample *sample)
     {
         acodec_type = flv::AudioCodecType::AAC;
         rs_freep(acodec);
-        acodec = new AACCodec;
-    }
-
-    AACCodec *aac_codec = dynamic_cast<AACCodec *>(acodec);
-    if (!aac_codec)
-    {
-        ret = ERROR_CODEC_ACODEC_TYPE_ERROR;
-        rs_error("audio codec type error. ret=%d", ret);
-        return ret;
+        acodec = new aac::Codec;
     }
 
     if (!manager->Require(1))
@@ -382,13 +374,14 @@ int Demuxer::demux_aac(BufferManager *manager, CodecSample *sample)
         return ret;
     }
 
+    CodecSample *sample = dynamic_cast<CodecSample *>(s);
     sample->aac_pkt_type = (flv::AACPacketType)manager->Read1Bytes();
     switch (sample->aac_pkt_type)
     {
     case flv::AACPacketType::SEQUENCE_HEADER:
-        return aac_codec->DecodeSequenceHeader(manager);
+        return acodec->DecodeSequenceHeader(manager);
     case flv::AACPacketType::RAW_DATA:
-        return aac_codec->DecodeRawData(manager, sample);
+        return acodec->DecodeRawData(manager, sample);
     default:
         ret = ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED;
         rs_error("flv aac_packet_type error. ret=%d", ret);
@@ -396,7 +389,7 @@ int Demuxer::demux_aac(BufferManager *manager, CodecSample *sample)
     }
 }
 
-int Demuxer::demux_avc(BufferManager *manager, CodecSample *sample)
+int Demuxer::demux_avc(BufferManager *manager, ICodecSample *s)
 {
     int ret = ERROR_SUCCESS;
 
@@ -404,9 +397,10 @@ int Demuxer::demux_avc(BufferManager *manager, CodecSample *sample)
     {
         vcodec_type = flv::VideoCodecType::AVC;
         rs_freep(vcodec);
-        vcodec = new AVCCodec;
+        vcodec = new avc::Codec;
     }
 
+    CodecSample *sample = dynamic_cast<CodecSample *>(s);
     if (sample->frame_type == flv::VideoFrameType::VIDEO_INFO_FRAME)
     {
         rs_warn("ignore video info frame");

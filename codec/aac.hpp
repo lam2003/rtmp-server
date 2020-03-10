@@ -22,13 +22,11 @@ extern std::string object_type_to_str(aac::ObjectType object_type);
 extern std::string sample_rate_to_str(int sample_rate_idx);
 extern std::string channel_to_str(int channel);
 
-} // namespace aac
-
-class AACCodec : public ACodec
+class Codec : public IACodec
 {
 public:
-    AACCodec();
-    virtual ~AACCodec();
+    Codec();
+    virtual ~Codec();
 
 public:
     virtual bool HasSequenceHeader() override;
@@ -42,5 +40,7 @@ public:
     uint8_t sample_rate;
     aac::ObjectType object_type;
 };
+
+} // namespace aac
 
 #endif

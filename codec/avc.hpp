@@ -76,13 +76,12 @@ extern std::string profile_to_str(Profile profile);
 extern std::string level_to_str(Level level);
 extern int read_bit(BitBufferManager *manager, int8_t &v);
 extern int read_uev(BitBufferManager *manager, int32_t &v);
-} // namespace avc
 
-class AVCCodec : public VCodec
+class Codec : public IVCodec
 {
 public:
-    AVCCodec();
-    virtual ~AVCCodec();
+    Codec();
+    virtual ~Codec();
 
 public:
     virtual bool HasSequenceHeader() override;
@@ -110,5 +109,7 @@ public:
     int height;
     int8_t length_size_minus_one;
 };
+
+} // namespace avc
 
 #endif

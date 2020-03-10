@@ -6,7 +6,7 @@
 
 namespace avc
 {
-    
+
 std::string profile_to_str(Profile profile)
 {
     switch (profile)
@@ -81,11 +81,9 @@ std::string level_to_str(Level level)
     }
 }
 
-} // namespace avc
-
 // for SPS, 7.3.2.1.1 Sequence parameter set data syntax
 // H.264-AVC-ISO_IEC_14496-10-2012.pdf, page 62.
-int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
+int Codec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
 {
     int ret = ERROR_SUCCESS;
 
@@ -376,7 +374,7 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
     return ret;
 }
 
-int AVCCodec::demux_sps()
+int Codec::demux_sps()
 {
     int ret = ERROR_SUCCESS;
 
@@ -434,12 +432,12 @@ int AVCCodec::demux_sps()
     return demux_sps_rbsp((char *)rbsp, nb_rbsp);
 }
 
-bool AVCCodec::HasSequenceHeader()
+bool Codec::HasSequenceHeader()
 {
     return extradata_size > 0 && extradata;
 }
 
-int AVCCodec::DecodeSequenceHeader(BufferManager *manager)
+int Codec::DecodeSequenceHeader(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
 
@@ -567,7 +565,7 @@ int AVCCodec::DecodeSequenceHeader(BufferManager *manager)
     return ret;
 }
 
-bool AVCCodec::start_with_annexb(BufferManager *manager, int *pnb_start_code)
+bool Codec::start_with_annexb(BufferManager *manager, int *pnb_start_code)
 {
     char *bytes = manager->Data() + manager->Pos();
     char *p = bytes;
@@ -599,7 +597,7 @@ bool AVCCodec::start_with_annexb(BufferManager *manager, int *pnb_start_code)
     return false;
 }
 
-int AVCCodec::demux_annexb_format(BufferManager *manager, ICodecSample *sample)
+int Codec::demux_annexb_format(BufferManager *manager, ICodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
@@ -650,7 +648,7 @@ int AVCCodec::demux_annexb_format(BufferManager *manager, ICodecSample *sample)
     return ret;
 }
 
-int AVCCodec::demux_ibmf_format(BufferManager *manager, ICodecSample *sample)
+int Codec::demux_ibmf_format(BufferManager *manager, ICodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
@@ -706,7 +704,7 @@ int AVCCodec::demux_ibmf_format(BufferManager *manager, ICodecSample *sample)
     return ret;
 }
 
-int AVCCodec::DecodecNalu(BufferManager *manager, ICodecSample *sample)
+int Codec::DecodecNalu(BufferManager *manager, ICodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
@@ -777,7 +775,7 @@ int AVCCodec::DecodecNalu(BufferManager *manager, ICodecSample *sample)
     return ret;
 }
 
-AVCCodec::AVCCodec()
+Codec::Codec()
 {
     profile = avc::Profile::UNKNOW;
     level = avc::Level::UNKNOW;
@@ -793,9 +791,11 @@ AVCCodec::AVCCodec()
     length_size_minus_one = 0;
 }
 
-AVCCodec::~AVCCodec()
+Codec::~Codec()
 {
     rs_freepa(extradata);
     rs_freepa(sps);
     rs_freepa(pps);
 }
+
+} // namespace avc

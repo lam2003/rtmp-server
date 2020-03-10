@@ -64,9 +64,8 @@ std::string channel_to_str(int channel)
         return "Unknow";
     }
 }
-} // namespace aac
 
-AACCodec::AACCodec()
+Codec::Codec()
 {
     extradata_size = 0;
     extradata = nullptr;
@@ -75,19 +74,19 @@ AACCodec::AACCodec()
     object_type = aac::ObjectType::UNKNOW;
 }
 
-AACCodec::~AACCodec()
+Codec::~Codec()
 {
     rs_freepa(extradata);
 }
 
-bool AACCodec::HasSequenceHeader()
+bool Codec::HasSequenceHeader()
 {
     return extradata_size > 0 && extradata;
 }
 
 // support mpeg4-aac
 // 1.6.2.1 AudioSpecificConfig, in aac-mp4a-format-ISO_IEC_14496-3+2001.pdf, page 33.
-int AACCodec::DecodeSequenceHeader(BufferManager *manager)
+int Codec::DecodeSequenceHeader(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
 
@@ -121,7 +120,7 @@ int AACCodec::DecodeSequenceHeader(BufferManager *manager)
     return ret;
 }
 
-int AACCodec::DecodeRawData(BufferManager *manager, ICodecSample *sample)
+int Codec::DecodeRawData(BufferManager *manager, ICodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
@@ -136,6 +135,8 @@ int AACCodec::DecodeRawData(BufferManager *manager, ICodecSample *sample)
         rs_error("add aac sample failed. ret=%d", ret);
         return ret;
     }
-    
+
     return ret;
 }
+
+} // namespace aac

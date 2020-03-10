@@ -5,11 +5,11 @@
 #include <common/buffer.hpp>
 #include <common/sample.hpp>
 
-class VCodec
+class IVCodec
 {
 public:
-    VCodec();
-    virtual ~VCodec();
+    IVCodec();
+    virtual ~IVCodec();
 
 public:
     virtual bool HasSequenceHeader() = 0;
@@ -17,11 +17,11 @@ public:
     virtual int DecodecNalu(BufferManager *manager, ICodecSample *sample) = 0;
 };
 
-class ACodec
+class IACodec
 {
 public:
-    ACodec();
-    virtual ~ACodec();
+    IACodec();
+    virtual ~IACodec();
 
 public:
     virtual bool HasSequenceHeader() = 0;
