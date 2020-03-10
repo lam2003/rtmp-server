@@ -7,7 +7,7 @@
 
 #include <string>
 
-class Connection;
+class IConnection;
 
 class IConnectionManager
 {
@@ -16,15 +16,15 @@ public:
     virtual ~IConnectionManager();
 
 public:
-    virtual void OnRemove(Connection *conn) = 0;
+    virtual void OnRemove(IConnection *conn) = 0;
 };
 
-class Connection : public virtual IKbpsDelta,
+class IConnection : public virtual IKbpsDelta,
                    public virtual internal::IThreadHandler
 {
 public:
-    Connection(IConnectionManager *conn_manager, st_netfd_t client_stfd);
-    virtual ~Connection();
+    IConnection(IConnectionManager *conn_manager, st_netfd_t client_stfd);
+    virtual ~IConnection();
 
 public:
     virtual void Dispose();

@@ -28,7 +28,7 @@ IWakeable::~IWakeable()
 }
 
 
-Consumer::Consumer(Source *s, Connection *c)
+Consumer::Consumer(Source *s, IConnection *c)
 {
     source_ = s;
     conn_ = c;

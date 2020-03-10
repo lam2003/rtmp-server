@@ -36,7 +36,7 @@ public:
 
 private:
     Source *source_;
-    Connection *conn_;
+    IConnection *conn_;
     bool pause_;
     Jitter *jitter_;
     MessageQueue *queue_;

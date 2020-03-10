@@ -1,5 +1,13 @@
+/*
+ * @Author: your name
+ * @Date: 2020-03-10 15:17:23
+ * @LastEditTime: 2020-03-10 15:33:55
+ * @LastEditors: your name
+ * @Description: In User Settings Edit
+ * @FilePath: \rtmp_server\app\server.cpp
+ */
 #include <app/server.hpp>
-#include <app/rtmp_connection.hpp>
+#include <protocol/rtmp/connection.hpp>
 #include <common/utils.hpp>
 #include <common/log.hpp>
 #include <common/error.hpp>
@@ -117,10 +125,10 @@ int32_t Server::AcceptClient(ListenerType type, st_netfd_t stfd)
         return ret;
     }
 
-    Connection *conn = nullptr;
+    IConnection *conn = nullptr;
     if (type == ListenerType::RTMP)
     {
-        conn = new RTMPConnection(this, stfd);
+        conn = new rtmp::Connection(this, stfd);
     }
 
     if ((ret = conn->Start()) != ERROR_SUCCESS)
@@ -149,7 +157,7 @@ int32_t Server::ListenRTMP()
     return ret;
 }
 
-void Server::OnRemove(Connection *conn)
+void Server::OnRemove(IConnection *conn)
 {
 }
 

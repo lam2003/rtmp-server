@@ -1,10 +1,10 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime: 2020-02-21 13:16:37
+ * @LastEditTime: 2020-03-10 15:35:41
  */
 
-#include <app/rtmp_connection.hpp>
+#include <protocol/rtmp/connection.hpp>
 #include <protocol/rtmp/stack.hpp>
 #include <protocol/rtmp/defines.hpp>
 #include <protocol/rtmp/source.hpp>
@@ -17,7 +17,10 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd) : Connection(server, stfd)
+namespace rtmp
+{
+
+Connection::Connection(Server *server, st_netfd_t stfd) : IConnection(server, stfd)
 {
     server_ = server;
     socket_ = new StSocket(stfd);
@@ -28,7 +31,7 @@ RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd) : Connection(ser
     tcp_nodelay_ = false;
 }
 
-RTMPConnection::~RTMPConnection()
+Connection::~Connection()
 {
     rs_freep(response_);
     rs_freep(request_);
@@ -36,7 +39,7 @@ RTMPConnection::~RTMPConnection()
     rs_freep(socket_);
 }
 
-int32_t RTMPConnection::DoCycle()
+int32_t Connection::DoCycle()
 {
     int ret = ERROR_SUCCESS;
 
@@ -62,7 +65,7 @@ int32_t RTMPConnection::DoCycle()
     return ret;
 }
 
-int32_t RTMPConnection::StreamServiceCycle()
+int32_t Connection::StreamServiceCycle()
 {
     int ret = ERROR_SUCCESS;
 
@@ -123,7 +126,7 @@ int32_t RTMPConnection::StreamServiceCycle()
     return ret;
 }
 
-int32_t RTMPConnection::Publishing(rtmp::Source *source)
+int32_t Connection::Publishing(rtmp::Source *source)
 {
     int ret = ERROR_SUCCESS;
 
@@ -140,7 +143,7 @@ int32_t RTMPConnection::Publishing(rtmp::Source *source)
     return ret;
 }
 
-int32_t RTMPConnection::ServiceCycle()
+int32_t Connection::ServiceCycle()
 {
     int ret = ERROR_SUCCESS;
 
@@ -184,22 +187,22 @@ int32_t RTMPConnection::ServiceCycle()
     return ret;
 }
 
-void RTMPConnection::Resample()
+void Connection::Resample()
 {
 }
-int64_t RTMPConnection::GetSendBytesDelta()
-{
-    return 0;
-}
-int64_t RTMPConnection::GetRecvBytesDelta()
+int64_t Connection::GetSendBytesDelta()
 {
     return 0;
 }
-void RTMPConnection::CleanUp()
+int64_t Connection::GetRecvBytesDelta()
+{
+    return 0;
+}
+void Connection::CleanUp()
 {
 }
 
-int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_edge)
+int Connection::process_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_edge)
 {
     int ret = ERROR_SUCCESS;
     if (is_edge)
@@ -251,7 +254,7 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
     return ret;
 }
 
-int RTMPConnection::handle_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_fmle, bool is_edge)
+int Connection::handle_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_fmle, bool is_edge)
 {
     int ret = ERROR_SUCCESS;
 
@@ -298,7 +301,7 @@ int RTMPConnection::handle_publish_message(rtmp::Source *source, rtmp::CommonMes
  * @name: set_socket_option
  * @msg: 配置tcp NO_DELAY选项
  */
-void RTMPConnection::set_socket_option()
+void Connection::set_socket_option()
 {
     bool nvalue = _config->GetTCPNoDelay(request_->vhost);
     if (nvalue != tcp_nodelay_)
@@ -323,7 +326,7 @@ void RTMPConnection::set_socket_option()
     }
 }
 
-int RTMPConnection::acquire_publish(rtmp::Source *source, bool is_edge)
+int Connection::acquire_publish(rtmp::Source *source, bool is_edge)
 {
     int ret = ERROR_SUCCESS;
 
@@ -349,7 +352,7 @@ int RTMPConnection::acquire_publish(rtmp::Source *source, bool is_edge)
     return ret;
 }
 
-int RTMPConnection::do_publishing(rtmp::Source *source, PublishRecvThread *recv_thread)
+int Connection::do_publishing(rtmp::Source *source, PublishRecvThread *recv_thread)
 {
     int ret = ERROR_SUCCESS;
 
@@ -413,3 +416,4 @@ int RTMPConnection::do_publishing(rtmp::Source *source, PublishRecvThread *recv_
 
     return ret;
 }
+} // namespace rtmp

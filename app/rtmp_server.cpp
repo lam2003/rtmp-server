@@ -158,7 +158,7 @@ int RTMPServer::ResponseConnectApp(rtmp::Request *req, const std::string &local_
     pkt->props->Set("mode", AMF0Any::Number(1));
     pkt->props->Set("level", AMF0Any::String("status"));
     pkt->props->Set("code", AMF0Any::String("NetConnection.Connect.Success"));
-    pkt->props->Set("description", AMF0Any::String("Connection succeeded"));
+    pkt->props->Set("description", AMF0Any::String("IConnection succeeded"));
     pkt->props->Set("objectEncoding", AMF0Any::Number(req->object_encoding));
 
     AMF0EcmaArray *ecma_array = AMF0Any::EcmaArray();

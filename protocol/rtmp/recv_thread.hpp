@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:02:50
- * @LastEditTime : 2020-02-06 17:45:47
+ * @LastEditTime: 2020-03-10 15:41:27
  */
 #ifndef RS_RTMP_RECV_THREAD_HPP
 #define RS_RTMP_RECV_THREAD_HPP
@@ -9,16 +9,17 @@
 #include <common/core.hpp>
 #include <common/thread.hpp>
 #include <protocol/rtmp/stack.hpp>
-#include <app/rtmp_connection.hpp>
+#include <protocol/rtmp/connection.hpp>
 #include <app/rtmp_server.hpp>
+namespace rtmp
+{
+class Connection;
 
-class RTMPConnection;
-
-class RTMPRecvThread : virtual public internal::IThreadHandler
+class RecvThread : virtual public internal::IThreadHandler
 {
 public:
-    RTMPRecvThread(rtmp::IMessageHandler *handler, RTMPServer *rtmp, int32_t timeout_ms);
-    virtual ~RTMPRecvThread();
+    RecvThread(rtmp::IMessageHandler *handler, RTMPServer *rtmp, int32_t timeout_ms);
+    virtual ~RecvThread();
 
 public:
     virtual int32_t GetID();
@@ -47,7 +48,7 @@ public:
                       rtmp::Request *request,
                       int mr_socket_fd,
                       int timeout_ms,
-                      RTMPConnection *conn,
+                      rtmp::Connection *conn,
                       rtmp::Source *source,
                       bool is_fmle,
                       bool is_edge);
@@ -73,7 +74,7 @@ private:
     void set_socket_buffer(int sleep_ms);
 
 private:
-    RTMPRecvThread *thread_;
+    RecvThread *thread_;
     RTMPServer *rtmp_;
     rtmp::Request *request_;
     int64_t nb_msgs_;
@@ -83,7 +84,7 @@ private:
     int mr_sleep_;
     bool real_time_;
     int recv_error_code_;
-    RTMPConnection *conn_;
+    rtmp::Connection *conn_;
     rtmp::Source *source_;
     bool is_fmle_;
     bool is_edge_;
@@ -91,5 +92,7 @@ private:
     int cid;
     int ncid;
 };
+
+} // namespace rtmp
 
 #endif

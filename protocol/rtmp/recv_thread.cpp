@@ -1,12 +1,15 @@
-#include <app/rtmp_recv_thread.hpp>
+#include <protocol/rtmp/recv_thread.hpp>
 #include <protocol/rtmp/defines.hpp>
 #include <common/utils.hpp>
 #include <common/error.hpp>
 #include <common/config.hpp>
 
-RTMPRecvThread::RTMPRecvThread(rtmp::IMessageHandler *handler,
-                               RTMPServer *rtmp,
-                               int32_t timeout_ms)
+namespace rtmp
+{
+
+RecvThread::RecvThread(rtmp::IMessageHandler *handler,
+                       RTMPServer *rtmp,
+                       int32_t timeout_ms)
 {
 
     thread_ = new internal::Thread("recv", this, 0, true);
@@ -15,33 +18,33 @@ RTMPRecvThread::RTMPRecvThread(rtmp::IMessageHandler *handler,
     timeout_ = timeout_ms;
 }
 
-RTMPRecvThread::~RTMPRecvThread()
+RecvThread::~RecvThread()
 {
     Stop();
     rs_freep(thread_);
 }
 
-int32_t RTMPRecvThread::GetID()
+int32_t RecvThread::GetID()
 {
     return thread_->GetID();
 }
 
-int32_t RTMPRecvThread::Start()
+int32_t RecvThread::Start()
 {
     return thread_->Start();
 }
 
-void RTMPRecvThread::Stop()
+void RecvThread::Stop()
 {
     thread_->Stop();
 }
 
-void RTMPRecvThread::StopLoop()
+void RecvThread::StopLoop()
 {
     thread_->StopLoop();
 }
 
-int32_t RTMPRecvThread::Cycle()
+int32_t RecvThread::Cycle()
 {
     int32_t ret = ERROR_SUCCESS;
 
@@ -77,13 +80,13 @@ int32_t RTMPRecvThread::Cycle()
     return ret;
 }
 
-void RTMPRecvThread::OnThreadStop()
+void RecvThread::OnThreadStop()
 {
     rtmp_->SetRecvTimeout(timeout_ * 1000);
     handler_->OnThreadStop();
 }
 
-void RTMPRecvThread::OnThreadStart()
+void RecvThread::OnThreadStart()
 {
     //set never timeout can improve 33% performance
     rtmp_->SetRecvTimeout(-1);
@@ -94,12 +97,12 @@ PublishRecvThread::PublishRecvThread(RTMPServer *rtmp,
                                      rtmp::Request *request,
                                      int mr_socket_fd,
                                      int timeout_ms,
-                                     RTMPConnection *conn,
+                                     rtmp::Connection *conn,
                                      rtmp::Source *source,
                                      bool is_fmle,
                                      bool is_edge)
 {
-    thread_ = new RTMPRecvThread(this, rtmp, timeout_ms);
+    thread_ = new RecvThread(this, rtmp, timeout_ms);
     rtmp_ = rtmp;
     request_ = request;
     nb_msgs_ = 0;
@@ -270,3 +273,4 @@ int64_t PublishRecvThread::GetMsgNum()
 {
     return nb_msgs_;
 }
+} // namespace rtmp

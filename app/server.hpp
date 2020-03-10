@@ -62,7 +62,7 @@ public:
     virtual int32_t Listen();
     virtual int32_t AcceptClient(ListenerType type, st_netfd_t stfd);
     //IConnectionManager
-    virtual void OnRemove(Connection *conn) override;
+    virtual void OnRemove(IConnection *conn) override;
     //rtmp::ISourceHandler
     virtual int OnPublish(rtmp::Source *s, rtmp::Request *r) override;
     virtual int OnUnPublish(rtmp::Source *s, rtmp::Request *r) override;

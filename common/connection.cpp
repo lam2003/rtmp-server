@@ -12,7 +12,7 @@ IConnectionManager::~IConnectionManager()
 {
 }
 
-Connection::Connection(IConnectionManager *conn_manager, st_netfd_t client_stfd) : conn_manager_(conn_manager),
+IConnection::IConnection(IConnectionManager *conn_manager, st_netfd_t client_stfd) : conn_manager_(conn_manager),
                                                                                    client_stfd_(client_stfd),
                                                                                    client_ip_(""),
                                                                                    disposed_(false),
@@ -22,13 +22,13 @@ Connection::Connection(IConnectionManager *conn_manager, st_netfd_t client_stfd)
     thread_ = new internal::Thread("connection", this, 0, false);
 }
 
-Connection::~Connection()
+IConnection::~IConnection()
 {
     Dispose();
     rs_freep(thread_);
 }
 
-void Connection::Dispose()
+void IConnection::Dispose()
 {
     if (disposed_)
     {
@@ -39,12 +39,12 @@ void Connection::Dispose()
     STCloseFd(client_stfd_);
 }
 
-int32_t Connection::Start()
+int32_t IConnection::Start()
 {
     return thread_->Start();
 }
 
-int32_t Connection::Cycle()
+int32_t IConnection::Cycle()
 {
     int32_t ret = ERROR_SUCCESS;
     id_ = _context->GetID();
@@ -70,17 +70,17 @@ int32_t Connection::Cycle()
     return ERROR_SUCCESS;
 }
 
-int32_t Connection::GetID()
+int32_t IConnection::GetID()
 {
     return id_;
 }
 
-void Connection::SetExpired(bool expired)
+void IConnection::SetExpired(bool expired)
 {
     expired_ = expired;
 }
 
-void Connection::OnThreadStop()
+void IConnection::OnThreadStop()
 {
     conn_manager_->OnRemove(this);
 }
