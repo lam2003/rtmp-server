@@ -7,6 +7,7 @@
 #define RS_UTILS_HPP
 
 #include <common/core.hpp>
+#include <common/buffer.hpp>
 
 #include <string>
 
@@ -57,6 +58,8 @@ public:
     static std::string BuildIndexSuffixPath(const std::string &template_path, int index);
     static bool IsFileExist(const std::string &path);
     static int CreateDirRecursively(const std::string &dir);
+    static int ReadBit(BitBufferManager *manager, int8_t &v);
+    static int ReadUEV(BitBufferManager *manager, int32_t &v);
 };
 
 #define rs_auto_free(class_name, instance) __impl_AutoFree<class_name> __auto_free_##instance(&instance, false)

@@ -358,3 +358,48 @@ int Utils::CreateDirRecursively(const std::string &dir)
 
     return ret;
 }
+
+int Utils::ReadBit(BitBufferManager *manager, int8_t &v)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (manager->Empty())
+    {
+        return ERROR_BIT_BUFFER_MANAGER_EMPTY;
+    }
+
+    v = manager->ReadBit();
+
+    return ret;
+}
+
+int Utils::ReadUEV(BitBufferManager *manager, int32_t &v)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (manager->Empty())
+    {
+        return ERROR_BIT_BUFFER_MANAGER_EMPTY;
+    }
+
+    int leading_zero_bits = -1;
+    for (int8_t b = 0; !b && !manager->Empty(); leading_zero_bits++)
+    {
+        b = manager->ReadBit();
+    }
+
+    if (leading_zero_bits >= 31)
+    {
+        return ERROR_BIT_BUFFER_MANAGER_EMPTY;
+    }
+
+    v = (1 << leading_zero_bits) - 1;
+
+    for (int i = 0; i < leading_zero_bits; i++)
+    {
+        int32_t b = manager->ReadBit();
+        v += b << (leading_zero_bits - i - 1);
+    }
+
+    return ret;
+}

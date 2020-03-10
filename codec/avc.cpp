@@ -6,6 +6,7 @@
 
 namespace avc
 {
+    
 std::string profile_to_str(Profile profile)
 {
     switch (profile)
@@ -80,51 +81,6 @@ std::string level_to_str(Level level)
     }
 }
 
-int read_bit(BitBufferManager *manager, int8_t &v)
-{
-    int ret = ERROR_SUCCESS;
-
-    if (manager->Empty())
-    {
-        return ERROR_BIT_BUFFER_MANAGER_EMPTY;
-    }
-
-    v = manager->ReadBit();
-
-    return ret;
-}
-
-int read_uev(BitBufferManager *manager, int32_t &v)
-{
-    int ret = ERROR_SUCCESS;
-
-    if (manager->Empty())
-    {
-        return ERROR_BIT_BUFFER_MANAGER_EMPTY;
-    }
-
-    int leading_zero_bits = -1;
-    for (int8_t b = 0; !b && !manager->Empty(); leading_zero_bits++)
-    {
-        b = manager->ReadBit();
-    }
-
-    if (leading_zero_bits >= 31)
-    {
-        return ERROR_BIT_BUFFER_MANAGER_EMPTY;
-    }
-
-    v = (1 << leading_zero_bits) - 1;
-
-    for (int i = 0; i < leading_zero_bits; i++)
-    {
-        int32_t b = manager->ReadBit();
-        v += b << (leading_zero_bits - i - 1);
-    }
-
-    return ret;
-}
-
 } // namespace avc
 
 // for SPS, 7.3.2.1.1 Sequence parameter set data syntax
@@ -177,7 +133,7 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
     }
 
     int32_t seq_parameter_set_id = -1;
-    if ((ret = avc::read_uev(&bbm, seq_parameter_set_id)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadUEV(&bbm, seq_parameter_set_id)) != ERROR_SUCCESS)
     {
         return ret;
     }
@@ -202,39 +158,39 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
         profile_idc == 118 ||
         profile_idc == 128)
     {
-        if ((ret = avc::read_uev(&bbm, chroma_format_idc)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, chroma_format_idc)) != ERROR_SUCCESS)
         {
             return ret;
         }
 
         if (chroma_format_idc == 3)
         {
-            if ((ret = avc::read_bit(&bbm, separate_colour_plane_flag)) != ERROR_SUCCESS)
+            if ((ret = Utils::ReadBit(&bbm, separate_colour_plane_flag)) != ERROR_SUCCESS)
             {
                 return ret;
             }
         }
 
         int32_t bit_depth_luma_minus8 = -1;
-        if ((ret = avc::read_uev(&bbm, bit_depth_luma_minus8)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, bit_depth_luma_minus8)) != ERROR_SUCCESS)
         {
             return ret;
         }
 
         int32_t bit_depth_chroma_minus8 = -1;
-        if ((ret = avc::read_uev(&bbm, bit_depth_chroma_minus8)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, bit_depth_chroma_minus8)) != ERROR_SUCCESS)
         {
             return ret;
         }
 
         int8_t qpprime_y_zero_transform_bypass_flag = -1;
-        if ((ret = avc::read_bit(&bbm, qpprime_y_zero_transform_bypass_flag)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadBit(&bbm, qpprime_y_zero_transform_bypass_flag)) != ERROR_SUCCESS)
         {
             return ret;
         }
 
         int8_t seq_scaling_matrix_present_flag = -1;
-        if ((ret = avc::read_bit(&bbm, seq_scaling_matrix_present_flag)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadBit(&bbm, seq_scaling_matrix_present_flag)) != ERROR_SUCCESS)
         {
             return ret;
         }
@@ -244,7 +200,7 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
             for (int i = 0; i < nb_scmpfs; i++)
             {
                 int8_t seq_scaling_matrix_present_flag_i = -1;
-                if ((ret = avc::read_bit(&bbm, seq_scaling_matrix_present_flag_i)) != ERROR_SUCCESS)
+                if ((ret = Utils::ReadBit(&bbm, seq_scaling_matrix_present_flag_i)) != ERROR_SUCCESS)
                 {
                     return ret;
                 }
@@ -253,13 +209,13 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
     }
 
     int32_t log2_max_frame_num_minus4 = -1;
-    if ((ret = avc::read_uev(&bbm, log2_max_frame_num_minus4)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadUEV(&bbm, log2_max_frame_num_minus4)) != ERROR_SUCCESS)
     {
         return ret;
     }
 
     int32_t pic_order_cnt_type = -1;
-    if ((ret = avc::read_uev(&bbm, pic_order_cnt_type)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadUEV(&bbm, pic_order_cnt_type)) != ERROR_SUCCESS)
     {
         return ret;
     }
@@ -267,7 +223,7 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
     if (pic_order_cnt_type == 0)
     {
         int32_t log2_max_pic_order_cnt_lsb_minus4 = -1;
-        if ((ret = avc::read_uev(&bbm, log2_max_pic_order_cnt_lsb_minus4)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, log2_max_pic_order_cnt_lsb_minus4)) != ERROR_SUCCESS)
         {
             return ret;
         }
@@ -275,25 +231,25 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
     else if (pic_order_cnt_type == 1)
     {
         int8_t delta_pic_order_always_zero_flag = -1;
-        if ((ret = avc::read_bit(&bbm, delta_pic_order_always_zero_flag)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadBit(&bbm, delta_pic_order_always_zero_flag)) != ERROR_SUCCESS)
         {
             return ret;
         }
 
         int32_t offset_for_non_ref_pic = -1;
-        if ((ret = avc::read_uev(&bbm, offset_for_non_ref_pic)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, offset_for_non_ref_pic)) != ERROR_SUCCESS)
         {
             return ret;
         }
 
         int32_t offset_for_top_to_bottom_field = -1;
-        if ((ret = avc::read_uev(&bbm, offset_for_top_to_bottom_field)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, offset_for_top_to_bottom_field)) != ERROR_SUCCESS)
         {
             return ret;
         }
 
         int32_t num_ref_frames_in_pic_order_cnt_cycle = -1;
-        if ((ret = avc::read_uev(&bbm, num_ref_frames_in_pic_order_cnt_cycle)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, num_ref_frames_in_pic_order_cnt_cycle)) != ERROR_SUCCESS)
         {
             return ret;
         }
@@ -306,7 +262,7 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
         for (int i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++)
         {
             int32_t offset_for_ref_frame_i = -1;
-            if ((ret = avc::read_uev(&bbm, offset_for_ref_frame_i)) != ERROR_SUCCESS)
+            if ((ret = Utils::ReadUEV(&bbm, offset_for_ref_frame_i)) != ERROR_SUCCESS)
             {
                 return ret;
             }
@@ -314,25 +270,25 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
     }
 
     int32_t max_num_ref_frames = -1;
-    if ((ret = avc::read_uev(&bbm, max_num_ref_frames)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadUEV(&bbm, max_num_ref_frames)) != ERROR_SUCCESS)
     {
         return ret;
     }
 
     int8_t gaps_in_frame_num_value_allowed_flag = -1;
-    if ((ret = avc::read_bit(&bbm, gaps_in_frame_num_value_allowed_flag)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadBit(&bbm, gaps_in_frame_num_value_allowed_flag)) != ERROR_SUCCESS)
     {
         return ret;
     }
 
     int32_t pic_width_in_mbs_minus1 = -1;
-    if ((ret = avc::read_uev(&bbm, pic_width_in_mbs_minus1)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadUEV(&bbm, pic_width_in_mbs_minus1)) != ERROR_SUCCESS)
     {
         return ret;
     }
 
     int32_t pic_height_in_map_units_minus1 = -1;
-    if ((ret = avc::read_uev(&bbm, pic_height_in_map_units_minus1)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadUEV(&bbm, pic_height_in_map_units_minus1)) != ERROR_SUCCESS)
     {
         return ret;
     }
@@ -340,16 +296,16 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
     int8_t frame_mbs_only_flag = -1;
     int8_t mb_adaptive_frame_field_flag = -1;
     int8_t direct_8x8_inference_flag = -1;
-    if ((ret = avc::read_bit(&bbm, frame_mbs_only_flag)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadBit(&bbm, frame_mbs_only_flag)) != ERROR_SUCCESS)
     {
         return ret;
     }
     if (!frame_mbs_only_flag &&
-        (ret = avc::read_bit(&bbm, mb_adaptive_frame_field_flag)) != ERROR_SUCCESS)
+        (ret = Utils::ReadBit(&bbm, mb_adaptive_frame_field_flag)) != ERROR_SUCCESS)
     {
         return ret;
     }
-    if ((ret = avc::read_bit(&bbm, direct_8x8_inference_flag)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadBit(&bbm, direct_8x8_inference_flag)) != ERROR_SUCCESS)
     {
         return ret;
     }
@@ -358,25 +314,25 @@ int AVCCodec::demux_sps_rbsp(char *rbsp, int nb_rbsp)
     int32_t frame_crop_right_offset = 0;
     int32_t frame_crop_top_offset = 0;
     int32_t frame_crop_bottom_offset = 0;
-    if ((ret = avc::read_bit(&bbm, frame_cropping_flag)) != ERROR_SUCCESS)
+    if ((ret = Utils::ReadBit(&bbm, frame_cropping_flag)) != ERROR_SUCCESS)
     {
         return ret;
     }
     if (frame_cropping_flag)
     {
-        if ((ret = avc::read_uev(&bbm, frame_crop_left_offset)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, frame_crop_left_offset)) != ERROR_SUCCESS)
         {
             return ret;
         }
-        if ((ret = avc::read_uev(&bbm, frame_crop_right_offset)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, frame_crop_right_offset)) != ERROR_SUCCESS)
         {
             return ret;
         }
-        if ((ret = avc::read_uev(&bbm, frame_crop_top_offset)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, frame_crop_top_offset)) != ERROR_SUCCESS)
         {
             return ret;
         }
-        if ((ret = avc::read_uev(&bbm, frame_crop_bottom_offset)) != ERROR_SUCCESS)
+        if ((ret = Utils::ReadUEV(&bbm, frame_crop_bottom_offset)) != ERROR_SUCCESS)
         {
             return ret;
         }
