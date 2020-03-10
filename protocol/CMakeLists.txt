@@ -6,6 +6,7 @@ add_library(protocol
     rtmp_packet.cpp
     rtmp_message.cpp
     rtmp_handshake.cpp
+    rtmp_jitter.cpp
 )
 
 add_dependencies(protocol

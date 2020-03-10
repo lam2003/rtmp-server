@@ -5,6 +5,7 @@
 #include <common/connection.hpp>
 #include <common/queue.hpp>
 #include <protocol/rtmp_stack.hpp>
+#include <protocol/rtmp_jitter.hpp>
 
 class Dvr;
 
@@ -13,13 +14,6 @@ namespace rtmp
 
 class Source;
 class MessageQueue;
-
-enum class JitterAlgorithm
-{
-    FULL = 1,
-    ZERO,
-    OFF
-};
 
 class ISourceHandler
 {
@@ -40,22 +34,6 @@ public:
 
 public:
     virtual void WakeUp() = 0;
-};
-
-
-class Jitter
-{
-public:
-    Jitter();
-    virtual ~Jitter();
-
-public:
-    virtual int Correct(SharedPtrMessage *msg, JitterAlgorithm ag);
-    virtual int GetTime();
-
-private:
-    int64_t last_pkt_time_;
-    int64_t last_pkt_correct_time_;
 };
 
 class Consumer : public IWakeable
@@ -111,23 +89,6 @@ private:
     FastVector<SharedPtrMessage *> msgs_;
 };
 
-class MixQueue
-{
-public:
-    MixQueue();
-    virtual ~MixQueue();
-
-public:
-    virtual void Clear();
-    virtual void Push(SharedPtrMessage *msg);
-    virtual SharedPtrMessage *Pop();
-
-private:
-    uint32_t nb_videos_;
-    uint32_t nb_audios_;
-    std::multimap<int64_t, SharedPtrMessage *> msgs_;
-};
-
 class Source
 {
 public:
@@ -167,7 +128,7 @@ private:
     SharedPtrMessage *cache_sh_audio_;
     std::vector<Consumer *> consumers_;
     JitterAlgorithm jitter_algorithm_;
-    MixQueue *mix_queue_;
+    MixQueue<SharedPtrMessage> *mix_queue_;
     Dvr *dvr_;
 };
 } // namespace rtmp

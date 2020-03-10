@@ -26,10 +26,6 @@
 #define RTMP_FMT0_HEADER_SIZE 16
 //rtmp timestamp_delta when extended timestamp enabled
 #define RTMP_EXTENDED_TIMESTAMP 0xffffff
-//rtmp jitter duration
-#define RTMP_MAX_JITTER_MS 250
-#define RTMP_MAX_JITTER_MS_NEG -250
-#define RTMP_DEFAULT_FRAME_TIME_MS 10
 //rtmp marge read small bytes
 #define RTMP_MR_SMALL_BYTES 4096
 #define RTMP_MR_MSGS 128

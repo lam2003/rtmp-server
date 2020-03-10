@@ -145,5 +145,31 @@ public:
     int max;
 };
 
+// class MessageQueue
+// {
+// public:
+//     MessageQueue();
+//     virtual ~MessageQueue();
+
+// public:
+//     virtual int Size();
+//     virtual int Duration();
+//     virtual void SetQueueSize(double second);
+//     virtual int Enqueue(SharedPtrMessage *msg, bool *is_overflow = nullptr);
+//     virtual int DumpPackets(int max_count, SharedPtrMessage **pmsgs, int &count);
+//     virtual int DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag);
+
+// protected:
+//     virtual void Shrink();
+//     virtual void Clear();
+
+// private:
+//     int64_t av_start_time_;
+//     int64_t av_end_time_;
+//     int queue_size_ms_;
+//     FastVector<SharedPtrMessage *> msgs_;
+// };
+
 } // namespace rtmp
+
 #endif

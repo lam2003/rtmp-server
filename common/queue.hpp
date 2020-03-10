@@ -6,6 +6,7 @@
 #include <common/utils.hpp>
 
 #define FAST_VEC_DEFAULT_SIZE 1024
+#define MIX_CORRECT_PURE_AV 10
 
 template <typename T>
 class FastVector
@@ -129,6 +130,106 @@ void FastVector<T>::PushBack(T msg)
         nb_msgs_ = size;
     }
     msgs_[count_++] = msg;
+}
+
+template <typename T>
+class MixQueue
+{
+public:
+    MixQueue();
+    virtual ~MixQueue();
+
+public:
+    virtual void Clear();
+    virtual void Push(T *msg);
+    virtual T *Pop();
+
+private:
+    uint32_t nb_videos_;
+    uint32_t nb_audios_;
+    std::multimap<int64_t, T *> msgs_;
+};
+
+template <typename T>
+MixQueue<T>::MixQueue()
+{
+    nb_videos_ = 0;
+    nb_audios_ = 0;
+}
+
+template <typename T>
+MixQueue<T>::~MixQueue()
+{
+    Clear();
+}
+
+template <typename T>
+void MixQueue<T>::Clear()
+{
+    typename std::multimap<int64_t, T *>::iterator it;
+    for (it = msgs_.begin(); it != msgs_.end(); it++)
+    {
+        T *msg = it->second;
+        rs_freep(msg);
+    }
+
+    msgs_.clear();
+    nb_videos_ = 0;
+    nb_audios_ = 0;
+}
+
+template <typename T>
+void MixQueue<T>::Push(T *msg)
+{
+    if (msg->IsVideo())
+    {
+        nb_videos_++;
+    }
+    else
+    {
+        nb_audios_++;
+    }
+
+    msgs_.insert(std::make_pair(msg->timestamp, msg));
+}
+
+template <typename T>
+T *MixQueue<T>::Pop()
+{
+    bool mix_ok = false;
+
+    if (nb_videos_ >= MIX_CORRECT_PURE_AV && nb_audios_ == 0)
+    {
+        mix_ok = true;
+    }
+    if (nb_audios_ >= MIX_CORRECT_PURE_AV && nb_videos_ == 0)
+    {
+        mix_ok = true;
+    }
+    if (nb_videos_ > 0 && nb_audios_ > 0)
+    {
+        mix_ok = true;
+    }
+
+    if (!mix_ok)
+    {
+        return nullptr;
+    }
+
+    typename std::multimap<int64_t, T *>::iterator it = msgs_.begin();
+    T *msg = it->second;
+    msgs_.erase(it);
+
+    if (msg->IsVideo())
+    {
+        nb_videos_--;
+    }
+    else
+    {
+        nb_audios_--;
+    }
+
+    return msg;
 }
 
 #endif

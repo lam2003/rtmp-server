@@ -7,7 +7,7 @@
 
 #include <sstream>
 
-#define MIX_CORRECT_PURE_AV 10
+
 
 namespace rtmp
 {
@@ -27,72 +27,13 @@ IWakeable::~IWakeable()
 {
 }
 
-Jitter::Jitter()
-{
-    last_pkt_time_ = 0;
-    last_pkt_correct_time_ = -1;
-}
-
-Jitter::~Jitter()
-{
-}
-
-int Jitter::Correct(SharedPtrMessage *msg, JitterAlgorithm ag)
-{
-    int ret = ERROR_SUCCESS;
-    if (ag != JitterAlgorithm::FULL)
-    {
-        if (ag == JitterAlgorithm::OFF)
-        {
-            return ret;
-        }
-        if (ag == JitterAlgorithm::ZERO)
-        {
-            //ensure timestamp start at zero
-            if (last_pkt_correct_time_ == -1)
-            {
-                last_pkt_correct_time_ = msg->timestamp;
-            }
-            msg->timestamp -= last_pkt_correct_time_;
-            return ret;
-        }
-
-        return ret;
-    }
-
-    if (!msg->IsAV())
-    {
-        msg->timestamp = 0;
-        return ret;
-    }
-
-    int64_t time = msg->timestamp;
-    int64_t delta = time - last_pkt_time_;
-
-    if (delta < RTMP_MAX_JITTER_MS_NEG || delta > RTMP_MAX_JITTER_MS)
-    {
-        delta = RTMP_DEFAULT_FRAME_TIME_MS;
-    }
-
-    last_pkt_correct_time_ = rs_max(0, last_pkt_correct_time_ + delta);
-
-    msg->timestamp = last_pkt_correct_time_;
-    last_pkt_time_ = time;
-
-    return ret;
-}
-
-int Jitter::GetTime()
-{
-    return last_pkt_correct_time_;
-}
 
 Consumer::Consumer(Source *s, Connection *c)
 {
     source_ = s;
     conn_ = c;
     pause_ = false;
-    jitter_ = new Jitter;
+    jitter_ = new rtmp::Jitter;
     queue_ = new MessageQueue;
     mw_wait_ = st_cond_new();
     mw_waiting_ = false;
@@ -368,83 +309,6 @@ int MessageQueue::DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag)
     return ret;
 }
 
-MixQueue::MixQueue()
-{
-    nb_videos_ = 0;
-    nb_audios_ = 0;
-}
-
-MixQueue::~MixQueue()
-{
-    Clear();
-}
-
-void MixQueue::Clear()
-{
-    std::multimap<int64_t, SharedPtrMessage *>::iterator it;
-    for (it = msgs_.begin(); it != msgs_.end(); it++)
-    {
-        SharedPtrMessage *msg = it->second;
-        rs_freep(msg);
-    }
-
-    msgs_.clear();
-    nb_videos_ = 0;
-    nb_audios_ = 0;
-}
-
-void MixQueue::Push(SharedPtrMessage *msg)
-{
-    if (msg->IsVideo())
-    {
-        nb_videos_++;
-    }
-    else
-    {
-        nb_audios_++;
-    }
-
-    msgs_.insert(std::make_pair(msg->timestamp, msg));
-}
-
-SharedPtrMessage *MixQueue::Pop()
-{
-    bool mix_ok = false;
-
-    if (nb_videos_ >= MIX_CORRECT_PURE_AV && nb_audios_ == 0)
-    {
-        mix_ok = true;
-    }
-    if (nb_audios_ >= MIX_CORRECT_PURE_AV && nb_videos_ == 0)
-    {
-        mix_ok = true;
-    }
-    if (nb_videos_ > 0 && nb_audios_ > 0)
-    {
-        mix_ok = true;
-    }
-
-    if (!mix_ok)
-    {
-        return nullptr;
-    }
-
-    std::multimap<int64_t, SharedPtrMessage *>::iterator it = msgs_.begin();
-    SharedPtrMessage *msg = it->second;
-    msgs_.erase(it);
-
-    if (msg->IsVideo())
-    {
-        nb_videos_--;
-    }
-    else
-    {
-        nb_audios_--;
-    }
-
-    return msg;
-}
-
 std::map<std::string, Source *> Source::pool_;
 
 Source::Source()
@@ -459,7 +323,7 @@ Source::Source()
     cache_metadata_ = nullptr;
     cache_sh_video_ = nullptr;
     cache_sh_audio_ = nullptr;
-    mix_queue_ = new MixQueue;
+    mix_queue_ = new MixQueue<SharedPtrMessage>;
     dvr_ = new Dvr;
 }
 
