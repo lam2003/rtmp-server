@@ -14,7 +14,7 @@ public:
 public:
     virtual bool HasSequenceHeader() = 0;
     virtual int DecodeSequenceHeader(BufferManager *manager) = 0;
-    virtual int DecodecNalu(BufferManager *manager, CodecSample *sample) = 0;
+    virtual int DecodecNalu(BufferManager *manager, ICodecSample *sample) = 0;
 };
 
 class ACodec
@@ -26,7 +26,7 @@ public:
 public:
     virtual bool HasSequenceHeader() = 0;
     virtual int DecodeSequenceHeader(BufferManager *manager) = 0;
-    virtual int DecodeRawData(BufferManager *manager, CodecSample *sample) = 0;
+    virtual int DecodeRawData(BufferManager *manager, ICodecSample *sample) = 0;
 };
 
 #endif

@@ -87,13 +87,13 @@ public:
 public:
     virtual bool HasSequenceHeader() override;
     virtual int DecodeSequenceHeader(BufferManager *manager) override;
-    virtual int DecodecNalu(BufferManager *manager, CodecSample *sample) override;
+    virtual int DecodecNalu(BufferManager *manager, ICodecSample *sample) override;
 
 private:
     int demux_sps_rbsp(char *rbsp, int nb_rbsp);
     int demux_sps();
-    int demux_annexb_format(BufferManager *manager, CodecSample *sample);
-    int demux_ibmf_format(BufferManager *manager, CodecSample *sample);
+    int demux_annexb_format(BufferManager *manager, ICodecSample *sample);
+    int demux_ibmf_format(BufferManager *manager, ICodecSample *sample);
     bool start_with_annexb(BufferManager *manager, int *pnb_start_code);
 
 public:

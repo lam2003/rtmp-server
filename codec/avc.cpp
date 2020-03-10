@@ -599,7 +599,7 @@ bool AVCCodec::start_with_annexb(BufferManager *manager, int *pnb_start_code)
     return false;
 }
 
-int AVCCodec::demux_annexb_format(BufferManager *manager, CodecSample *sample)
+int AVCCodec::demux_annexb_format(BufferManager *manager, ICodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
@@ -650,7 +650,7 @@ int AVCCodec::demux_annexb_format(BufferManager *manager, CodecSample *sample)
     return ret;
 }
 
-int AVCCodec::demux_ibmf_format(BufferManager *manager, CodecSample *sample)
+int AVCCodec::demux_ibmf_format(BufferManager *manager, ICodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
@@ -706,7 +706,7 @@ int AVCCodec::demux_ibmf_format(BufferManager *manager, CodecSample *sample)
     return ret;
 }
 
-int AVCCodec::DecodecNalu(BufferManager *manager, CodecSample *sample)
+int AVCCodec::DecodecNalu(BufferManager *manager, ICodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 

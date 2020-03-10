@@ -205,13 +205,13 @@ void MessageQueue::Shrink()
     {
         SharedPtrMessage *msg = msgs_.At(i);
 
-        if (msg->IsAudio() && FlvDemuxer::IsAACSequenceHeader(msg->payload, msg->size))
+        if (msg->IsAudio() && flv::Demuxer::IsAACSequenceHeader(msg->payload, msg->size))
         {
             rs_freep(audio_sh);
             audio_sh = msg;
             continue;
         }
-        if (msg->IsVideo() && FlvDemuxer::IsAVCSequenceHeader(msg->payload, msg->size))
+        if (msg->IsVideo() && flv::Demuxer::IsAVCSequenceHeader(msg->payload, msg->size))
         {
             rs_freep(video_sh);
             video_sh = msg;
@@ -418,7 +418,7 @@ int Source::on_video_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
-    bool is_sequence_hander = FlvDemuxer::IsAVCSequenceHeader(msg->payload, msg->size);
+    bool is_sequence_hander = flv::Demuxer::IsAVCSequenceHeader(msg->payload, msg->size);
     bool drop_for_reduce = false;
 
     if (is_sequence_hander && cache_sh_video_ && _config->GetReduceSequenceHeader(request_->host))
@@ -435,9 +435,9 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         rs_freep(cache_sh_video_);
         cache_sh_video_ = msg->Copy();
 
-        FlvCodecSample flv_sample;
-        FlvDemuxer demuxer;
-        if ((ret = demuxer.DemuxVideo(msg->payload, msg->size, &flv_sample)) != ERROR_SUCCESS)
+        flv::CodecSample sample;
+        flv::Demuxer demuxer;
+        if ((ret = demuxer.DemuxVideo(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
         {
             rs_error("source codec demux video failed. ret=%d", ret);
             return ret;
@@ -471,7 +471,7 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
-    bool is_sequence_header = FlvDemuxer::IsAACSequenceHeader(msg->payload, msg->size);
+    bool is_sequence_header = flv::Demuxer::IsAACSequenceHeader(msg->payload, msg->size);
     bool drop_for_reduce = false;
 
     if (is_sequence_header && cache_sh_audio_ && _config->GetReduceSequenceHeader(request_->vhost))
@@ -485,8 +485,8 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
 
     if (is_sequence_header)
     {
-        FlvDemuxer demuxer;
-        FlvCodecSample sample;
+        flv::Demuxer demuxer;
+        flv::CodecSample sample;
 
         if ((ret = demuxer.DemuxAudio(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
         {

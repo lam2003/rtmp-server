@@ -120,9 +120,7 @@ std::string frame_type_to_str(VideoFrameType frame_type)
     }
 }
 
-} // namespace flv
-
-FlvCodecSample::FlvCodecSample()
+CodecSample::CodecSample()
 {
     is_video = false;
     acodec_type = flv::AudioCodecType::UNKNOW;
@@ -133,11 +131,11 @@ FlvCodecSample::FlvCodecSample()
     has_print = false;
 }
 
-FlvCodecSample::~FlvCodecSample()
+CodecSample::~CodecSample()
 {
 }
 
-int FlvMuxer::write_previous_tag_size_to_cache(int size, char *cache)
+int Muxer::write_previous_tag_size_to_cache(int size, char *cache)
 {
     int ret = ERROR_SUCCESS;
 
@@ -150,7 +148,7 @@ int FlvMuxer::write_previous_tag_size_to_cache(int size, char *cache)
     return ret;
 }
 
-int FlvMuxer::write_tag(char *header, int header_size, char *tag, int tag_size)
+int Muxer::write_tag(char *header, int header_size, char *tag, int tag_size)
 {
     int ret = ERROR_SUCCESS;
 
@@ -179,7 +177,7 @@ int FlvMuxer::write_tag(char *header, int header_size, char *tag, int tag_size)
     return ret;
 }
 
-int FlvMuxer::write_tag_header_to_cache(char type, int size, int timestamp, char *cache)
+int Muxer::write_tag_header_to_cache(char type, int size, int timestamp, char *cache)
 {
     int ret = ERROR_SUCCESS;
 
@@ -200,7 +198,7 @@ int FlvMuxer::write_tag_header_to_cache(char type, int size, int timestamp, char
     return ret;
 }
 
-int FlvMuxer::write_flv_header(char flv_header[9])
+int Muxer::write_flv_header(char flv_header[9])
 {
     int ret = ERROR_SUCCESS;
 
@@ -219,7 +217,7 @@ int FlvMuxer::write_flv_header(char flv_header[9])
     return ret;
 }
 
-int FlvMuxer::WriteMuxerHeader()
+int Muxer::WriteMuxerHeader()
 {
     int ret = ERROR_SUCCESS;
 
@@ -241,7 +239,7 @@ int FlvMuxer::WriteMuxerHeader()
     return ret;
 }
 
-FlvMuxer::FlvMuxer()
+Muxer::Muxer()
 {
     writer_ = nullptr;
     nb_tag_headers_ = 0;
@@ -251,19 +249,19 @@ FlvMuxer::FlvMuxer()
     nb_iovss_cache_ = 0;
     iovss_cache_ = nullptr;
 }
-FlvMuxer::~FlvMuxer()
+Muxer::~Muxer()
 {
     rs_freepa(iovss_cache_);
     rs_freepa(ppts_);
     rs_freepa(tag_headers_);
 }
 
-int FlvMuxer::SizeTag(int data_size)
+int Muxer::SizeTag(int data_size)
 {
     return FLV_TAG_HEADER_SIZE + data_size + FLV_PREVIOUS_TAG_SIZE;
 }
 
-int FlvMuxer::Initialize(FileWriter *writer)
+int Muxer::Initialize(FileWriter *writer)
 {
     int ret = ERROR_SUCCESS;
 
@@ -278,7 +276,7 @@ int FlvMuxer::Initialize(FileWriter *writer)
     return ret;
 }
 
-int FlvMuxer::WriteMetadata(char *data, int size)
+int Muxer::WriteMetadata(char *data, int size)
 {
     int ret = ERROR_SUCCESS;
 
@@ -300,7 +298,7 @@ int FlvMuxer::WriteMetadata(char *data, int size)
     return ret;
 }
 
-int FlvMuxer::WriteAudio(int64_t timestamp, char *data, int size)
+int Muxer::WriteAudio(int64_t timestamp, char *data, int size)
 {
     int ret = ERROR_SUCCESS;
 
@@ -322,7 +320,7 @@ int FlvMuxer::WriteAudio(int64_t timestamp, char *data, int size)
     return ret;
 }
 
-int FlvMuxer::WriteVideo(int64_t timestamp, char *data, int size)
+int Muxer::WriteVideo(int64_t timestamp, char *data, int size)
 {
     int ret = ERROR_SUCCESS;
 
@@ -344,7 +342,7 @@ int FlvMuxer::WriteVideo(int64_t timestamp, char *data, int size)
     return ret;
 }
 
-FlvDemuxer::FlvDemuxer()
+Demuxer::Demuxer()
 {
     vcodec_type = flv::VideoCodecType::UNKNOW;
     vcodec = nullptr;
@@ -352,13 +350,13 @@ FlvDemuxer::FlvDemuxer()
     acodec = nullptr;
 }
 
-FlvDemuxer::~FlvDemuxer()
+Demuxer::~Demuxer()
 {
     rs_freep(vcodec);
     rs_freep(acodec);
 }
 
-int FlvDemuxer::demux_aac(BufferManager *manager, FlvCodecSample *sample)
+int Demuxer::demux_aac(BufferManager *manager, CodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
@@ -398,7 +396,7 @@ int FlvDemuxer::demux_aac(BufferManager *manager, FlvCodecSample *sample)
     }
 }
 
-int FlvDemuxer::demux_avc(BufferManager *manager, FlvCodecSample *sample)
+int Demuxer::demux_avc(BufferManager *manager, CodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 
@@ -446,7 +444,7 @@ int FlvDemuxer::demux_avc(BufferManager *manager, FlvCodecSample *sample)
     }
 }
 
-int FlvDemuxer::DemuxVideo(char *data, int size, CodecSample *s)
+int Demuxer::DemuxVideo(char *data, int size, ICodecSample *s)
 {
     int ret = ERROR_SUCCESS;
 
@@ -456,10 +454,10 @@ int FlvDemuxer::DemuxVideo(char *data, int size, CodecSample *s)
         return ret;
     }
 
-    if (!dynamic_cast<FlvCodecSample *>(s))
+    if (!dynamic_cast<CodecSample *>(s))
     {
         ret = ERROR_CODEC_SAMPLE_TYPE_ERROR;
-        rs_error("codec sample type is not FlvCodecSample. ret=%d", ret);
+        rs_error("codec sample type is not CodecSample. ret=%d", ret);
         return ret;
     }
 
@@ -477,7 +475,7 @@ int FlvDemuxer::DemuxVideo(char *data, int size, CodecSample *s)
 
     int8_t temp = manager.Read1Bytes();
 
-    FlvCodecSample *sample = dynamic_cast<FlvCodecSample *>(s);
+    CodecSample *sample = dynamic_cast<CodecSample *>(s);
     sample->vcodec_type = (flv::VideoCodecType)(temp & 0x0f);
     sample->frame_type = (flv::VideoFrameType)((temp >> 4) & 0x0f);
 
@@ -500,7 +498,7 @@ int FlvDemuxer::DemuxVideo(char *data, int size, CodecSample *s)
     }
 }
 
-int FlvDemuxer::DemuxAudio(char *data, int size, CodecSample *s)
+int Demuxer::DemuxAudio(char *data, int size, ICodecSample *s)
 {
     int ret = ERROR_SUCCESS;
 
@@ -510,10 +508,10 @@ int FlvDemuxer::DemuxAudio(char *data, int size, CodecSample *s)
         return ret;
     }
 
-    if (!dynamic_cast<FlvCodecSample *>(s))
+    if (!dynamic_cast<CodecSample *>(s))
     {
         ret = ERROR_CODEC_SAMPLE_TYPE_ERROR;
-        rs_error("codec sample type is not FlvCodecSample. ret=%d", ret);
+        rs_error("codec sample type is not CodecSample. ret=%d", ret);
         return ret;
     }
 
@@ -531,7 +529,7 @@ int FlvDemuxer::DemuxAudio(char *data, int size, CodecSample *s)
 
     int temp = manager.Read1Bytes();
 
-    FlvCodecSample *sample = dynamic_cast<FlvCodecSample *>(s);
+    CodecSample *sample = dynamic_cast<CodecSample *>(s);
     sample->is_video = false;
     sample->acodec_type = (flv::AudioCodecType)((temp >> 4) & 0x0f);
     sample->sound_type = (flv::AudioSoundType)(temp & 0x01);
@@ -559,7 +557,7 @@ int FlvDemuxer::DemuxAudio(char *data, int size, CodecSample *s)
     }
 }
 
-bool FlvDemuxer::IsAVC(char *data, int size)
+bool Demuxer::IsAVC(char *data, int size)
 {
     if (size < 1)
     {
@@ -571,7 +569,7 @@ bool FlvDemuxer::IsAVC(char *data, int size)
     return codec_id == (char)flv::VideoCodecType::AVC;
 }
 
-bool FlvDemuxer::IsAAC(char *data, int size)
+bool Demuxer::IsAAC(char *data, int size)
 {
     if (size < 1)
     {
@@ -584,7 +582,7 @@ bool FlvDemuxer::IsAAC(char *data, int size)
     return codec_id == (char)flv::AudioCodecType::AAC;
 }
 
-bool FlvDemuxer::IsAVCSequenceHeader(char *data, int size)
+bool Demuxer::IsAVCSequenceHeader(char *data, int size)
 {
     if (!IsAVC(data, size))
     {
@@ -605,7 +603,7 @@ bool FlvDemuxer::IsAVCSequenceHeader(char *data, int size)
            packet_type == (char)flv::AVCPacketType::SEQUENCE_HEADER;
 }
 
-bool FlvDemuxer::IsAACSequenceHeader(char *data, int size)
+bool Demuxer::IsAACSequenceHeader(char *data, int size)
 {
     if (!IsAAC(data, size))
     {
@@ -622,7 +620,7 @@ bool FlvDemuxer::IsAACSequenceHeader(char *data, int size)
     return packet_type == (char)flv::AACPacketType::SEQUENCE_HEADER;
 }
 
-bool FlvDemuxer::IsKeyFrame(char *data, int size)
+bool Demuxer::IsKeyFrame(char *data, int size)
 {
     if (size < 1)
     {
@@ -634,3 +632,5 @@ bool FlvDemuxer::IsKeyFrame(char *data, int size)
 
     return frame_type == (char)flv::VideoFrameType::KEY_FRAME;
 }
+
+} // namespace flv

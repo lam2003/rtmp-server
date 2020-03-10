@@ -5,11 +5,11 @@
 #include <common/file.hpp>
 #include <common/sample.hpp>
 
-class Muxer
+class IMuxer
 {
 public:
-    Muxer();
-    virtual ~Muxer();
+    IMuxer();
+    virtual ~IMuxer();
 
 public:
     virtual int Initialize(FileWriter *writer) = 0;
@@ -19,15 +19,15 @@ public:
     virtual int WriteMuxerHeader() = 0;
 };
 
-class Demuxer
+class IDemuxer
 {
 public:
-    Demuxer();
-    virtual ~Demuxer();
+    IDemuxer();
+    virtual ~IDemuxer();
 
 public:
-    virtual int DemuxAudio(char *data, int size, CodecSample *sample) = 0;
-    virtual int DemuxVideo(char *data, int size, CodecSample *sample) = 0;
+    virtual int DemuxAudio(char *data, int size, ICodecSample *sample) = 0;
+    virtual int DemuxVideo(char *data, int size, ICodecSample *sample) = 0;
 };
 
 #endif

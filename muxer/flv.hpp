@@ -105,13 +105,11 @@ extern std::string sound_size_to_str(AudioSoundSize sound_size);
 extern std::string video_codec_type_to_str(VideoCodecType codec_type);
 extern std::string frame_type_to_str(VideoFrameType frame_type);
 
-} // namespace flv
-
-class FlvCodecSample : public CodecSample
+class CodecSample : public ICodecSample
 {
 public:
-    FlvCodecSample();
-    virtual ~FlvCodecSample();
+    CodecSample();
+    virtual ~CodecSample();
 
 public:
     bool is_video;
@@ -127,11 +125,11 @@ public:
     bool has_print;
 };
 
-class FlvMuxer : public Muxer
+class Muxer : public IMuxer
 {
 public:
-    FlvMuxer();
-    virtual ~FlvMuxer();
+    Muxer();
+    virtual ~Muxer();
 
 public:
     static int SizeTag(int data_size);
@@ -157,15 +155,15 @@ private:
     iovec *iovss_cache_;
 };
 
-class FlvDemuxer : public Demuxer
+class Demuxer : public IDemuxer
 {
 public:
-    FlvDemuxer();
-    virtual ~FlvDemuxer();
+    Demuxer();
+    virtual ~Demuxer();
 
 public:
-    int DemuxAudio(char *data, int size, CodecSample *s);
-    int DemuxVideo(char *data, int size, CodecSample *s);
+    int DemuxAudio(char *data, int size, ICodecSample *s);
+    int DemuxVideo(char *data, int size, ICodecSample *s);
 
     static bool IsAVC(char *data, int size);
     static bool IsAAC(char *data, int size);
@@ -174,8 +172,8 @@ public:
     static bool IsKeyFrame(char *data, int size);
 
 private:
-    int demux_aac(BufferManager *manager, FlvCodecSample *sample);
-    int demux_avc(BufferManager *manager, FlvCodecSample *sample);
+    int demux_aac(BufferManager *manager, CodecSample *sample);
+    int demux_avc(BufferManager *manager, CodecSample *sample);
 
 public:
     flv::VideoCodecType vcodec_type;
@@ -183,5 +181,7 @@ public:
     flv::AudioCodecType acodec_type;
     ACodec *acodec;
 };
+
+} // namespace flv
 
 #endif

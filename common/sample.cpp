@@ -13,21 +13,21 @@ CodecSampleUnit::~CodecSampleUnit()
 {
 }
 
-CodecSample::CodecSample()
+ICodecSample::ICodecSample()
 {
     nb_sample_units = 0;
 }
 
-CodecSample::~CodecSample()
+ICodecSample::~ICodecSample()
 {
 }
 
-void CodecSample::Clear()
+void ICodecSample::Clear()
 {
     nb_sample_units = 0;
 }
 
-int CodecSample::AddSampleUnit(char *bytes, int size)
+int ICodecSample::AddSampleUnit(char *bytes, int size)
 {
     int ret = ERROR_SUCCESS;
 

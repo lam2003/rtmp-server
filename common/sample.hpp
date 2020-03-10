@@ -16,11 +16,11 @@ public:
     char *bytes;
 };
 
-class CodecSample
+class ICodecSample
 {
 public:
-    CodecSample();
-    virtual ~CodecSample();
+    ICodecSample();
+    virtual ~ICodecSample();
 
 public:
     virtual void Clear();

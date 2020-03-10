@@ -39,7 +39,7 @@ private:
 private:
     rtmp::Request *request_;
     DvrPlan *plan_;
-    FlvMuxer *muxer_;
+    flv::Muxer *muxer_;
     rtmp::Jitter *jitter_;
     rtmp::JitterAlgorithm jitter_algorithm_;
     FileWriter *writer_;

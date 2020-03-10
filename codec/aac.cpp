@@ -121,7 +121,7 @@ int AACCodec::DecodeSequenceHeader(BufferManager *manager)
     return ret;
 }
 
-int AACCodec::DecodeRawData(BufferManager *manager, CodecSample *sample)
+int AACCodec::DecodeRawData(BufferManager *manager, ICodecSample *sample)
 {
     int ret = ERROR_SUCCESS;
 

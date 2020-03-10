@@ -1,17 +1,17 @@
 #include <muxer/muxer.hpp>
 
-Muxer::Muxer()
+IMuxer::IMuxer()
 {
 }
 
-Muxer::~Muxer()
+IMuxer::~IMuxer()
 {
 }
 
-Demuxer::Demuxer()
+IDemuxer::IDemuxer()
 {
 }
 
-Demuxer::~Demuxer()
+IDemuxer::~IDemuxer()
 {
 }

@@ -15,7 +15,7 @@ FlvSegment::FlvSegment(DvrPlan *plan)
 {
     request_ = nullptr;
     plan_ = plan;
-    muxer_ = new FlvMuxer;
+    muxer_ = new flv::Muxer;
     jitter_ = nullptr;
     jitter_algorithm_ = rtmp::JitterAlgorithm::OFF;
     writer_ = new FileWriter;
@@ -360,8 +360,8 @@ int FlvSegment::WriteVideo(rtmp::SharedPtrMessage *shared_video)
     char *payload = video->payload;
     int size = video->size;
 
-    bool is_sequence_header = FlvDemuxer::IsAVCSequenceHeader(payload, size);
-    bool is_keyframe = FlvDemuxer::IsAVC(payload, size) && FlvDemuxer::IsKeyFrame(payload, size) && !is_sequence_header;
+    bool is_sequence_header = flv::Demuxer::IsAVCSequenceHeader(payload, size);
+    bool is_keyframe = flv::Demuxer::IsAVC(payload, size) && flv::Demuxer::IsKeyFrame(payload, size) && !is_sequence_header;
 
     if (is_keyframe)
     {
@@ -633,7 +633,7 @@ int DvrSegmentPlan::update_duration(rtmp::SharedPtrMessage *msg)
         {
             char *payload = msg->payload;
             int size = msg->size;
-            bool is_keyframe = FlvDemuxer::IsAVC(payload, size) && FlvDemuxer::IsKeyFrame(payload, size) && !FlvDemuxer::IsAVCSequenceHeader(payload, size);
+            bool is_keyframe = flv::Demuxer::IsAVC(payload, size) && flv::Demuxer::IsKeyFrame(payload, size) && !flv::Demuxer::IsAVCSequenceHeader(payload, size);
             if (!is_keyframe)
             {
                 return ret;
@@ -680,7 +680,7 @@ int DvrSegmentPlan::OnAudio(rtmp::SharedPtrMessage *shared_audio)
 {
     int ret = ERROR_SUCCESS;
 
-    if (FlvDemuxer::IsAACSequenceHeader(shared_audio->payload, shared_audio->size))
+    if (flv::Demuxer::IsAACSequenceHeader(shared_audio->payload, shared_audio->size))
     {
         rs_freep(sh_audio_);
         sh_audio_ = shared_audio->Copy();
@@ -703,7 +703,7 @@ int DvrSegmentPlan::OnVideo(rtmp::SharedPtrMessage *shared_video)
 {
     int ret = ERROR_SUCCESS;
 
-    if (FlvDemuxer::IsAVCSequenceHeader(shared_video->payload, shared_video->size))
+    if (flv::Demuxer::IsAVCSequenceHeader(shared_video->payload, shared_video->size))
     {
         rs_freep(sh_video_);
         sh_video_ = shared_video->Copy();
