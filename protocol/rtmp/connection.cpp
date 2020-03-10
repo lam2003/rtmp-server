@@ -1,13 +1,14 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime: 2020-03-10 15:51:30
+ * @LastEditTime: 2020-03-10 17:55:24
  */
 
 #include <protocol/rtmp/connection.hpp>
-#include <protocol/rtmp/stack.hpp>
 #include <protocol/rtmp/defines.hpp>
 #include <protocol/rtmp/source.hpp>
+#include <protocol/rtmp/recv_thread.hpp>
+#include <protocol/rtmp/message.hpp>
 #include <common/error.hpp>
 #include <common/config.hpp>
 #include <common/log.hpp>
@@ -133,7 +134,7 @@ int32_t Connection::Publishing(Source *source)
     bool vhost_is_edge = _config->GetVhostIsEdge(request_->vhost);
     if ((ret = acquire_publish(source, false)) == ERROR_SUCCESS)
     {
-        PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ != ConnType::FMLE_PUBLISH, vhost_is_edge);
+        PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ == ConnType::FMLE_PUBLISH, vhost_is_edge);
 
         ret = do_publishing(source, &recv_thread);
 

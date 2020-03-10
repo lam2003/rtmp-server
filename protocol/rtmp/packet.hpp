@@ -1,13 +1,16 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-12 11:06:24
- * @LastEditTime : 2020-02-12 12:31:54
+ * @LastEditTime: 2020-03-10 16:47:00
  */
 #ifndef RS_RTMP_PACKET_HPP
 #define RS_RTMP_PACKET_HPP
 
 #include <common/core.hpp>
-#include <protocol/amf/amf0.hpp>
+#include <common/buffer.hpp>
+
+class AMF0Any;
+class AMF0Object;
 
 namespace rtmp
 {

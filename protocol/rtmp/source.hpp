@@ -1,18 +1,31 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-03-10 16:10:07
+ * @LastEditTime: 2020-03-10 17:53:20
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \rtmp_server\protocol\rtmp\source.hpp
+ */
 #ifndef RS_RTMP_SOURCE_HPP
 #define RS_RTMP_SOURCE_HPP
 
 #include <common/core.hpp>
 #include <common/connection.hpp>
 #include <common/queue.hpp>
-#include <protocol/rtmp/stack.hpp>
 #include <protocol/rtmp/jitter.hpp>
+
+#include <vector>
 
 namespace rtmp
 {
 
 class Dvr;
+class Request;
+class Reponse;
+class CommonMessage;
+class OnMetadataPacket;
+class Consumer;
 class Source;
-class MessageQueue;
 
 class ISourceHandler
 {
@@ -23,69 +36,6 @@ public:
 public:
     virtual int OnPublish(Source *s, Request *r) = 0;
     virtual int OnUnPublish(Source *s, Request *r) = 0;
-};
-
-class IWakeable
-{
-public:
-    IWakeable();
-    virtual ~IWakeable();
-
-public:
-    virtual void WakeUp() = 0;
-};
-
-class Consumer : public IWakeable
-{
-public:
-    Consumer(Source *s, IConnection *c);
-    virtual ~Consumer();
-
-public:
-    virtual void SetQueueSize(double queue_size);
-    virtual int GetTime();
-    virtual int Enqueue(SharedPtrMessage *shared_msg, bool atc, JitterAlgorithm ag);
-    virtual int DumpPackets(MessageArray *msg_arr, int &count);
-    virtual void Wait(int nb_msgs, int duration);
-    virtual int OnPlayClientPause(bool is_pause);
-    //IWakeable
-    virtual void WakeUp() override;
-
-private:
-    Source *source_;
-    IConnection *conn_;
-    bool pause_;
-    Jitter *jitter_;
-    MessageQueue *queue_;
-    st_cond_t mw_wait_;
-    bool mw_waiting_;
-    int mw_min_msgs_;
-    int mw_duration_;
-};
-
-class MessageQueue
-{
-public:
-    MessageQueue();
-    virtual ~MessageQueue();
-
-public:
-    virtual int Size();
-    virtual int Duration();
-    virtual void SetQueueSize(double second);
-    virtual int Enqueue(SharedPtrMessage *msg, bool *is_overflow = nullptr);
-    virtual int DumpPackets(int max_count, SharedPtrMessage **pmsgs, int &count);
-    virtual int DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag);
-
-protected:
-    virtual void Shrink();
-    virtual void Clear();
-
-private:
-    int64_t av_start_time_;
-    int64_t av_end_time_;
-    int queue_size_ms_;
-    FastVector<SharedPtrMessage *> msgs_;
 };
 
 class Source

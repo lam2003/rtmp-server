@@ -1,15 +1,14 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 13:14:31
- * @LastEditTime: 2020-03-10 15:49:30
+ * @LastEditTime: 2020-03-10 17:54:50
  */
 #include <protocol/rtmp/dvr.hpp>
-#include <common/config.hpp>
 #include <protocol/amf/amf0.hpp>
-
-//48kHz/1024=46.875fps
-//46.875fps*10s=468.75
-#define NUM_TO_JUDGE_DVR_ONLY_HAS_AUDIO 500
+#include <protocol/rtmp/source.hpp>
+#include <protocol/rtmp/defines.hpp>
+#include <protocol/rtmp/message.hpp>
+#include <common/config.hpp>
 
 namespace rtmp
 {
@@ -644,7 +643,7 @@ int DvrSegmentPlan::update_duration(SharedPtrMessage *msg)
             audio_num_before_segment_ = 0;
         }
 
-        if (audio_num_before_segment_ < NUM_TO_JUDGE_DVR_ONLY_HAS_AUDIO && msg->IsAudio())
+        if (audio_num_before_segment_ < RTMP_NUM_TO_JUDGE_DVR_ONLY_HAS_AUDIO && msg->IsAudio())
         {
             audio_num_before_segment_++;
             return ret;

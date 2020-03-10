@@ -2,10 +2,15 @@
 #define RS_RTMP_CONSUMER_HPP
 
 #include <common/core.hpp>
+#include <common/connection.hpp>
+#include <protocol/rtmp/jitter.hpp>
 
 namespace rtmp
 {
 
+class SharedPtrMessage;
+class MessageArray;
+class MessageQueue;
 class Source;
 
 class IWakeable
@@ -21,12 +26,12 @@ public:
 class Consumer : public IWakeable
 {
 public:
-    Consumer();
+    Consumer(Source *s, IConnection *c);
     virtual ~Consumer();
 
 public:
     virtual void SetQueueSize(double queue_size);
-    virtual void GetTime();
+    virtual int GetTime();
     virtual int Enqueue(SharedPtrMessage *shared_msg, bool atc, JitterAlgorithm ag);
     virtual int DumpPackets(MessageArray *msg_arr, int &count);
     virtual void Wait(int nb_msgs, int duration);

@@ -1,8 +1,8 @@
 /*
- * @Author: your name
+ * @Author: linmin
  * @Date: 2020-03-10 15:17:23
  * @LastEditTime: 2020-03-10 15:33:55
- * @LastEditors: your name
+ * @LastEditors: linmin
  * @Description: In User Settings Edit
  * @FilePath: \rtmp_server\app\server.cpp
  */

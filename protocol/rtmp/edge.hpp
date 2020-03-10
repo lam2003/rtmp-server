@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-18 12:52:35
- * @LastEditTime: 2020-02-18 13:03:16
+ * @LastEditTime: 2020-03-10 16:38:39
  */
 #ifndef RS_RTMP_EDGE_HPP
 #define RS_RTMP_EDGE_HPP
@@ -10,11 +10,14 @@
 #include <common/thread.hpp>
 #include <common/io.hpp>
 #include <common/kbps.hpp>
-#include <protocol/rtmp/source.hpp>
-#include <protocol/rtmp/stack.hpp>
 
 namespace rtmp
 {
+
+class PublishEdge;
+class Source;
+class CommonMessage;
+class Request;
 
 enum EdgeState
 {
@@ -23,12 +26,6 @@ enum EdgeState
     INGEST_CONNECTED = 201,
     PUBLISH = 200,
 };
-
-
-
-class PublishEdge;
-
-
 
 class EdgeForwarder : public internal::IThreadHandler
 {
@@ -54,7 +51,7 @@ private:
     int stream_id_;
     Source *source_;
     PublishEdge *edge_;
-    Request request_;
+    Request *request_;
     internal::Thread *thread_;
     st_netfd_t stfd_;
     IProtocolReaderWriter *rw_;

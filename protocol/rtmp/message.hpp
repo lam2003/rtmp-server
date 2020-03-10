@@ -1,16 +1,20 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-17 12:54:14
- * @LastEditTime: 2020-02-18 12:53:05
+ * @LastEditTime: 2020-03-10 16:42:02
  */
 
 #ifndef RS_RTMP_MESSAGE_HPP
 #define RS_RTMP_MESSAGE_HPP
 
 #include <common/core.hpp>
+#include <common/queue.hpp>
+#include <protocol/rtmp/jitter.hpp>
 
 namespace rtmp
 {
+
+class Consumer;
 
 extern int ChunkHeaderC0(int perfer_cid,
                          uint32_t timestamp,
@@ -145,30 +149,30 @@ public:
     int max;
 };
 
-// class MessageQueue
-// {
-// public:
-//     MessageQueue();
-//     virtual ~MessageQueue();
+class MessageQueue
+{
+public:
+    MessageQueue();
+    virtual ~MessageQueue();
 
-// public:
-//     virtual int Size();
-//     virtual int Duration();
-//     virtual void SetQueueSize(double second);
-//     virtual int Enqueue(SharedPtrMessage *msg, bool *is_overflow = nullptr);
-//     virtual int DumpPackets(int max_count, SharedPtrMessage **pmsgs, int &count);
-//     virtual int DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag);
+public:
+    virtual int Size();
+    virtual int Duration();
+    virtual void SetQueueSize(double second);
+    virtual int Enqueue(SharedPtrMessage *msg, bool *is_overflow = nullptr);
+    virtual int DumpPackets(int max_count, SharedPtrMessage **pmsgs, int &count);
+    virtual int DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag);
 
-// protected:
-//     virtual void Shrink();
-//     virtual void Clear();
+protected:
+    virtual void Shrink();
+    virtual void Clear();
 
-// private:
-//     int64_t av_start_time_;
-//     int64_t av_end_time_;
-//     int queue_size_ms_;
-//     FastVector<SharedPtrMessage *> msgs_;
-// };
+private:
+    int64_t av_start_time_;
+    int64_t av_end_time_;
+    int queue_size_ms_;
+    FastVector<SharedPtrMessage *> msgs_;
+};
 
 } // namespace rtmp
 

@@ -1,19 +1,21 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:02:50
- * @LastEditTime: 2020-03-10 15:41:27
+ * @LastEditTime: 2020-03-10 16:48:59
  */
 #ifndef RS_RTMP_RECV_THREAD_HPP
 #define RS_RTMP_RECV_THREAD_HPP
 
 #include <common/core.hpp>
 #include <common/thread.hpp>
-#include <protocol/rtmp/stack.hpp>
-#include <protocol/rtmp/connection.hpp>
+#include <common/connection.hpp>
 #include <app/rtmp_server.hpp>
+
 namespace rtmp
 {
+
 class Connection;
+class Source;
 
 class RecvThread : virtual public internal::IThreadHandler
 {

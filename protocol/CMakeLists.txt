@@ -10,6 +10,7 @@ add_library(protocol
     rtmp/connection.cpp
     rtmp/recv_thread.cpp
     rtmp/dvr.cpp
+    rtmp/consumer.cpp
 )
 
 add_dependencies(protocol

@@ -1,3 +1,12 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-24 11:23:35
+ * @LastEditTime: 2020-03-10 16:39:51
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * 
+ * @FilePath: \rtmp_server\protocol\rtmp\defines.hpp
+ */
 #ifndef RS_RTMP_DEFINES_H
 #define RS_RTMP_DEFINES_H
 
@@ -71,5 +80,12 @@
 #define RTMP_AMF0_COMMAND_ON_METADATA "onMetaData"
 #define RTMP_AMF0_COMMAND_SET_DATAFRAME "@setDataFrame"
 
+//48kHz/1024=46.875fps
+//46.875fps*10s=468.75
+#define RTMP_NUM_TO_JUDGE_DVR_ONLY_HAS_AUDIO 500
+
+#define RTMP_MAX_JITTER_MS 250
+#define RTMP_MAX_JITTER_MS_NEG -250
+#define RTMP_DEFAULT_FRAME_TIME_MS 10
 
 #endif

@@ -1,11 +1,20 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-03-10 10:29:49
+ * @LastEditTime: 2020-03-10 16:39:01
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \rtmp_server\protocol\rtmp\jitter.hpp
+ */
 #ifndef RS_RTMP_JITTER_HPP
 #define RS_RTMP_JITTER_HPP
 
 #include <common/core.hpp>
-#include <protocol/rtmp/message.hpp>
 
 namespace rtmp
 {
+
+class SharedPtrMessage;
 
 enum class JitterAlgorithm
 {

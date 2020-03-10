@@ -3,6 +3,7 @@
 #include <common/error.hpp>
 #include <protocol/rtmp/stack.hpp>
 #include <protocol/rtmp/defines.hpp>
+#include <protocol/amf/amf0.hpp>
 
 RTMPServer::RTMPServer(IProtocolReaderWriter *rw) : rw_(rw)
 {

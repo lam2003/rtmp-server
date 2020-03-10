@@ -1,13 +1,15 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-17 12:57:29
- * @LastEditTime: 2020-02-18 12:54:40
+ * @LastEditTime: 2020-03-10 16:20:17
  */
 #include <protocol/rtmp/message.hpp>
 #include <protocol/rtmp/defines.hpp>
+#include <protocol/rtmp/consumer.hpp>
 #include <common/utils.hpp>
 #include <common/log.hpp>
 #include <common/error.hpp>
+#include <muxer/flv.hpp>
 
 namespace rtmp
 {
@@ -407,6 +409,148 @@ void MessageArray::Zero(int count)
     {
         msgs[i] = nullptr;
     }
+}
+
+MessageQueue::MessageQueue()
+{
+    av_start_time_ = -1;
+    av_end_time_ = -1;
+    queue_size_ms_ = 0;
+}
+
+MessageQueue::~MessageQueue()
+{
+    Clear();
+}
+
+int MessageQueue::Size()
+{
+    return msgs_.Size();
+}
+
+int MessageQueue::Duration()
+{
+    return (int)(av_end_time_ - av_start_time_);
+}
+
+void MessageQueue::SetQueueSize(double second)
+{
+    queue_size_ms_ = (int)(second * 1000);
+}
+
+void MessageQueue::Shrink()
+{
+    SharedPtrMessage *video_sh = nullptr;
+    SharedPtrMessage *audio_sh = nullptr;
+
+    int msgs_size = msgs_.Size();
+
+    for (int i = 0; i < msgs_size; i++)
+    {
+        SharedPtrMessage *msg = msgs_.At(i);
+
+        if (msg->IsAudio() && flv::Demuxer::IsAACSequenceHeader(msg->payload, msg->size))
+        {
+            rs_freep(audio_sh);
+            audio_sh = msg;
+            continue;
+        }
+        if (msg->IsVideo() && flv::Demuxer::IsAVCSequenceHeader(msg->payload, msg->size))
+        {
+            rs_freep(video_sh);
+            video_sh = msg;
+            continue;
+        }
+
+        rs_freep(msg);
+    }
+    msgs_.Clear();
+
+    av_start_time_ = av_end_time_;
+
+    if (audio_sh)
+    {
+        audio_sh->timestamp = av_end_time_;
+        msgs_.PushBack(audio_sh);
+    }
+    if (video_sh)
+    {
+        video_sh->timestamp = av_end_time_;
+        msgs_.PushBack(video_sh);
+    }
+}
+
+int MessageQueue::Enqueue(SharedPtrMessage *msg, bool *is_overflow)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (msg->IsAV())
+    {
+        if (av_start_time_ == -1)
+        {
+            av_start_time_ = msg->timestamp;
+        }
+        av_end_time_ = msg->timestamp;
+    }
+
+    msgs_.PushBack(msg);
+
+    while (av_end_time_ - av_start_time_ > queue_size_ms_)
+    {
+        if (is_overflow)
+        {
+            *is_overflow = true;
+        }
+        Shrink();
+    }
+
+    return ret;
+}
+
+void MessageQueue::Clear()
+{
+    msgs_.Free();
+    av_start_time_ = av_end_time_ = -1;
+}
+
+int MessageQueue::DumpPackets(int max_count, SharedPtrMessage **pmsgs, int &count)
+{
+    int ret = ERROR_SUCCESS;
+
+    int nb_msgs = msgs_.Size();
+    if (nb_msgs <= 0)
+    {
+        return ret;
+    }
+
+    count = rs_min(nb_msgs, max_count);
+
+    SharedPtrMessage **omsgs = msgs_.Data();
+    for (int i = 0; i < count; i++)
+    {
+        pmsgs[i] = omsgs[i];
+    }
+
+    SharedPtrMessage *last = omsgs[count - 1];
+    av_start_time_ = last->timestamp;
+
+    if (count >= nb_msgs)
+    {
+        msgs_.Clear();
+    }
+    else
+    {
+        msgs_.Erase(msgs_.Begin(), msgs_.Begin() + count);
+    }
+
+    return ret;
+}
+
+int MessageQueue::DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag)
+{
+    int ret = ERROR_SUCCESS;
+
+    return ret;
 }
 
 } // namespace rtmp

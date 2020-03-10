@@ -1,5 +1,6 @@
 #include <protocol/rtmp/packet.hpp>
 #include <protocol/rtmp/defines.hpp>
+#include <protocol/amf/amf0.hpp>
 #include <common/utils.hpp>
 #include <common/log.hpp>
 #include <common/error.hpp>

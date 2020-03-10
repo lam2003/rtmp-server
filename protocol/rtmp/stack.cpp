@@ -1,5 +1,9 @@
 #include <protocol/rtmp/stack.hpp>
 #include <protocol/rtmp/defines.hpp>
+#include <protocol/rtmp/packet.hpp>
+#include <protocol/rtmp/handshake.hpp>
+#include <protocol/amf/amf0.hpp>
+#include <protocol/rtmp/message.hpp>
 
 namespace rtmp
 {

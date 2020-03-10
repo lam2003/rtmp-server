@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 19:10:29
- * @LastEditTime: 2020-03-10 15:49:17
+ * @LastEditTime: 2020-03-10 17:55:03
  */
 #ifndef RS_DVR_HPP
 #define RS_DVR_HPP
@@ -9,13 +9,14 @@
 #include <common/core.hpp>
 #include <common/file.hpp>
 #include <common/queue.hpp>
-#include <protocol/rtmp/source.hpp>
+#include <protocol/rtmp/jitter.hpp>
 #include <muxer/flv.hpp>
 
 namespace rtmp
 {
 
 class DvrPlan;
+class Source;
 
 class FlvSegment
 {

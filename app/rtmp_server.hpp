@@ -1,8 +1,19 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-02-24 11:23:35
+ * @LastEditTime: 2020-03-10 17:56:53
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \rtmp_server\app\rtmp_server.hpp
+ */
 #ifndef RS_RTMP_SERVER_HPP
 #define RS_RTMP_SERVER_HPP
 
 #include <common/core.hpp>
 #include <protocol/rtmp/stack.hpp>
+#include <protocol/rtmp/packet.hpp>
+#include <protocol/rtmp/handshake.hpp>
+#include <protocol/rtmp/message.hpp>
 
 class RTMPServer
 {

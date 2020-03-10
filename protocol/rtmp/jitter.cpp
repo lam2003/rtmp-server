@@ -1,11 +1,17 @@
+/*
+ * @Author: linmin
+ * @Date: 2020-03-10 10:29:30
+ * @LastEditTime: 2020-03-10 16:40:32
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \rtmp_server\protocol\rtmp\jitter.cpp
+ */
 #include <protocol/rtmp/jitter.hpp>
+#include <protocol/rtmp/message.hpp>
+#include <protocol/rtmp/defines.hpp>
 #include <common/error.hpp>
 #include <common/log.hpp>
 #include <common/utils.hpp>
-
-#define MAX_JITTER_MS 250
-#define MAX_JITTER_MS_NEG -250
-#define DEFAULT_FRAME_TIME_MS 10
 
 namespace rtmp
 {
@@ -52,9 +58,9 @@ int Jitter::Correct(SharedPtrMessage *msg, JitterAlgorithm ag)
     int64_t time = msg->timestamp;
     int64_t delta = time - last_pkt_time_;
 
-    if (delta < MAX_JITTER_MS_NEG || delta > MAX_JITTER_MS)
+    if (delta < RTMP_MAX_JITTER_MS_NEG || delta > RTMP_MAX_JITTER_MS)
     {
-        delta = DEFAULT_FRAME_TIME_MS;
+        delta = RTMP_DEFAULT_FRAME_TIME_MS;
     }
 
     last_pkt_correct_time_ = rs_max(0, last_pkt_correct_time_ + delta);

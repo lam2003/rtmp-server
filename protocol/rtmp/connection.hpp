@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-10 16:16:08
- * @LastEditTime: 2020-03-10 15:43:23
+ * @LastEditTime: 2020-03-10 16:32:49
  */
 #ifndef RS_RTMP_CONNECTION_HPP
 #define RS_RTMP_CONNECTION_HPP
@@ -11,12 +11,12 @@
 #include <common/connection.hpp>
 #include <app/rtmp_server.hpp>
 #include <app/server.hpp>
-#include <protocol/rtmp/recv_thread.hpp>
-
-class PublishRecvThread;
 
 namespace rtmp
 {
+    
+class PublishRecvThread;
+
 class Connection : virtual public IConnection
 {
     friend class PublishRecvThread;
