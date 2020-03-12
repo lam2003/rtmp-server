@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime: 2020-03-12 13:21:02
+ * @LastEditTime: 2020-03-12 19:43:34
  */
 
 #include <protocol/rtmp/connection.hpp>
@@ -119,6 +119,11 @@ int32_t Connection::StreamServiceCycle()
         }
         return Publishing(source);
     case ConnType::PLAY:
+        if ((ret = rtmp_->StartPlay(response_->stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("start to play stream failed. ret=%d", ret);
+            return ret;
+        }
         break;
     default:
         break;

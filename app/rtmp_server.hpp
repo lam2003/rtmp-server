@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-24 11:23:35
- * @LastEditTime: 2020-03-11 16:44:58
+ * @LastEditTime: 2020-03-12 17:33:54
  * @LastEditors: linmin
  * @Description: In User Settings Edit
  * @FilePath: \rtmp_server\app\rtmp_server.hpp
@@ -37,6 +37,7 @@ public:
     virtual void SetMargeRead(bool v, IMergeReadHandler *handler);
     virtual int DecodeMessage(rtmp::CommonMessage *msg, rtmp::Packet **ppacket);
     virtual int FMLEUnPublish(int stream_id, double unpublish_tid);
+    virtual int StartPlay(int stream_id);
 
 private:
     int identify_fmle_publish_client(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_name);

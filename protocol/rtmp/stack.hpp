@@ -31,6 +31,18 @@ enum class ConnType
     FLASH_PUBLISH = 3,
 };
 
+enum class UserEventType
+{
+    STREAM_BEGIN = 0x00,
+    STREAM_EOF = 0x01,
+    STREAM_DRY = 0x02,
+    SET_BUFFER_LEN = 0x03,
+    STREAM_IS_RECORDED = 0x04,
+    PING_REQUEST = 0x06,
+    PING_RESPONSE = 0x07,
+    FMS_EVENT0 = 0x1a
+};
+
 extern void DiscoveryTcUrl(const std::string &tc_url,
                            std::string &schema,
                            std::string &host,

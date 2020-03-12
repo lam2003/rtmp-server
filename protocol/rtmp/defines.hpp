@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-24 11:23:35
- * @LastEditTime: 2020-03-11 13:34:25
+ * @LastEditTime: 2020-03-12 19:28:55
  * @LastEditors: linmin
  */
 #ifndef RS_RTMP_DEFINES_H
@@ -41,6 +41,8 @@
 #define RTMP_CID_PROTOCOL_CONTROL 0x02
 #define RTMP_CID_OVER_CONNECTION 0x03
 #define RTMP_CID_OVER_CONNECTION2 0x04
+#define RTMP_CID_OVER_STREAM 0x05
+#define RTMP_CID_OVER_STREAM2 0x08
 #define RTMP_CID_VIDEO 0x06
 #define RTMP_CID_AUDIO 0x07
 

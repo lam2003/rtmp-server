@@ -757,6 +757,11 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
         *ppacket = packet = new SetChunkSizePacket;
         return packet->Decode(manager);
     }
+    else if (header.IsUserControlMessage())
+    {
+        *ppacket = packet = new UserControlPacket;
+        return packet->Decode(manager);
+    }
 
     return ret;
 }

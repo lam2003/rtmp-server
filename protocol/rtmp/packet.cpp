@@ -1,5 +1,6 @@
 #include <protocol/rtmp/packet.hpp>
 #include <protocol/rtmp/defines.hpp>
+#include <protocol/rtmp/stack.hpp>
 #include <protocol/amf/amf0.hpp>
 #include <common/utils.hpp>
 #include <common/log.hpp>
@@ -1436,4 +1437,179 @@ int PlayPacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
+UserControlPacket::UserControlPacket()
+{
+    event_type = 0;
+    event_data = 0;
+    extra_data = 0;
+}
+
+UserControlPacket::~UserControlPacket()
+{
+}
+
+int UserControlPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!manager->Require(2))
+    {
+        ret = ERROR_RTMP_MESSAGE_DECODE;
+        rs_error("decode user control packet: read event type failed. ret=%d", ret);
+        return ret;
+    }
+
+    event_type = manager->Read2Bytes();
+
+    if (event_type == (int16_t)UserEventType::FMS_EVENT0)
+    {
+        if (!manager->Require(1))
+        {
+            ret = ERROR_RTMP_MESSAGE_DECODE;
+            rs_error("decode user control packet: read event_data failed. ret=%d", ret);
+            return ret;
+        }
+        event_data = manager->Read1Bytes();
+    }
+    else
+    {
+        if (!manager->Require(4))
+        {
+            ret = ERROR_RTMP_MESSAGE_DECODE;
+            rs_error("decode user control packet: read event_data failed. ret=%d", ret);
+            return ret;
+        }
+        event_data = manager->Read4Bytes();
+    }
+
+    if (event_type == (int16_t)UserEventType::SET_BUFFER_LEN)
+    {
+        if (!manager->Require(4))
+        {
+            ret = ERROR_RTMP_MESSAGE_DECODE;
+            rs_error("decode user control packet: read extra_data failed. ret=%d", ret);
+            return ret;
+        }
+        extra_data = manager->Read4Bytes();
+    }
+
+    rs_trace("decode user control packet success. event_type=%d, event_data=%d, extra_data=%d", event_type, event_data, extra_data);
+
+    return ret;
+}
+
+int UserControlPacket::GetPreferCID()
+{
+    return RTMP_CID_PROTOCOL_CONTROL;
+}
+
+int UserControlPacket::GetMessageType()
+{
+    return RTMP_MSG_USER_CONTROL_MESSAGE;
+}
+
+int UserControlPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!manager->Require(GetSize()))
+    {
+        ret = ERROR_RTMP_MESSAGE_ENCODE;
+        rs_error("encode user control packet failed. ret=%d", ret);
+        return ret;
+    }
+
+    manager->Write2Bytes(event_type);
+
+    if (event_type == (int16_t)UserEventType::FMS_EVENT0)
+    {
+        manager->Write1Bytes(event_data);
+    }
+    else
+    {
+        manager->Write4Bytes(event_data);
+    }
+
+    if (event_type == (int16_t)UserEventType::SET_BUFFER_LEN)
+    {
+        manager->Write4Bytes(extra_data);
+    }
+
+    rs_trace("encode user control packet success");
+
+    return ret;
+}
+
+int UserControlPacket::GetSize()
+{
+    int size = 0;
+
+    size += 2;
+
+    if (event_type == (int16_t)UserEventType::FMS_EVENT0)
+    {
+        size += 1;
+    }
+    else
+    {
+        size += 4;
+    }
+
+    if (event_type == (int16_t)UserEventType::SET_BUFFER_LEN)
+    {
+        size += 4;
+    }
+
+    return size;
+}
+
+OnStatusDataPacket::OnStatusDataPacket()
+{
+    command_name = RTMP_AMF0_COMMAND_ON_STATUS;
+    data = AMF0Any::Object();
+}
+
+OnStatusDataPacket::~OnStatusDataPacket()
+{
+    rs_freep(data);
+}
+
+int OnStatusDataPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_STREAM;
+}
+
+int OnStatusDataPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_DATA;
+}
+
+int OnStatusDataPacket::GetSize()
+{
+    return AMF0_LEN_STR(command_name) + AMF0_LEN_OBJECT(data);
+}
+
+int OnStatusDataPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
+int OnStatusDataPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0WriteString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("encode on_status_data packet: amf0 write command failed. ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = data->Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("encode  on_status_data packet: amf0 write data failed. ret=%d", ret);
+        return ret;
+    }
+    return ret;
+}
 } // namespace rtmp

@@ -478,3 +478,64 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
 
     return ret;
 }
+
+int RTMPServer::StartPlay(int stream_id)
+{
+    int ret = ERROR_SUCCESS;
+    {
+        rtmp::UserControlPacket *pkt = new rtmp::UserControlPacket;
+        pkt->event_type = (int16_t)rtmp::UserEventType::STREAM_BEGIN;
+        pkt->event_data = stream_id;
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send StreamBegin failed. ret=%d", ret);
+            return ret;
+        }
+
+        rs_trace("send StreamBegin success");
+    }
+    {
+        rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
+        pkt->data->Set("level", AMF0Any::String("status"));
+        pkt->data->Set("code", AMF0Any::String("NetStream.Play.Reset"));
+        pkt->data->Set("description", AMF0Any::String("Stream is now reseting"));
+        pkt->data->Set("details", AMF0Any::String("stream"));
+        pkt->data->Set("clientid", AMF0Any::String("ASAICiss"));
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send onStatus(NetStream.Play.Reset) message failed. ret=%d", ret);
+            return ret;
+        }
+
+        rs_trace("send onStatus(NetStream.Play.Reset) success");
+    }
+    {
+        rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
+        pkt->data->Set("level", AMF0Any::String("status"));
+        pkt->data->Set("code", AMF0Any::String("NetStream.Play.Start"));
+        pkt->data->Set("description", AMF0Any::String("Stream is now playing"));
+        pkt->data->Set("details", AMF0Any::String("stream"));
+        pkt->data->Set("clientid", AMF0Any::String("ASAICiss"));
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send onStatus(NetStream.Play.Start) message failed. ret=%d", ret);
+            return ret;
+        }
+
+        rs_trace("send onStatus(NetStream.Play.Start) success");
+    }
+    {
+        rtmp::OnStatusDataPacket *pkt = new rtmp::OnStatusDataPacket;
+        pkt->data->Set("code", AMF0Any::String("NetStream.Data.Start"));
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send onStatus(NetStream.Data.Start) message failed. ret=%d", ret);
+            return ret;
+        }
+        rs_trace("send onStatus(NetStream.Data.Start) success");
+    }
+
+    rs_trace("start play success");
+
+    return ret;
+}

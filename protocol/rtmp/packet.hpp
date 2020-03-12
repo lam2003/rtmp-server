@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-12 11:06:24
- * @LastEditTime: 2020-03-11 15:39:16
+ * @LastEditTime: 2020-03-12 19:26:47
  */
 #ifndef RS_RTMP_PACKET_HPP
 #define RS_RTMP_PACKET_HPP
@@ -343,5 +343,51 @@ public:
     double duration;
     bool reset;
 };
+
+class UserControlPacket : public Packet
+{
+public:
+    UserControlPacket();
+    virtual ~UserControlPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    int16_t event_type;
+    int32_t event_data;
+    int32_t extra_data;
+};
+
+class OnStatusDataPacket : public Packet
+{
+public:
+    OnStatusDataPacket();
+    virtual ~OnStatusDataPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    AMF0Object *data;
+};
+
 } // namespace rtmp
 #endif
