@@ -1,11 +1,9 @@
 /*
- * @Author: linmin
  * @Date: 2020-03-10 10:29:30
- * @LastEditTime: 2020-03-10 16:40:32
- * @LastEditors: Please set LastEditors
- * @Description: In User Settings Edit
- * @FilePath: \rtmp_server\protocol\rtmp\jitter.cpp
+ * @LastEditors: linmin
+ * @LastEditTime: 2020-03-10 18:17:53
  */
+
 #include <protocol/rtmp/jitter.hpp>
 #include <protocol/rtmp/message.hpp>
 #include <protocol/rtmp/defines.hpp>
@@ -16,7 +14,7 @@
 namespace rtmp
 {
 
-Jitter::Jitter()
+Jitter::Jitter()  
 {
     last_pkt_time_ = 0;
     last_pkt_correct_time_ = -1;

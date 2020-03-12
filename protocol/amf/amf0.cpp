@@ -297,6 +297,17 @@ bool AMF0Any::IsEcmaArray()
     return marker == AMF0_ECMA_ARRAY;
 }
 
+bool AMF0Any::ToBoolean()
+{
+    AMF0Boolean *p = dynamic_cast<AMF0Boolean *>(this);
+    return p->value;
+}
+
+bool AMF0Any::IsBoolean()
+{
+    return marker == AMF0_BOOLEAN;
+}
+
 AMF0Object *AMF0Any::Object()
 {
     return new AMF0Object;
@@ -360,7 +371,7 @@ int AMF0ObjectEOF::Read(BufferManager *manager)
     if (temp_value != 0x00)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read object EOF value failed. require=0x00, actual=%#x, ret=%d", temp_value, ret);
+        rs_error("amf0 read object EOF value failed. required=0x00, actual=%#x, ret=%d", temp_value, ret);
         return ret;
     }
 
@@ -375,7 +386,7 @@ int AMF0ObjectEOF::Read(BufferManager *manager)
     if (marker != AMF0_ObJECT_END)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read object EOF marker failed. require=%#x, actual=%#x, ret=%d", AMF0_ObJECT_END, marker, ret);
+        rs_error("amf0 read object EOF marker failed. required=%#x, actual=%#x, ret=%d", AMF0_ObJECT_END, marker, ret);
         return ret;
     }
 
@@ -611,7 +622,7 @@ int AMF0EcmaArray::Read(BufferManager *manager)
     if (marker != AMF0_ECMA_ARRAY)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read ecma array marker failed. require=%#x, actual=%#x, ret=%d", AMF0_ECMA_ARRAY, marker, ret);
+        rs_error("amf0 read ecma array marker failed. required=%#x, actual=%#x, ret=%d", AMF0_ECMA_ARRAY, marker, ret);
         return ret;
     }
 
@@ -777,7 +788,7 @@ int AMF0StrictArray::Read(BufferManager *manager)
     if (marker != AMF0_STRICT_ARRAY)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read strict array marker failed. require=%#x, actual=%#x, ret=%d", AMF0_STRICT_ARRAY, marker, ret);
+        rs_error("amf0 read strict array marker failed. required=%#x, actual=%#x, ret=%d", AMF0_STRICT_ARRAY, marker, ret);
         return ret;
     }
 
@@ -892,7 +903,7 @@ int AMF0Date::Read(BufferManager *manager)
     if (marker != AMF0_DATE)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read date marker failed. require=%#x, actual=%#x, ret=%d", AMF0_DATE, marker, ret);
+        rs_error("amf0 read date marker failed. required=%#x, actual=%#x, ret=%d", AMF0_DATE, marker, ret);
         return ret;
     }
 
@@ -1001,7 +1012,7 @@ int AMF0Object::Read(BufferManager *manager)
     if (marker != AMF0_OBJECT)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read object marker failed. require=%#x, actual=%#x, ret=%d", AMF0_OBJECT, marker, ret);
+        rs_error("amf0 read object marker failed. required=%#x, actual=%#x, ret=%d", AMF0_OBJECT, marker, ret);
         return ret;
     }
 
@@ -1250,7 +1261,7 @@ int AMF0ReadString(BufferManager *manager, std::string &value)
     if (marker != AMF0_STRING)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read string marker failed. require=%#x, actual=%#x, ret=%d", AMF0_STRING, marker, ret);
+        rs_error("amf0 read string marker failed. required=%#x, actual=%#x, ret=%d", AMF0_STRING, marker, ret);
         return ret;
     }
 
@@ -1272,7 +1283,7 @@ int AMF0ReadNumber(BufferManager *manager, double &value)
     if (marker != AMF0_NUMBER)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read number marker failed. require=%#x, actual=%#x, ret=%d", AMF0_NUMBER, marker, ret);
+        rs_error("amf0 read number marker failed. required=%#x, actual=%#x, ret=%d", AMF0_NUMBER, marker, ret);
         return ret;
     }
 
@@ -1346,7 +1357,7 @@ int AMF0ReadBoolean(BufferManager *manager, bool &value)
     if (marker != AMF0_BOOLEAN)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read bool marker failed. require=%#x, actual=%#x, ret=%d", AMF0_BOOLEAN, marker, ret);
+        rs_error("amf0 read bool marker failed. required=%#x, actual=%#x, ret=%d", AMF0_BOOLEAN, marker, ret);
         return ret;
     }
 
@@ -1409,7 +1420,7 @@ int AMF0ReadNull(BufferManager *manager)
     if (marker != AMF0_NULL)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read null marker failed. require=%#x, actual=%#x, ret=%d", AMF0_NULL, marker, ret);
+        rs_error("amf0 read null marker failed. required=%#x, actual=%#x, ret=%d", AMF0_NULL, marker, ret);
         return ret;
     }
 
@@ -1447,7 +1458,7 @@ int AMF0ReadUndefined(BufferManager *manager)
     if (marker != AMF0_UNDEFINED)
     {
         ret = ERROR_PROTOCOL_AMF0_DECODE;
-        rs_error("amf0 read undefined marker failed. require=%#x,actual=%#x, ret=%d", AMF0_UNDEFINED, marker, ret);
+        rs_error("amf0 read undefined marker failed. required=%#x,actual=%#x, ret=%d", AMF0_UNDEFINED, marker, ret);
         return ret;
     }
 

@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime: 2020-03-10 17:55:24
+ * @LastEditTime: 2020-03-12 13:21:02
  */
 
 #include <protocol/rtmp/connection.hpp>
@@ -74,7 +74,7 @@ int32_t Connection::StreamServiceCycle()
 
     if ((ret = rtmp_->IdentifyClient(response_->stream_id, type, request_->stream, request_->duration)) != ERROR_SUCCESS)
     {
-        rs_error("identify client failed. ret=%d");
+        rs_error("identify client failed. ret=%d", ret);
         return ret;
     }
 
@@ -120,7 +120,7 @@ int32_t Connection::StreamServiceCycle()
         return Publishing(source);
     case ConnType::PLAY:
         break;
-    case ConnType::UNKNOW:
+    default:
         break;
     }
 
@@ -134,7 +134,7 @@ int32_t Connection::Publishing(Source *source)
     bool vhost_is_edge = _config->GetVhostIsEdge(request_->vhost);
     if ((ret = acquire_publish(source, false)) == ERROR_SUCCESS)
     {
-        PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ == ConnType::FMLE_PUBLISH, vhost_is_edge);
+        PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source, type_ != ConnType::FLASH_PUBLISH, vhost_is_edge);
 
         ret = do_publishing(source, &recv_thread);
 

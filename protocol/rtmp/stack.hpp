@@ -28,6 +28,7 @@ enum class ConnType
     UNKNOW = 0,
     PLAY = 1,
     FMLE_PUBLISH = 2,
+    FLASH_PUBLISH = 3,
 };
 
 extern void DiscoveryTcUrl(const std::string &tc_url,

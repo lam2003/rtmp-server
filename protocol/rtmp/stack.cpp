@@ -739,6 +739,11 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
             *ppacket = packet = new OnMetadataPacket;
             return packet->Decode(manager);
         }
+        else if (command == RTMP_AMF0_COMMAND_PLAY)
+        {
+            *ppacket = packet = new PlayPacket;
+            return packet->Decode(manager);
+        }
         else
         {
             rs_warn("drop the amf0 command message, command_name=%s",

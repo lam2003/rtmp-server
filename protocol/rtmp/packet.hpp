@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-12 11:06:24
- * @LastEditTime: 2020-03-10 16:47:00
+ * @LastEditTime: 2020-03-11 15:39:16
  */
 #ifndef RS_RTMP_PACKET_HPP
 #define RS_RTMP_PACKET_HPP
@@ -315,6 +315,33 @@ protected:
 public:
     std::string name;
     AMF0Object *metadata;
+};
+
+class PlayPacket : public Packet
+{
+public:
+    PlayPacket();
+    virtual ~PlayPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    //Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Any *command_obj;
+    std::string stream_name;
+    double start;
+    double duration;
+    bool reset;
 };
 } // namespace rtmp
 #endif

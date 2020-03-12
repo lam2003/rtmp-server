@@ -101,6 +101,8 @@ public:
     virtual bool IsNumber();
     virtual AMF0EcmaArray *ToEcmaArray();
     virtual bool IsEcmaArray();
+    virtual bool ToBoolean();
+    virtual bool IsBoolean();
 
 public:
     char marker;

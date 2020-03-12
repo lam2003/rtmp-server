@@ -1,8 +1,8 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-24 11:23:35
- * @LastEditTime: 2020-03-10 17:56:53
- * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2020-03-11 16:44:58
+ * @LastEditors: linmin
  * @Description: In User Settings Edit
  * @FilePath: \rtmp_server\app\rtmp_server.hpp
  */
@@ -38,8 +38,10 @@ public:
     virtual int DecodeMessage(rtmp::CommonMessage *msg, rtmp::Packet **ppacket);
     virtual int FMLEUnPublish(int stream_id, double unpublish_tid);
 
-protected:
-    virtual int IdentifyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_id);
+private:
+    int identify_fmle_publish_client(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_name);
+    int identify_create_stream_client(rtmp::CreateStreamPacket *pkt, int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration);
+    int identify_play_client(rtmp::PlayPacket *pkt, rtmp::ConnType &type, std::string &stream_name, double &duration);
 
 private:
     IProtocolReaderWriter *rw_;

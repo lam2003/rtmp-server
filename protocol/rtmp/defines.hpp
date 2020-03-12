@@ -1,11 +1,8 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-24 11:23:35
- * @LastEditTime: 2020-03-10 16:39:51
- * @LastEditors: Please set LastEditors
- * @Description: In User Settings Edit
- * 
- * @FilePath: \rtmp_server\protocol\rtmp\defines.hpp
+ * @LastEditTime: 2020-03-11 13:34:25
+ * @LastEditors: linmin
  */
 #ifndef RS_RTMP_DEFINES_H
 #define RS_RTMP_DEFINES_H
@@ -79,6 +76,7 @@
 #define RTMP_AMF0_COMMAND_ON_FC_UNPUBLISH "onFCUnpublish"
 #define RTMP_AMF0_COMMAND_ON_METADATA "onMetaData"
 #define RTMP_AMF0_COMMAND_SET_DATAFRAME "@setDataFrame"
+#define RTMP_AMF0_COMMAND_PLAY "play"
 
 //48kHz/1024=46.875fps
 //46.875fps*10s=468.75
