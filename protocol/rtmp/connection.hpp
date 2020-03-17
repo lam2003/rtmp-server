@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-10 16:16:08
- * @LastEditTime: 2020-03-10 16:32:49
+ * @LastEditTime: 2020-03-13 10:22:24
  */
 #ifndef RS_RTMP_CONNECTION_HPP
 #define RS_RTMP_CONNECTION_HPP
@@ -14,7 +14,7 @@
 
 namespace rtmp
 {
-    
+
 class PublishRecvThread;
 
 class Connection : virtual public IConnection
@@ -36,6 +36,7 @@ protected:
     virtual int32_t StreamServiceCycle();
     virtual int32_t ServiceCycle();
     virtual int32_t Publishing(Source *source);
+    virtual int32_t Playing(Source *source);
     //IConnection
     virtual int32_t DoCycle() override;
 

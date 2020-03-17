@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime: 2020-03-12 19:43:34
+ * @LastEditTime: 2020-03-13 10:47:28
  */
 
 #include <protocol/rtmp/connection.hpp>
@@ -124,6 +124,7 @@ int32_t Connection::StreamServiceCycle()
             rs_error("start to play stream failed. ret=%d", ret);
             return ret;
         }
+        return Playing(source);
         break;
     default:
         break;
@@ -146,6 +147,13 @@ int32_t Connection::Publishing(Source *source)
         recv_thread.Stop();
     }
 
+    return ret;
+}
+
+int32_t Connection::Playing(Source *source)
+{
+    int ret = ERROR_SUCCESS;
+    
     return ret;
 }
 
