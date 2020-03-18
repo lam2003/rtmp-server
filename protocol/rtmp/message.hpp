@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-17 12:54:14
- * @LastEditTime: 2020-03-10 16:42:02
+ * @LastEditTime: 2020-03-18 13:31:08
  */
 
 #ifndef RS_RTMP_MESSAGE_HPP
@@ -9,28 +9,26 @@
 
 #include <common/core.hpp>
 #include <common/queue.hpp>
-#include <protocol/rtmp/jitter.hpp>
 
-namespace rtmp
-{
+namespace rtmp {
 
+enum class JitterAlgorithm;
 class Consumer;
 
-extern int ChunkHeaderC0(int perfer_cid,
+extern int ChunkHeaderC0(int      perfer_cid,
                          uint32_t timestamp,
-                         int32_t payload_length,
-                         int8_t message_type,
-                         int32_t stream_id,
-                         char *buf);
-extern int ChunkHeaderC3(int perfer_cid, uint32_t timestamp, char *buf);
+                         int32_t  payload_length,
+                         int8_t   message_type,
+                         int32_t  stream_id,
+                         char*    buf);
+extern int ChunkHeaderC3(int perfer_cid, uint32_t timestamp, char* buf);
 
-class MessageHeader
-{
-public:
+class MessageHeader {
+  public:
     MessageHeader();
     virtual ~MessageHeader();
 
-public:
+  public:
     bool IsAudio();
     bool IsVideo();
     bool IsAMF0Command();
@@ -47,133 +45,128 @@ public:
     void InitializeVideo(int32_t size, uint32_t time, int32_t stream);
     void InitializeAudio(int32_t size, uint32_t time, int32_t stream);
 
-public:
+  public:
     int32_t timestamp_delta;
     int32_t payload_length;
-    int8_t message_type;
+    int8_t  message_type;
     int32_t stream_id;
     int64_t timestamp;
     int32_t perfer_cid;
 };
 
-class CommonMessage
-{
-public:
+class CommonMessage {
+  public:
     CommonMessage();
     virtual ~CommonMessage();
 
-public:
+  public:
     virtual void CreatePayload(int32_t size);
 
-public:
-    int32_t size;
-    char *payload;
+  public:
+    int32_t       size;
+    char*         payload;
     MessageHeader header;
 };
 
-class ChunkStream
-{
-public:
+class ChunkStream {
+  public:
     ChunkStream(int cid);
     virtual ~ChunkStream();
 
-public:
-    int cid;
-    char fmt;
-    CommonMessage *msg;
-    bool extended_timestamp;
-    int msg_count;
-    MessageHeader header;
+  public:
+    int            cid;
+    char           fmt;
+    CommonMessage* msg;
+    bool           extended_timestamp;
+    int            msg_count;
+    MessageHeader  header;
 };
 
 struct SharedMessageHeader
 {
     int32_t payload_length;
-    int8_t message_type;
-    int perfer_cid;
+    int8_t  message_type;
+    int     perfer_cid;
 };
 
-class SharedPtrMessage
-{
-public:
+class SharedPtrMessage {
+  public:
     SharedPtrMessage();
     virtual ~SharedPtrMessage();
 
-public:
-    virtual int Create(CommonMessage *msg);
-    virtual int Create(MessageHeader *pheader, char *payload, int size);
-    virtual int Count();
+  public:
+    virtual int  Create(CommonMessage* msg);
+    virtual int  Create(MessageHeader* pheader, char* payload, int size);
+    virtual int  Count();
     virtual bool Check(int stream_id);
     virtual bool IsAV();
     virtual bool IsAudio();
     virtual bool IsVideo();
-    virtual int ChunkHeader(char *buf, bool c0);
-    virtual SharedPtrMessage *Copy();
+    virtual int  ChunkHeader(char* buf, bool c0);
+    virtual SharedPtrMessage* Copy();
 
-private:
-    class SharedPtrPayload
-    {
-    public:
+  private:
+    class SharedPtrPayload {
+      public:
         SharedPtrPayload();
         virtual ~SharedPtrPayload();
 
-    public:
-        int size;
-        char *payload;
-        int shared_count;
+      public:
+        int                 size;
+        char*               payload;
+        int                 shared_count;
         SharedMessageHeader header;
     };
 
-public:
+  public:
     int64_t timestamp;
     int32_t stream_id;
-    int size;
-    char *payload;
+    int     size;
+    char*   payload;
 
-private:
-    SharedPtrPayload *ptr_;
+  private:
+    SharedPtrPayload* ptr_;
 };
 
-class MessageArray
-{
-public:
+class MessageArray {
+  public:
     MessageArray(int max_msgs);
     virtual ~MessageArray();
 
-public:
+  public:
     virtual void Free(int count);
     virtual void Zero(int count);
 
-public:
-    SharedPtrMessage **msgs;
-    int max;
+  public:
+    SharedPtrMessage** msgs;
+    int                max;
 };
 
-class MessageQueue
-{
-public:
+class MessageQueue {
+  public:
     MessageQueue();
     virtual ~MessageQueue();
 
-public:
-    virtual int Size();
-    virtual int Duration();
+  public:
+    virtual int  Size();
+    virtual int  Duration();
     virtual void SetQueueSize(double second);
-    virtual int Enqueue(SharedPtrMessage *msg, bool *is_overflow = nullptr);
-    virtual int DumpPackets(int max_count, SharedPtrMessage **pmsgs, int &count);
-    virtual int DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag);
+    virtual int  Enqueue(SharedPtrMessage* msg, bool* is_overflow = nullptr);
+    virtual int
+                DumpPackets(int max_count, SharedPtrMessage** pmsgs, int& count);
+    virtual int DumpPackets(Consumer* consumer, bool atc, JitterAlgorithm ag);
 
-protected:
+  protected:
     virtual void Shrink();
     virtual void Clear();
 
-private:
-    int64_t av_start_time_;
-    int64_t av_end_time_;
-    int queue_size_ms_;
-    FastVector<SharedPtrMessage *> msgs_;
+  private:
+    int64_t                       av_start_time_;
+    int64_t                       av_end_time_;
+    int                           queue_size_ms_;
+    FastVector<SharedPtrMessage*> msgs_;
 };
 
-} // namespace rtmp
+}  // namespace rtmp
 
 #endif

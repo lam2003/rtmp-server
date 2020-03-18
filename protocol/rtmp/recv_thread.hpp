@@ -1,15 +1,16 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:02:50
- * @LastEditTime: 2020-03-17 18:07:59
+ * @LastEditTime: 2020-03-18 13:35:33
  */
 #ifndef RS_RTMP_RECV_THREAD_HPP
 #define RS_RTMP_RECV_THREAD_HPP
 
-#include <app/rtmp_server.hpp>
 #include <common/connection.hpp>
 #include <common/core.hpp>
 #include <common/thread.hpp>
+
+class RTMPServer;
 
 namespace rtmp {
 

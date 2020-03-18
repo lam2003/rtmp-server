@@ -1,3 +1,4 @@
+#include <app/rtmp_server.hpp>
 #include <common/config.hpp>
 #include <common/error.hpp>
 #include <common/utils.hpp>

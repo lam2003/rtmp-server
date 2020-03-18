@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-24 11:23:35
- * @LastEditTime: 2020-03-12 19:28:55
+ * @LastEditTime: 2020-03-18 10:53:59
  * @LastEditors: linmin
  */
 #ifndef RS_RTMP_DEFINES_H
@@ -17,27 +17,29 @@
 #define RTMP_DEFAULT_VHOST_PARAM "?vhost=__defaultVhost__"
 #define RTMP_DEFAULT_VHOST "__defaultVhost__"
 
-//rtmp chunk size
+// rtmp chunk size
 #define RTMP_DEFAULT_CHUNK_SIZE 128
 #define RTMP_MIN_CHUNK_SIZE 128
 #define RTMP_MAX_CHUNK_SIZE 65535
-//rtmp chunk stream cache num
+// rtmp chunk stream cache num
 #define RTMP_CHUNK_STREAM_CHCAHE 16
-//rtmp fmt0 header size(max base header)
+// rtmp fmt0 header size(max base header)
 #define RTMP_FMT0_HEADER_SIZE 16
-//rtmp timestamp_delta when extended timestamp enabled
+// rtmp timestamp_delta when extended timestamp enabled
 #define RTMP_EXTENDED_TIMESTAMP 0xffffff
-//rtmp marge read small bytes
+// rtmp marge read small bytes
 #define RTMP_MR_SMALL_BYTES 4096
 #define RTMP_MR_MSGS 128
+#define RTMP_MR_MIN_MSGS 8
+#define RTMP_MR_SLEEP_MS 350
 
-//rtmp message header type
+// rtmp message header type
 #define RTMP_FMT_TYPE0 0
 #define RTMP_FMT_TYPE1 1
 #define RTMP_FMT_TYPE2 2
 #define RTMP_FMT_TYPE3 3
 
-//rtmp cid
+// rtmp cid
 #define RTMP_CID_PROTOCOL_CONTROL 0x02
 #define RTMP_CID_OVER_CONNECTION 0x03
 #define RTMP_CID_OVER_CONNECTION2 0x04
@@ -46,7 +48,7 @@
 #define RTMP_CID_VIDEO 0x06
 #define RTMP_CID_AUDIO 0x07
 
-//rtmp message type
+// rtmp message type
 #define RTMP_MSG_SET_CHUNK_SIZE 0x01
 #define RTMP_MSG_ABORT 0x02
 #define RTMP_MSG_ACK 0x03
@@ -64,7 +66,7 @@
 #define RTMP_MSG_AMF0_SHARED_OBJ 0x13
 #define RTMP_MSG_AGGREGATE 0x16
 
-//amf0 command message
+// amf0 command message
 #define RTMP_AMF0_COMMAND_CONNECT "connect"
 #define RTMP_AMF0_COMMAND_RESULT "_result"
 #define RTMP_AMF0_COMMAND_RELEASE_STREAM "releaseStream"
@@ -80,8 +82,8 @@
 #define RTMP_AMF0_COMMAND_SET_DATAFRAME "@setDataFrame"
 #define RTMP_AMF0_COMMAND_PLAY "play"
 
-//48kHz/1024=46.875fps
-//46.875fps*10s=468.75
+// 48kHz/1024=46.875fps
+// 46.875fps*10s=468.75
 #define RTMP_NUM_TO_JUDGE_DVR_ONLY_HAS_AUDIO 500
 
 #define RTMP_MAX_JITTER_MS 250

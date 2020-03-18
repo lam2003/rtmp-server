@@ -1,0 +1,95 @@
+/*
+ * @Date: 2020-03-18 11:17:48
+ * @LastEditors: linmin
+ * @LastEditTime: 2020-03-18 13:18:50
+ */
+#include <common/log.hpp>
+#include <muxer/flv.hpp>
+#include <protocol/rtmp/gop_cache.hpp>
+#include <protocol/rtmp/jitter.hpp>
+#include <protocol/rtmp/message.hpp>
+
+
+#define PURE_AUDIO_GUESS_THRESHOLD 115
+
+namespace rtmp {
+
+GopCache::GopCache()
+{
+    cached_video_count_           = 0;
+    enable_gop_cache_             = false;
+    audio_after_last_video_count_ = 0;
+}
+
+GopCache::~GopCache() {}
+
+void GopCache::Set(bool enabled)
+{
+    enable_gop_cache_ = enabled;
+
+    if (!enable_gop_cache_) {
+        rs_info("gop cache disabled, clear %d packets", (int)queue_.size());
+        Clear();
+        return;
+    }
+}
+
+void GopCache::Dispose()
+{
+    Clear();
+}
+
+int GopCache::Cache(SharedPtrMessage* shared_msg)
+{
+    int ret = ERROR_SUCCESS;
+    if (!enable_gop_cache_) {
+        return ret;
+    }
+
+    SharedPtrMessage* msg = shared_msg;
+    if (msg->IsVideo()) {
+        if (!flv::Demuxer::IsAVC(msg->payload, msg->size)) {
+            rs_info("gop cache drop video for none avc");
+            return ret;
+        }
+
+        if (flv::Demuxer::IsKeyFrame(msg->payload, msg->size)) {
+            rs_info("clear gop cache when got keyframe. vcount=%d, count=%d",
+                    cached_video_count_, (int)queue_.size());
+            Clear();
+            cached_video_count_ = 1;
+        }
+        else {
+            cached_video_count_++;
+        }
+
+        audio_after_last_video_count_ = 0;
+    }
+    else if (msg->IsAudio()) {
+        audio_after_last_video_count_++;
+    }
+
+    if (audio_after_last_video_count_ > PURE_AUDIO_GUESS_THRESHOLD) {
+        rs_warn("clear gop cache for guess pure audio overflow");
+        Clear();
+        return ret;
+    }
+
+    queue_.push_back(msg->Copy());
+}
+
+void GopCache::Clear()
+{
+    std::vector<SharedPtrMessage*>::iterator it;
+
+    for (it = queue_.begin(); it != queue_.end(); it++) {
+        SharedPtrMessage* msg = *it;
+        rs_freep(msg);
+    }
+
+    queue_.clear();
+    cached_video_count_           = 0;
+    audio_after_last_video_count_ = 0;
+}
+
+}  // namespace rtmp

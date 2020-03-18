@@ -1,61 +1,58 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-17 12:57:29
- * @LastEditTime: 2020-03-11 17:02:02
+ * @LastEditTime: 2020-03-18 13:31:21
  */
-#include <protocol/rtmp/message.hpp>
-#include <protocol/rtmp/defines.hpp>
-#include <protocol/rtmp/consumer.hpp>
-#include <common/utils.hpp>
-#include <common/log.hpp>
 #include <common/error.hpp>
+#include <common/log.hpp>
+#include <common/utils.hpp>
 #include <muxer/flv.hpp>
+#include <protocol/rtmp/consumer.hpp>
+#include <protocol/rtmp/defines.hpp>
+#include <protocol/rtmp/jitter.hpp>
+#include <protocol/rtmp/message.hpp>
 
-namespace rtmp
-{
+namespace rtmp {
 
-int ChunkHeaderC0(int perfer_cid,
+int ChunkHeaderC0(int      perfer_cid,
                   uint32_t timestamp,
-                  int32_t payload_length,
-                  int8_t message_type,
-                  int32_t stream_id,
-                  char *buf)
+                  int32_t  payload_length,
+                  int8_t   message_type,
+                  int32_t  stream_id,
+                  char*    buf)
 {
-    char *pp = nullptr;
-    char *p = buf;
+    char* pp = nullptr;
+    char* p  = buf;
 
     *p++ = 0x00 | (0x3f & perfer_cid);
-    if (timestamp < RTMP_EXTENDED_TIMESTAMP)
-    {
-        pp = (char *)&timestamp;
+    if (timestamp < RTMP_EXTENDED_TIMESTAMP) {
+        pp   = (char*)&timestamp;
         *p++ = pp[2];
         *p++ = pp[1];
         *p++ = pp[0];
     }
-    else
-    {
+    else {
         *p++ = 0xff;
         *p++ = 0xff;
         *p++ = 0xff;
     }
 
-    pp = (char *)&payload_length;
+    pp   = (char*)&payload_length;
     *p++ = pp[2];
     *p++ = pp[1];
     *p++ = pp[0];
 
     *p++ = message_type;
 
-    //little-endian
-    pp = (char *)&stream_id;
+    // little-endian
+    pp   = (char*)&stream_id;
     *p++ = pp[0];
     *p++ = pp[1];
     *p++ = pp[2];
     *p++ = pp[3];
 
-    if (timestamp >= RTMP_EXTENDED_TIMESTAMP)
-    {
-        pp = (char *)&timestamp;
+    if (timestamp >= RTMP_EXTENDED_TIMESTAMP) {
+        pp   = (char*)&timestamp;
         *p++ = pp[3];
         *p++ = pp[2];
         *p++ = pp[1];
@@ -65,16 +62,15 @@ int ChunkHeaderC0(int perfer_cid,
     return p - buf;
 }
 
-int ChunkHeaderC3(int perfer_cid, uint32_t timestamp, char *buf)
+int ChunkHeaderC3(int perfer_cid, uint32_t timestamp, char* buf)
 {
-    char *pp = nullptr;
-    char *p = buf;
+    char* pp = nullptr;
+    char* p  = buf;
 
     *p++ = 0xC0 | (0x3f & perfer_cid);
 
-    if (timestamp >= RTMP_EXTENDED_TIMESTAMP)
-    {
-        pp = (char *)&timestamp;
+    if (timestamp >= RTMP_EXTENDED_TIMESTAMP) {
+        pp   = (char*)&timestamp;
         *p++ = pp[3];
         *p++ = pp[2];
         *p++ = pp[1];
@@ -87,16 +83,14 @@ int ChunkHeaderC3(int perfer_cid, uint32_t timestamp, char *buf)
 MessageHeader::MessageHeader()
 {
     timestamp_delta = 0;
-    payload_length = 0;
-    message_type = 0;
-    stream_id = 0;
-    timestamp = 0;
-    perfer_cid = 0;
+    payload_length  = 0;
+    message_type    = 0;
+    stream_id       = 0;
+    timestamp       = 0;
+    perfer_cid      = 0;
 }
 
-MessageHeader::~MessageHeader()
-{
-}
+MessageHeader::~MessageHeader() {}
 
 bool MessageHeader::IsAudio()
 {
@@ -106,7 +100,6 @@ bool MessageHeader::IsAudio()
 }
 bool MessageHeader::IsVideo()
 {
-
     if (message_type == RTMP_MSG_VIDEO_MESSAGE)
         return true;
     return false;
@@ -174,35 +167,35 @@ bool MessageHeader::IsAggregate()
 }
 void MessageHeader::InitializeAMF0Script(int32_t size, int32_t stream)
 {
-    message_type = RTMP_MSG_AMF0_DATA;
-    payload_length = size;
+    message_type    = RTMP_MSG_AMF0_DATA;
+    payload_length  = size;
     timestamp_delta = 0;
-    timestamp = 0;
-    stream_id = stream;
-    perfer_cid = RTMP_CID_OVER_CONNECTION2;
+    timestamp       = 0;
+    stream_id       = stream;
+    perfer_cid      = RTMP_CID_OVER_CONNECTION2;
 }
 void MessageHeader::InitializeVideo(int32_t size, uint32_t time, int32_t stream)
 {
-    message_type = RTMP_MSG_VIDEO_MESSAGE;
-    payload_length = size;
+    message_type    = RTMP_MSG_VIDEO_MESSAGE;
+    payload_length  = size;
     timestamp_delta = time;
-    timestamp = time;
-    stream_id = stream;
-    perfer_cid = RTMP_CID_VIDEO;
+    timestamp       = time;
+    stream_id       = stream;
+    perfer_cid      = RTMP_CID_VIDEO;
 }
 void MessageHeader::InitializeAudio(int32_t size, uint32_t time, int32_t stream)
 {
-    message_type = RTMP_MSG_AUDIO_MESSAGE;
-    payload_length = size;
+    message_type    = RTMP_MSG_AUDIO_MESSAGE;
+    payload_length  = size;
     timestamp_delta = time;
-    timestamp = time;
-    stream_id = stream;
-    perfer_cid = RTMP_CID_AUDIO;
+    timestamp       = time;
+    stream_id       = stream;
+    perfer_cid      = RTMP_CID_AUDIO;
 }
 
 CommonMessage::CommonMessage()
 {
-    size = 0;
+    size    = 0;
     payload = nullptr;
 }
 
@@ -219,16 +212,14 @@ void CommonMessage::CreatePayload(int32_t size)
 
 ChunkStream::ChunkStream(int cid)
 {
-    this->cid = cid;
-    fmt = 0;
-    msg = nullptr;
+    this->cid          = cid;
+    fmt                = 0;
+    msg                = nullptr;
     extended_timestamp = false;
-    msg_count = 0;
+    msg_count          = 0;
 }
 
-ChunkStream::~ChunkStream()
-{
-}
+ChunkStream::~ChunkStream() {}
 
 /**
  * @name: SharedPtrPayload
@@ -236,8 +227,8 @@ ChunkStream::~ChunkStream()
  */
 SharedPtrMessage::SharedPtrPayload::SharedPtrPayload()
 {
-    size = 0;
-    payload = nullptr;
+    size         = 0;
+    payload      = nullptr;
     shared_count = 0;
 }
 
@@ -257,25 +248,21 @@ SharedPtrMessage::SharedPtrMessage()
 
 SharedPtrMessage::~SharedPtrMessage()
 {
-    if (ptr_)
-    {
-        if (ptr_->shared_count <= 0)
-        {
+    if (ptr_) {
+        if (ptr_->shared_count <= 0) {
             rs_freep(ptr_);
         }
-        else
-        {
+        else {
             ptr_->shared_count--;
         }
     }
 }
 
-int SharedPtrMessage::Create(MessageHeader *pheader, char *payload, int size)
+int SharedPtrMessage::Create(MessageHeader* pheader, char* payload, int size)
 {
     int ret = ERROR_SUCCESS;
 
-    if (ptr_)
-    {
+    if (ptr_) {
         ret = ERROR_SYSTEM_ASSERT_FAILED;
         rs_error("can't set payload twice. ret=%d", ret);
         rs_assert(false);
@@ -283,34 +270,33 @@ int SharedPtrMessage::Create(MessageHeader *pheader, char *payload, int size)
 
     ptr_ = new SharedPtrPayload;
 
-    if (pheader)
-    {
-        ptr_->header.message_type = pheader->message_type;
+    if (pheader) {
+        ptr_->header.message_type   = pheader->message_type;
         ptr_->header.payload_length = pheader->payload_length;
-        ptr_->header.perfer_cid = pheader->perfer_cid;
-        this->timestamp = pheader->timestamp;
-        this->stream_id = pheader->stream_id;
+        ptr_->header.perfer_cid     = pheader->perfer_cid;
+        this->timestamp             = pheader->timestamp;
+        this->stream_id             = pheader->stream_id;
     }
     ptr_->payload = payload;
-    ptr_->size = size;
+    ptr_->size    = size;
 
     this->payload = ptr_->payload;
-    this->size = ptr_->size;
+    this->size    = ptr_->size;
 
     return ret;
 }
 
-int SharedPtrMessage::Create(CommonMessage *msg)
+int SharedPtrMessage::Create(CommonMessage* msg)
 {
     int ret = ERROR_SUCCESS;
 
-    if ((ret = Create(&msg->header, msg->payload, msg->size)) != ERROR_SUCCESS)
-    {
+    if ((ret = Create(&msg->header, msg->payload, msg->size)) !=
+        ERROR_SUCCESS) {
         return ret;
     }
 
     msg->payload = nullptr;
-    msg->size = 0;
+    msg->size    = 0;
 
     return ret;
 }
@@ -322,14 +308,13 @@ int SharedPtrMessage::Count()
 
 bool SharedPtrMessage::Check(int stream_id)
 {
-    if (ptr_->header.perfer_cid < 2 || ptr_->header.perfer_cid > 63)
-    {
-        rs_info("change the chunk_id=%d to default=%d", ptr_->header.perfer_cid, RTMP_CID_PROTOCOL_CONTROL);
+    if (ptr_->header.perfer_cid < 2 || ptr_->header.perfer_cid > 63) {
+        rs_info("change the chunk_id=%d to default=%d", ptr_->header.perfer_cid,
+                RTMP_CID_PROTOCOL_CONTROL);
         ptr_->header.perfer_cid = RTMP_CID_PROTOCOL_CONTROL;
     }
 
-    if (this->stream_id == stream_id)
-    {
+    if (this->stream_id == stream_id) {
         return true;
     }
 
@@ -354,36 +339,36 @@ bool SharedPtrMessage::IsVideo()
     return ptr_->header.message_type == RTMP_MSG_VIDEO_MESSAGE;
 }
 
-int SharedPtrMessage::ChunkHeader(char *buf, bool c0)
+int SharedPtrMessage::ChunkHeader(char* buf, bool c0)
 {
-    if (c0)
-    {
-        return ChunkHeaderC0(ptr_->header.perfer_cid, timestamp, ptr_->header.payload_length, ptr_->header.message_type, stream_id, buf);
+    if (c0) {
+        return ChunkHeaderC0(ptr_->header.perfer_cid, timestamp,
+                             ptr_->header.payload_length,
+                             ptr_->header.message_type, stream_id, buf);
     }
-    else
-    {
+    else {
         return ChunkHeaderC3(ptr_->header.perfer_cid, timestamp, buf);
     }
 }
 
-SharedPtrMessage *SharedPtrMessage::Copy()
+SharedPtrMessage* SharedPtrMessage::Copy()
 {
-    SharedPtrMessage *copy = new SharedPtrMessage;
-    copy->ptr_ = ptr_;
+    SharedPtrMessage* copy = new SharedPtrMessage;
+    copy->ptr_             = ptr_;
     ptr_->shared_count++;
 
     copy->timestamp = timestamp;
     copy->stream_id = stream_id;
-    copy->payload = ptr_->payload;
-    copy->size = ptr_->size;
+    copy->payload   = ptr_->payload;
+    copy->size      = ptr_->size;
 
     return copy;
 }
 
 MessageArray::MessageArray(int max_msgs)
 {
-    msgs = new SharedPtrMessage *[max_msgs];
-    max = max_msgs;
+    msgs = new SharedPtrMessage*[max_msgs];
+    max  = max_msgs;
 
     Zero(max_msgs);
 }
@@ -395,9 +380,8 @@ MessageArray::~MessageArray()
 
 void MessageArray::Free(int count)
 {
-    for (int i = 0; i < count; i++)
-    {
-        SharedPtrMessage *msg = msgs[i];
+    for (int i = 0; i < count; i++) {
+        SharedPtrMessage* msg = msgs[i];
         rs_freep(msg);
         msgs[i] = nullptr;
     }
@@ -405,8 +389,7 @@ void MessageArray::Free(int count)
 
 void MessageArray::Zero(int count)
 {
-    for (int i = 0; i < count; i++)
-    {
+    for (int i = 0; i < count; i++) {
         msgs[i] = nullptr;
     }
 }
@@ -414,7 +397,7 @@ void MessageArray::Zero(int count)
 MessageQueue::MessageQueue()
 {
     av_start_time_ = -1;
-    av_end_time_ = -1;
+    av_end_time_   = -1;
     queue_size_ms_ = 0;
 }
 
@@ -440,23 +423,22 @@ void MessageQueue::SetQueueSize(double second)
 
 void MessageQueue::Shrink()
 {
-    SharedPtrMessage *video_sh = nullptr;
-    SharedPtrMessage *audio_sh = nullptr;
+    SharedPtrMessage* video_sh = nullptr;
+    SharedPtrMessage* audio_sh = nullptr;
 
     int msgs_size = msgs_.Size();
 
-    for (int i = 0; i < msgs_size; i++)
-    {
-        SharedPtrMessage *msg = msgs_.At(i);
+    for (int i = 0; i < msgs_size; i++) {
+        SharedPtrMessage* msg = msgs_.At(i);
 
-        if (msg->IsAudio() && flv::Demuxer::IsAACSequenceHeader(msg->payload, msg->size))
-        {
+        if (msg->IsAudio() &&
+            flv::Demuxer::IsAACSequenceHeader(msg->payload, msg->size)) {
             rs_freep(audio_sh);
             audio_sh = msg;
             continue;
         }
-        if (msg->IsVideo() && flv::Demuxer::IsAVCSequenceHeader(msg->payload, msg->size))
-        {
+        if (msg->IsVideo() &&
+            flv::Demuxer::IsAVCSequenceHeader(msg->payload, msg->size)) {
             rs_freep(video_sh);
             video_sh = msg;
             continue;
@@ -468,26 +450,22 @@ void MessageQueue::Shrink()
 
     av_start_time_ = av_end_time_;
 
-    if (audio_sh)
-    {
+    if (audio_sh) {
         audio_sh->timestamp = av_end_time_;
         msgs_.PushBack(audio_sh);
     }
-    if (video_sh)
-    {
+    if (video_sh) {
         video_sh->timestamp = av_end_time_;
         msgs_.PushBack(video_sh);
     }
 }
 
-int MessageQueue::Enqueue(SharedPtrMessage *msg, bool *is_overflow)
+int MessageQueue::Enqueue(SharedPtrMessage* msg, bool* is_overflow)
 {
     int ret = ERROR_SUCCESS;
 
-    if (msg->IsAV())
-    {
-        if (av_start_time_ == -1)
-        {
+    if (msg->IsAV()) {
+        if (av_start_time_ == -1) {
             av_start_time_ = msg->timestamp;
         }
         av_end_time_ = msg->timestamp;
@@ -495,10 +473,8 @@ int MessageQueue::Enqueue(SharedPtrMessage *msg, bool *is_overflow)
 
     msgs_.PushBack(msg);
 
-    while (av_end_time_ - av_start_time_ > queue_size_ms_)
-    {
-        if (is_overflow)
-        {
+    while (av_end_time_ - av_start_time_ > queue_size_ms_) {
+        if (is_overflow) {
             *is_overflow = true;
         }
         Shrink();
@@ -513,44 +489,42 @@ void MessageQueue::Clear()
     av_start_time_ = av_end_time_ = -1;
 }
 
-int MessageQueue::DumpPackets(int max_count, SharedPtrMessage **pmsgs, int &count)
+int MessageQueue::DumpPackets(int                max_count,
+                              SharedPtrMessage** pmsgs,
+                              int&               count)
 {
     int ret = ERROR_SUCCESS;
 
     int nb_msgs = msgs_.Size();
-    if (nb_msgs <= 0)
-    {
+    if (nb_msgs <= 0) {
         return ret;
     }
 
     count = rs_min(nb_msgs, max_count);
 
-    SharedPtrMessage **omsgs = msgs_.Data();
-    for (int i = 0; i < count; i++)
-    {
+    SharedPtrMessage** omsgs = msgs_.Data();
+    for (int i = 0; i < count; i++) {
         pmsgs[i] = omsgs[i];
     }
 
-    SharedPtrMessage *last = omsgs[count - 1];
-    av_start_time_ = last->timestamp;
+    SharedPtrMessage* last = omsgs[count - 1];
+    av_start_time_         = last->timestamp;
 
-    if (count >= nb_msgs)
-    {
+    if (count >= nb_msgs) {
         msgs_.Clear();
     }
-    else
-    {
+    else {
         msgs_.Erase(msgs_.Begin(), msgs_.Begin() + count);
     }
 
     return ret;
 }
 
-int MessageQueue::DumpPackets(Consumer *consumer, bool atc, JitterAlgorithm ag)
+int MessageQueue::DumpPackets(Consumer* consumer, bool atc, JitterAlgorithm ag)
 {
     int ret = ERROR_SUCCESS;
 
     return ret;
 }
 
-} // namespace rtmp
+}  // namespace rtmp
