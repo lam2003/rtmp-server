@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-24 11:23:35
- * @LastEditTime: 2020-03-18 10:53:59
+ * @LastEditTime: 2020-03-18 17:51:14
  * @LastEditors: linmin
  */
 #ifndef RS_RTMP_DEFINES_H
@@ -32,6 +32,8 @@
 #define RTMP_MR_MSGS 128
 #define RTMP_MR_MIN_MSGS 8
 #define RTMP_MR_SLEEP_MS 350
+#define RTMP_IOVS_MAX (RTMP_MR_MSGS * 2)
+#define RTMP_C0C3_HEADERS_MAX (RTMP_MR_MSGS * 32)
 
 // rtmp message header type
 #define RTMP_FMT_TYPE0 0

@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime: 2020-03-18 13:33:23
+ * @LastEditTime: 2020-03-18 18:01:00
  */
 
 #include <app/rtmp_server.hpp>
@@ -34,6 +34,7 @@ Connection::Connection(Server* server, st_netfd_t stfd)
     type_        = ConnType::UNKNOW;
     tcp_nodelay_ = false;
     mw_sleep_    = RTMP_MR_SLEEP_MS;
+    wakeable_    = nullptr;
 }
 
 Connection::~Connection()
@@ -42,6 +43,13 @@ Connection::~Connection()
     rs_freep(request_);
     rs_freep(rtmp_);
     rs_freep(socket_);
+}
+
+void Connection::Dispose()
+{
+    if (wakeable_) {
+        wakeable_->WakeUp();
+    }
 }
 
 int32_t Connection::do_cycle()
@@ -121,7 +129,6 @@ int32_t Connection::StreamServiceCycle()
                 return ret;
             }
             return Playing(source);
-            break;
         default: break;
     }
 
@@ -187,6 +194,14 @@ int32_t Connection::do_playing(Source*          source,
             st_usleep(mw_sleep_ * 1000);
             continue;
         }
+
+        if ((ret = rtmp_->SendAndFreeMessages(
+                 msgs.msgs, count, response_->stream_id)) != ERROR_SUCCESS) {
+            if (!IsClientGracefullyClose(ret)) {
+                rs_error("send messages to client failed. ret=%d", ret);
+            }
+            return ret;
+        }
     }
 
     return ret;
@@ -194,9 +209,30 @@ int32_t Connection::do_playing(Source*          source,
 
 int32_t Connection::Playing(Source* source)
 {
+    int ret = ERROR_SUCCESS;
+
     Consumer* consumer = nullptr;
-    // if ((ret = source->FetchOrCreate))
-    return 0;
+    if ((ret = source->CreateConsumer(this, consumer)) != ERROR_SUCCESS) {
+        rs_error("create consumer failed. ret=%d", ret);
+        return ret;
+    }
+
+    QueueRecvThread recv_thread(consumer, rtmp_, mw_sleep_);
+    if ((ret = recv_thread.Start()) != ERROR_SUCCESS) {
+        rs_error("start isolate recv thread failed. ret=%d", ret);
+        return ret;
+    }
+
+    wakeable_ = consumer;
+    ret       = do_playing(source, consumer, &recv_thread);
+    wakeable_ = nullptr;
+
+    recv_thread.Stop();
+
+    if (!recv_thread.Empty()) {
+        rs_warn("drop received %d messages", recv_thread.Size());
+    }
+    return ret;
 }
 
 int32_t Connection::ServiceCycle()

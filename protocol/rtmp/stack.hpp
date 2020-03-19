@@ -7,6 +7,7 @@
 #include <common/io.hpp>
 #include <common/log.hpp>
 #include <common/utils.hpp>
+#include <protocol/rtmp/defines.hpp>
 
 #include <map>
 #include <vector>
@@ -107,10 +108,12 @@ class Protocol {
     virtual int  RecvMessage(CommonMessage** pmsg);
     virtual int  DecodeMessage(CommonMessage* msg, Packet** ppacket);
     virtual int  SendAndFreePacket(Packet* packet, int stream_id);
+    virtual int
+                 SendAndFreeMessages(SharedPtrMessage** msgs, int nb_msgs, int stream_id);
     virtual void SetRecvBuffer(int buffer_size);
     virtual void SetMargeRead(bool v, IMergeReadHandler* handler);
     virtual void SetAutoResponse(bool v);
-    
+
     template <typename T> int ExpectMessage(CommonMessage** pmsg, T** ppacket)
     {
         int ret = ERROR_SUCCESS;
@@ -160,6 +163,7 @@ class Protocol {
     virtual int DoSimpleSend(MessageHeader* header, char* payload, int size);
     virtual int OnSendPacket(MessageHeader* header, Packet* packet);
     virtual int ManualResponseFlush();
+    virtual int do_send_messages(SharedPtrMessage** msgs, int nb_msgs);
 
   private:
     IProtocolReaderWriter*        rw_;
@@ -173,6 +177,9 @@ class Protocol {
     AckWindowSize                 out_ack_size_;
     std::vector<Packet*>          manual_response_queue_;
     std::map<double, std::string> requests_;
+    iovec*                        out_iovs_;
+    int                           nb_out_iovs_;
+    char                          out_c0c3_caches_[RTMP_C0C3_HEADERS_MAX];
 };
 
 }  // namespace rtmp

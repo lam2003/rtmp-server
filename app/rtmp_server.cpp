@@ -557,3 +557,10 @@ void RTMPServer::SetAutoResponse(bool v)
 {
     protocol_->SetAutoResponse(v);
 }
+
+int RTMPServer::SendAndFreeMessages(rtmp::SharedPtrMessage** msgs,
+                                    int                      nb_msgs,
+                                    int                      stream_id)
+{
+    return protocol_->SendAndFreeMessages(msgs, nb_msgs, stream_id);
+}

@@ -1,5 +1,6 @@
+#include <common/socket.hpp>
 #include <protocol/amf/amf0.hpp>
-#include <protocol/rtmp/defines.hpp>
+#include <protocol/rtmp/gop_cache.hpp>
 #include <protocol/rtmp/handshake.hpp>
 #include <protocol/rtmp/message.hpp>
 #include <protocol/rtmp/packet.hpp>
@@ -178,6 +179,8 @@ Protocol::Protocol(IProtocolReaderWriter* rw)
     rw_             = rw;
     in_chunk_size_  = RTMP_DEFAULT_CHUNK_SIZE;
     out_chunk_size_ = RTMP_DEFAULT_CHUNK_SIZE;
+    nb_out_iovs_    = RTMP_IOVS_MAX;
+    out_iovs_       = (iovec*)malloc(nb_out_iovs_ * sizeof(iovec));
 
     in_buffer_ = new FastBuffer;
     cs_cache_  = new ChunkStream*[RTMP_CHUNK_STREAM_CHCAHE];
@@ -216,6 +219,7 @@ Protocol::~Protocol()
         rs_freep(cs);
     }
     rs_freepa(cs_cache_);
+    rs_freepa(out_iovs_);
 }
 
 void Protocol::SetSendTimeout(int64_t timeout_us)
@@ -691,11 +695,18 @@ int Protocol::OnSendPacket(MessageHeader* header, Packet* packet)
     int ret = ERROR_SUCCESS;
 
     switch (header->message_type) {
-        case RTMP_MSG_WINDOW_ACK_SIZE:
+        case RTMP_MSG_WINDOW_ACK_SIZE: {
             SetWindowAckSizePacket* pkt =
                 dynamic_cast<SetWindowAckSizePacket*>(packet);
             out_ack_size_.window = (uint32_t)pkt->ackowledgement_window_size;
             break;
+        }
+        case RTMP_MSG_SET_CHUNK_SIZE: {
+            SetChunkSizePacket* pkt = dynamic_cast<SetChunkSizePacket*>(packet);
+            out_chunk_size_         = pkt->chunk_size;
+            break;
+        }
+        default: break;
     }
     return ret;
 }
@@ -758,6 +769,7 @@ int Protocol::DoSimpleSend(MessageHeader* header, char* payload, int size)
         iovs[0].iov_base = c0c3;
         iovs[0].iov_len  = nbh;
 
+        printf("out_size#########:%d\n", out_chunk_size_);
         int payload_size = rs_min(end - p, out_chunk_size_);
         iovs[1].iov_base = p;
         iovs[1].iov_len  = payload_size;
@@ -830,6 +842,28 @@ int Protocol::SendAndFreePacket(Packet* packet, int stream_id)
     return ret;
 }
 
+int Protocol::SendAndFreeMessages(SharedPtrMessage** msgs,
+                                  int                nb_msgs,
+                                  int                stream_id)
+{
+    for (int i = 0; i < nb_msgs; i++) {
+        if (!msgs[i]) {
+            continue;
+        }
+
+        if (msgs[i]->Check(stream_id)) {
+            break;
+        }
+    }
+
+    int ret = do_send_messages(msgs, nb_msgs);
+    for (int i = 0; i < nb_msgs; i++) {
+        rs_freep(msgs[i]);
+    }
+
+    return ret;
+}
+
 int Protocol::OnRecvMessage(CommonMessage* msg)
 {
     int ret = ERROR_SUCCESS;
@@ -890,6 +924,75 @@ void Protocol::SetMargeRead(bool v, IMergeReadHandler* handler)
 void Protocol::SetAutoResponse(bool v)
 {
     auto_response_when_recv_ = v;
+}
+
+int Protocol::do_send_messages(SharedPtrMessage** msgs, int nb_msgs)
+{
+    int ret = ERROR_SUCCESS;
+
+    int    iov_index        = 0;
+    iovec* iovs             = out_iovs_ + iov_index;
+    int    c0c3_cache_index = 0;
+    char*  c0c3_cache       = out_c0c3_caches_ + c0c3_cache_index;
+
+    for (int i = 0; i < nb_msgs; i++) {
+        SharedPtrMessage* msg = msgs[i];
+        if (!msg) {
+            continue;
+        }
+
+        if (!msg->payload || msg->size <= 0) {
+            rs_info("ignore empty message");
+            continue;
+        }
+
+        char* p    = msg->payload;
+        char* pend = msg->payload + msg->size;
+
+        while (p < pend) {
+            int nbh = msg->ChunkHeader(c0c3_cache, p == msg->payload);
+
+            iovs[0].iov_base = c0c3_cache;
+            iovs[0].iov_len  = nbh;
+
+            int payload_size = rs_min(out_chunk_size_, (int)(pend - p));
+            iovs[1].iov_base = p;
+            iovs[1].iov_len  = payload_size;
+
+            p += payload_size;
+            if (iov_index >= nb_out_iovs_ - 2) {
+                rs_warn("resize out_iovs %d => %d", nb_out_iovs_,
+                        nb_out_iovs_ + RTMP_IOVS_MAX);
+                nb_out_iovs_ += RTMP_IOVS_MAX;
+                int relloc_size = sizeof(iovec) * nb_out_iovs_;
+                out_iovs_       = (iovec*)realloc(out_iovs_, relloc_size);
+            }
+
+            iov_index += 2;
+            iovs = out_iovs_ + iov_index;
+
+            c0c3_cache_index += nbh;
+            c0c3_cache = out_c0c3_caches_ + c0c3_cache_index;
+
+            int c0c3_left = RTMP_C0C3_HEADERS_MAX - c0c3_cache_index;
+            if (c0c3_left < RTMP_FMT0_HEADER_SIZE) {
+                if ((ret = send_large_iovs(rw_, out_iovs_, iov_index,
+                                           nullptr)) != ERROR_SUCCESS) {
+                    return ret;
+                }
+
+                iov_index        = 0;
+                iovs             = out_iovs_ + iov_index;
+                c0c3_cache_index = 0;
+                c0c3_cache       = out_c0c3_caches_ + c0c3_cache_index;
+            }
+        }
+    }
+
+    if (iov_index <= 0) {
+        return ret;
+    }
+    return send_large_iovs(rw_, out_iovs_, iov_index, nullptr);
 }
 
 }  // namespace rtmp

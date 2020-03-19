@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-03-10 16:10:07
- * @LastEditTime: 2020-03-18 13:28:53
+ * @LastEditTime: 2020-03-18 15:00:29
  * @LastEditors: linmin
  * @Description: In User Settings Edit
  * @FilePath: \rtmp_server\protocol\rtmp\source.hpp
@@ -19,6 +19,7 @@ namespace rtmp {
 
 enum class JitterAlgorithm;
 
+class GopCache;
 class Dvr;
 class Request;
 class Reponse;
@@ -59,9 +60,9 @@ class Source {
     virtual int  SourceId();
     virtual int  CreateConsumer(Connection* conn,
                                 Consumer*&  consumer,
-                                bool        ds,
-                                bool        dm,
-                                bool        dg);
+                                bool        ds = true,
+                                bool        dm = true,
+                                bool        dg = true);
 
   protected:
     static Source* Fetch(Request* r);
@@ -83,9 +84,10 @@ class Source {
     SharedPtrMessage*                     cache_sh_video_;
     SharedPtrMessage*                     cache_sh_audio_;
     std::vector<Consumer*>                consumers_;
-    JitterAlgorithm                       jitter_algorithm_;
+    JitterAlgorithm                       ag_;
     MixQueue<SharedPtrMessage>*           mix_queue_;
     Dvr*                                  dvr_;
+    GopCache*                             gop_cache_;
 };
 }  // namespace rtmp
 #endif

@@ -1,14 +1,14 @@
 /*
  * @Date: 2020-03-18 11:17:48
  * @LastEditors: linmin
- * @LastEditTime: 2020-03-18 13:18:50
+ * @LastEditTime: 2020-03-18 14:07:06
  */
 #include <common/log.hpp>
 #include <muxer/flv.hpp>
+#include <protocol/rtmp/consumer.hpp>
 #include <protocol/rtmp/gop_cache.hpp>
 #include <protocol/rtmp/jitter.hpp>
 #include <protocol/rtmp/message.hpp>
-
 
 #define PURE_AUDIO_GUESS_THRESHOLD 115
 
@@ -78,13 +78,30 @@ int GopCache::Cache(SharedPtrMessage* shared_msg)
     queue_.push_back(msg->Copy());
 }
 
+int GopCache::Dump(Consumer* consumer, bool atc, JitterAlgorithm ag)
+{
+    int ret = ERROR_SUCCESS;
+
+    std::vector<SharedPtrMessage*>::iterator it;
+    for (it = queue_.begin(); it != queue_.end(); it++) {
+        if ((ret = consumer->Enqueue(*it, atc, ag)) != ERROR_SUCCESS) {
+            rs_error("dispatch cached gop failed. ret=%d", ret);
+            return ret;
+        }
+    }
+
+    rs_trace("dispatch cached gop success. count=%d, duration=%d",
+             (int)queue_.size(), consumer->GetTime());
+
+    return ret;
+}
+
 void GopCache::Clear()
 {
     std::vector<SharedPtrMessage*>::iterator it;
 
     for (it = queue_.begin(); it != queue_.end(); it++) {
-        SharedPtrMessage* msg = *it;
-        rs_freep(msg);
+        rs_freep(*it);
     }
 
     queue_.clear();
@@ -92,4 +109,22 @@ void GopCache::Clear()
     audio_after_last_video_count_ = 0;
 }
 
+bool GopCache::PureAudio()
+{
+    return cached_video_count_ == 0;
+}
+
+int64_t GopCache::StartTime()
+{
+    if (Empty()) {
+        return 0;
+    }
+
+    return queue_[0]->timestamp;
+}
+
+bool GopCache::Empty()
+{
+    return queue_.empty();
+}
 }  // namespace rtmp

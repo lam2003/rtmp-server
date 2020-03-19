@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-10 16:16:08
- * @LastEditTime: 2020-03-18 13:34:20
+ * @LastEditTime: 2020-03-18 15:06:59
  */
 #ifndef RS_RTMP_CONNECTION_HPP
 #define RS_RTMP_CONNECTION_HPP
@@ -14,7 +14,7 @@ class Server;
 class RTMPServer;
 
 namespace rtmp {
-  
+
 enum class ConnType;
 class PublishRecvThread;
 class QueueRecvThread;
@@ -23,6 +23,7 @@ class Consumer;
 class Response;
 class Request;
 class CommonMessage;
+class IWakeable;
 
 class Connection : virtual public IConnection {
     friend class PublishRecvThread;
@@ -32,6 +33,7 @@ class Connection : virtual public IConnection {
     virtual ~Connection();
 
   public:
+    virtual void Dispose();
     // IKbpsDelta
     virtual void    Resample() override;
     virtual int64_t GetSendBytesDelta() override;
@@ -69,6 +71,7 @@ class Connection : virtual public IConnection {
     ConnType    type_;
     bool        tcp_nodelay_;
     int         mw_sleep_;
+    IWakeable*  wakeable_;
 
     int publish_first_pkt_timeout_;
     int publish_normal_pkt_timeout_;

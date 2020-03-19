@@ -5,6 +5,7 @@
 #include <protocol/rtmp/consumer.hpp>
 #include <protocol/rtmp/defines.hpp>
 #include <protocol/rtmp/dvr.hpp>
+#include <protocol/rtmp/gop_cache.hpp>
 #include <protocol/rtmp/jitter.hpp>
 #include <protocol/rtmp/message.hpp>
 #include <protocol/rtmp/packet.hpp>
@@ -34,6 +35,7 @@ Source::Source()
     cache_sh_audio_            = nullptr;
     mix_queue_                 = new MixQueue<SharedPtrMessage>;
     dvr_                       = new Dvr;
+    gop_cache_                 = new GopCache;
 }
 
 Source::~Source()
@@ -44,6 +46,7 @@ Source::~Source()
     rs_freep(cache_sh_video_);
     rs_freep(cache_metadata_);
     rs_freep(request_);
+    rs_freep(gop_cache_);
 }
 
 int Source::FetchOrCreate(Request* r, ISourceHandler* h, Source** pps)
@@ -159,8 +162,7 @@ int Source::on_video_impl(SharedPtrMessage* msg)
     if (!drop_for_reduce) {
         for (int i = 0; i < (int)consumers_.size(); i++) {
             Consumer* consumer = consumers_.at(i);
-            if ((ret = consumer->Enqueue(msg, atc_, jitter_algorithm_)) !=
-                ERROR_SUCCESS) {
+            if ((ret = consumer->Enqueue(msg, atc_, ag_)) != ERROR_SUCCESS) {
                 rs_error("dispatch video failed. ret=%d", ret);
                 return ret;
             }
@@ -209,8 +211,7 @@ int Source::on_audio_impl(SharedPtrMessage* msg)
     if (!drop_for_reduce) {
         for (int i = 0; i < (int)consumers_.size(); i++) {
             Consumer* consumer = consumers_.at(i);
-            if ((ret = consumer->Enqueue(msg, atc_, jitter_algorithm_)) !=
-                ERROR_SUCCESS) {
+            if ((ret = consumer->Enqueue(msg, atc_, ag_)) != ERROR_SUCCESS) {
                 rs_error("dispatch audio failed. ret=%d", ret);
                 return ret;
             }
@@ -430,9 +431,9 @@ int Source::SourceId()
 
 int Source::CreateConsumer(Connection* conn,
                            Consumer*&  consumer,
-                           bool        ds,
-                           bool        dm,
-                           bool        dg)
+                           bool        ds,  // dispatch sequence header
+                           bool        dm,  // dispatch meta data
+                           bool        dg)         // dispatch gop cache
 {
     int ret = ERROR_SUCCESS;
 
@@ -442,6 +443,49 @@ int Source::CreateConsumer(Connection* conn,
     // queue_size 单位second
     double queue_size = _config->GetQueueSize(request_->vhost);
     consumer->SetQueueSize(queue_size);
+
+    if (atc_ && !gop_cache_->Empty()) {
+        if (cache_metadata_) {
+            cache_metadata_->timestamp = gop_cache_->StartTime();
+        }
+        if (cache_sh_audio_) {
+            cache_sh_audio_->timestamp = gop_cache_->StartTime();
+        }
+        if (cache_sh_video_) {
+            cache_sh_video_->timestamp = gop_cache_->StartTime();
+        }
+    }
+
+    if (dm && cache_metadata_ &&
+        (ret = consumer->Enqueue(cache_metadata_, atc_, ag_)) !=
+            ERROR_SUCCESS) {
+        // actually it never return failed.
+        rs_error("dispatch metadata failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (ds && cache_sh_audio_ &&
+        (ret = consumer->Enqueue(cache_sh_audio_, atc_, ag_)) !=
+            ERROR_SUCCESS) {
+        // actually it never return failed.
+        rs_error("dispatch audio sequence header failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (ds && cache_sh_video_ &&
+        (ret = consumer->Enqueue(cache_sh_video_, atc_, ag_)) !=
+            ERROR_SUCCESS) {
+        // actually it never return failed.
+        rs_error("dispatch video sequence header failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (dg && (ret = gop_cache_->Dump(consumer, atc_, ag_)) != ERROR_SUCCESS) {
+        rs_error("dispatch cached gop failed. ret=%d", ret);
+        return ret;
+    }
+
+    rs_trace("create consumer. queue_size=%.2f, jitter=%d", queue_size, ag_);
 
     return ret;
 }

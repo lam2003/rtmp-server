@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-17 12:57:29
- * @LastEditTime: 2020-03-18 13:31:21
+ * @LastEditTime: 2020-03-19 14:04:04
  */
 #include <common/error.hpp>
 #include <common/log.hpp>
@@ -272,7 +272,7 @@ int SharedPtrMessage::Create(MessageHeader* pheader, char* payload, int size)
 
     if (pheader) {
         ptr_->header.message_type   = pheader->message_type;
-        ptr_->header.payload_length = pheader->payload_length;
+        ptr_->header.payload_length = size;
         ptr_->header.perfer_cid     = pheader->perfer_cid;
         this->timestamp             = pheader->timestamp;
         this->stream_id             = pheader->stream_id;

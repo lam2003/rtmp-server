@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-24 11:23:35
- * @LastEditTime: 2020-03-17 18:03:54
+ * @LastEditTime: 2020-03-18 17:00:14
  * @LastEditors: linmin
  * @Description: In User Settings Edit
  * @FilePath: \rtmp_server\app\rtmp_server.hpp
@@ -42,6 +42,9 @@ class RTMPServer {
     virtual int FMLEUnPublish(int stream_id, double unpublish_tid);
     virtual int StartPlay(int stream_id);
     virtual void SetAutoResponse(bool v);
+    virtual int  SendAndFreeMessages(rtmp::SharedPtrMessage** msgs,
+                                     int                      nb_msgs,
+                                     int                      stream_id);
 
   private:
     int identify_fmle_publish_client(rtmp::FMLEStartPacket* pkt,

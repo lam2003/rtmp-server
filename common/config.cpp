@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-08 13:11:52
- * @LastEditTime: 2020-03-18 11:12:18
+ * @LastEditTime: 2020-03-18 18:44:11
  */
 #include <common/config.hpp>
 
@@ -11,7 +11,7 @@ Config::~Config() {}
 
 int32_t Config::GetChunkSize(const std::string& vhost)
 {
-    return 128;
+    return 15000;
 }
 
 void    Config::Subscribe(IReloadHandler* handler) {}
