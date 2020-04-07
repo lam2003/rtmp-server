@@ -168,7 +168,7 @@ int Muxer::write_tag(char *header, int header_size, char *tag, int tag_size)
 
     if ((ret = writer_->Writev(iovs, 3, nullptr)) != ERROR_SUCCESS)
     {
-        if (!IsClientGracefullyClose(ret))
+        if (!is_client_gracefully_close(ret))
         {
             rs_error("write flv tag failed. ret=%d", ret);
         }
@@ -288,7 +288,7 @@ int Muxer::WriteMetadata(char *data, int size)
 
     if ((ret = write_tag(tag_header, sizeof(tag_header), data, size)) != ERROR_SUCCESS)
     {
-        if (!IsClientGracefullyClose(ret))
+        if (!is_client_gracefully_close(ret))
         {
             rs_error("write flv metadata tag failed. ret=%d", ret);
         }
@@ -310,7 +310,7 @@ int Muxer::WriteAudio(int64_t timestamp, char *data, int size)
 
     if ((ret = write_tag(tag_header, sizeof(tag_header), data, size)) != ERROR_SUCCESS)
     {
-        if (!IsClientGracefullyClose(ret))
+        if (!is_client_gracefully_close(ret))
         {
             rs_error("write flv audio tag failed. ret=%d", ret);
         }
@@ -332,7 +332,7 @@ int Muxer::WriteVideo(int64_t timestamp, char *data, int size)
 
     if ((ret = write_tag(tag_header, sizeof(tag_header), data, size)) != ERROR_SUCCESS)
     {
-        if (!IsClientGracefullyClose(ret))
+        if (!is_client_gracefully_close(ret))
         {
             rs_error("write flv video tag failed. ret=%d", ret);
         }

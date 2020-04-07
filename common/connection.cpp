@@ -51,7 +51,7 @@ int32_t IConnection::Cycle()
 
     ret = do_cycle();
 
-    if (IsClientGracefullyClose(ret)) {
+    if (is_client_gracefully_close(ret)) {
         ret = ERROR_SOCKET_CLOSED;
         rs_warn("client %s disconnect peer,ret=%d", client_ip_.c_str(), ret);
     }

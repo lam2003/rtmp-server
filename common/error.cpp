@@ -1,6 +1,6 @@
 #include <common/error.hpp>
 
-bool IsClientGracefullyClose(int32_t err_code)
+bool is_client_gracefully_close(int32_t err_code)
 {
     return err_code == ERROR_SOCKET_READ ||
            err_code == ERROR_SOCKET_READ_FULLY ||
@@ -8,7 +8,7 @@ bool IsClientGracefullyClose(int32_t err_code)
            err_code == ERROR_SOCKET_TIMEOUT;
 }
 
-bool IsSystemControlError(int err_code)
+bool is_system_control_error(int err_code)
 {
     return err_code == ERROR_CONTROL_REPUBLISH ||
            err_code == ERROR_CONTROL_RTMP_CLOSE;

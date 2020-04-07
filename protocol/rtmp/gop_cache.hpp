@@ -11,7 +11,7 @@
 #include <vector>
 
 namespace rtmp {
-    
+
 enum class JitterAlgorithm;
 class SharedPtrMessage;
 class Consumer;

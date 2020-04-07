@@ -1,7 +1,7 @@
 /*
  * @Author: linmin
  * @Date: 2020-02-06 17:27:12
- * @LastEditTime: 2020-03-18 18:01:00
+ * @LastEditTime: 2020-04-07 13:05:37
  */
 
 #include <app/rtmp_server.hpp>
@@ -175,7 +175,8 @@ int32_t Connection::do_playing(Source*          source,
         }
 
         if ((ret = recv_thread->ErrorCode()) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret) && !IsSystemControlError(ret)) {
+            if (!is_client_gracefully_close(ret) &&
+                !is_system_control_error(ret)) {
                 rs_error("recv thread failed. ret=%d", ret);
             }
             return ret;
@@ -197,7 +198,7 @@ int32_t Connection::do_playing(Source*          source,
 
         if ((ret = rtmp_->SendAndFreeMessages(
                  msgs.msgs, count, response_->stream_id)) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret)) {
+            if (!is_client_gracefully_close(ret)) {
                 rs_error("send messages to client failed. ret=%d", ret);
             }
             return ret;
@@ -471,10 +472,11 @@ int Connection::do_publishing(Source* source, PublishRecvThread* recv_thread)
         }
 
         if ((ret = recv_thread->ErrorCode()) != ERROR_SUCCESS) {
-            if (!IsSystemControlError(ret) && !IsClientGracefullyClose(ret)) {
+            if (!is_system_control_error(ret) &&
+                !is_client_gracefully_close(ret)) {
                 rs_error("recv thread failed. ret=%d", ret);
-                return ret;
             }
+            return ret;
         }
 
         if (recv_thread->GetMsgNum() <= nb_msgs) {

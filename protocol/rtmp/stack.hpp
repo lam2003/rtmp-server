@@ -121,7 +121,7 @@ class Protocol {
         while (true) {
             CommonMessage* msg = nullptr;
             if ((ret = RecvMessage(&msg)) != ERROR_SUCCESS) {
-                if (!IsClientGracefullyClose(ret)) {
+                if (!is_client_gracefully_close(ret)) {
                     rs_error("recv message failed. ret=%d", ret);
                 }
                 return ret;

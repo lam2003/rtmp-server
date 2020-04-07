@@ -62,9 +62,14 @@ int32_t RecvThread::Cycle()
 
         CommonMessage* msg = nullptr;
 
-        if ((ret = rtmp_->RecvMessage(&msg)) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret)) {
-                rs_error("thread process message failed,ret=%d", ret);
+        ret = rtmp_->RecvMessage(&msg);
+        if (ret == ERROR_SUCCESS) {
+            ret = handler_->Handle(msg);
+        }
+
+        if (ret != ERROR_SUCCESS) {
+            if (!is_client_gracefully_close(ret) && !is_system_control_error(ret)) {
+                rs_error("thread process message failed. ret=%d", ret);
             }
 
             thread_->StopLoop();
@@ -73,11 +78,7 @@ int32_t RecvThread::Cycle()
 
             return ret;
         }
-        else {
-            ret = handler_->Handle(msg);
-        }
     }
-
     return ret;
 }
 

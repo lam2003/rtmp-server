@@ -237,7 +237,7 @@ int Protocol::ReadBasicHeader(char& fmt, int& cid)
     int ret = ERROR_SUCCESS;
 
     if ((ret = in_buffer_->Grow(rw_, 1)) != ERROR_SUCCESS) {
-        if (!IsClientGracefullyClose(ret)) {
+        if (!is_client_gracefully_close(ret)) {
             rs_error("read 1B basic header failed. ret=%d", ret);
         }
         return ret;
@@ -266,7 +266,7 @@ int Protocol::ReadBasicHeader(char& fmt, int& cid)
     // 64-319
     if (cid == 0) {
         if ((ret = in_buffer_->Grow(rw_, 1)) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret)) {
+            if (!is_client_gracefully_close(ret)) {
                 rs_error("read 2B basic header failed. ret=%d", ret);
             }
             return ret;
@@ -278,7 +278,7 @@ int Protocol::ReadBasicHeader(char& fmt, int& cid)
     // 64–65599
     else if (cid == 1) {
         if ((ret = in_buffer_->Grow(rw_, 2)) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret)) {
+            if (!is_client_gracefully_close(ret)) {
                 rs_error("read 3 bytes basic header failed,ret=%d", ret);
             }
             return ret;
@@ -344,7 +344,7 @@ int Protocol::ReadMessageHeader(ChunkStream* cs, char fmt)
 
     if (mh_size > 0 &&
         (ret = in_buffer_->Grow(rw_, mh_size)) != ERROR_SUCCESS) {
-        if (!IsClientGracefullyClose(ret)) {
+        if (!is_client_gracefully_close(ret)) {
             rs_error("read %dB message header failed. ret=%d", mh_size, ret);
         }
         return ret;
@@ -401,7 +401,7 @@ int Protocol::ReadMessageHeader(ChunkStream* cs, char fmt)
     if (cs->extended_timestamp) {
         mh_size += 4;
         if ((ret = in_buffer_->Grow(rw_, 4)) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret)) {
+            if (!is_client_gracefully_close(ret)) {
                 rs_error(
                     "read %dB message header failed. required_size=4, ret=%d",
                     mh_size, ret);
@@ -463,7 +463,7 @@ int Protocol::ReadMessagePayload(ChunkStream* cs, CommonMessage** pmsg)
     }
 
     if ((ret = in_buffer_->Grow(rw_, payload_size)) != ERROR_SUCCESS) {
-        if (!IsClientGracefullyClose(ret)) {
+        if (!is_client_gracefully_close(ret)) {
             rs_error("read payload failed. required_size=%d, ret=%d",
                      payload_size, ret);
         }
@@ -490,7 +490,7 @@ int Protocol::RecvInterlacedMessage(CommonMessage** pmsg)
     char fmt = 0;
     int  cid = 0;
     if ((ret = ReadBasicHeader(fmt, cid)) != ERROR_SUCCESS) {
-        if (!IsClientGracefullyClose(ret)) {
+        if (!is_client_gracefully_close(ret)) {
             rs_error("read basic header failed. ret=%d", ret);
         }
         return ret;
@@ -512,7 +512,7 @@ int Protocol::RecvInterlacedMessage(CommonMessage** pmsg)
     }
 
     if ((ret = ReadMessageHeader(cs, fmt)) != ERROR_SUCCESS) {
-        if (!IsClientGracefullyClose(ret)) {
+        if (!is_client_gracefully_close(ret)) {
             rs_error("read message header failed. ret=%d", ret);
         }
         return ret;
@@ -520,7 +520,7 @@ int Protocol::RecvInterlacedMessage(CommonMessage** pmsg)
 
     CommonMessage* msg = nullptr;
     if ((ret = ReadMessagePayload(cs, &msg)) != ERROR_SUCCESS) {
-        if (!IsClientGracefullyClose(ret)) {
+        if (!is_client_gracefully_close(ret)) {
             rs_error("read message payload failed. ret=%d", ret);
         }
         return ret;
@@ -542,7 +542,7 @@ int Protocol::RecvMessage(CommonMessage** pmsg)
     while (true) {
         CommonMessage* msg = nullptr;
         if ((ret = RecvInterlacedMessage(&msg)) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret)) {
+            if (!is_client_gracefully_close(ret)) {
                 rs_error("recv interlaced message failed. ret=%d", ret);
             }
             rs_freep(msg);
@@ -672,7 +672,7 @@ int Protocol::DoDecodeMessage(MessageHeader& header,
             return packet->Decode(manager);
         }
         else {
-            rs_warn("drop the amf0 command message, command_name=%s",
+            rs_trace("drop the amf0 command message, command_name=%s",
                     command.c_str());
             *ppacket = packet = new Packet;
             return packet->Decode(manager);
@@ -769,14 +769,13 @@ int Protocol::DoSimpleSend(MessageHeader* header, char* payload, int size)
         iovs[0].iov_base = c0c3;
         iovs[0].iov_len  = nbh;
 
-        printf("out_size#########:%d\n", out_chunk_size_);
         int payload_size = rs_min(end - p, out_chunk_size_);
         iovs[1].iov_base = p;
         iovs[1].iov_len  = payload_size;
         p += payload_size;
 
         if ((ret = rw_->WriteEv(iovs, 2, nullptr)) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret)) {
+            if (!is_client_gracefully_close(ret)) {
                 rs_error("send packet with writev failed. ret=%d", ret);
             }
             return ret;

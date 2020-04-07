@@ -218,7 +218,7 @@ int RTMPServer::identify_create_stream_client(rtmp::CreateStreamPacket* pkt,
     while (true) {
         rtmp::CommonMessage* msg = nullptr;
         if ((ret = protocol_->RecvMessage(&msg)) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret)) {
+            if (!is_client_gracefully_close(ret)) {
                 rs_error("recv identify client message failed. ret=%d", ret);
             }
             return ret;
@@ -259,7 +259,7 @@ int RTMPServer::IdentifyClient(int             stream_id,
     while (true) {
         rtmp::CommonMessage* msg = nullptr;
         if ((ret = protocol_->RecvMessage(&msg)) != ERROR_SUCCESS) {
-            if (!IsClientGracefullyClose(ret)) {
+            if (!is_client_gracefully_close(ret)) {
                 rs_error("recv identify client message failed,ret=%d", ret);
             }
             return ret;
@@ -436,7 +436,7 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
                        AMF0Any::String("Stop publishing stream"));
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
             ERROR_SUCCESS) {
-            if (!IsSystemControlError(ret) && !IsClientGracefullyClose(ret)) {
+            if (!is_system_control_error(ret) && !is_client_gracefully_close(ret)) {
                 rs_error("send onFCUnpublish(NetStream.Unpublish.Success) "
                          "message failed. ret=%d",
                          ret);
@@ -452,7 +452,7 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
             new rtmp::FMLEStartResPacket(unpublish_tid);
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
             ERROR_SUCCESS) {
-            if (!IsSystemControlError(ret) && !IsClientGracefullyClose(ret)) {
+            if (!is_system_control_error(ret) && !is_client_gracefully_close(ret)) {
                 rs_error("send FCUnpublish response messsage failed. ret=%d",
                          ret);
             }
@@ -469,7 +469,7 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
 
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
             ERROR_SUCCESS) {
-            if (!IsSystemControlError(ret) && !IsClientGracefullyClose(ret)) {
+            if (!is_system_control_error(ret) && !is_client_gracefully_close(ret)) {
                 rs_error("send onStatus(NetStream.Unpublish.Success) message "
                          "failed. ret=%d",
                          ret);

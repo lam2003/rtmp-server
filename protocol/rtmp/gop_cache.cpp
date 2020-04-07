@@ -1,7 +1,7 @@
 /*
  * @Date: 2020-03-18 11:17:48
  * @LastEditors: linmin
- * @LastEditTime: 2020-03-18 14:07:06
+ * @LastEditTime: 2020-03-25 12:32:09
  */
 #include <common/log.hpp>
 #include <muxer/flv.hpp>
@@ -42,6 +42,7 @@ void GopCache::Dispose()
 int GopCache::Cache(SharedPtrMessage* shared_msg)
 {
     int ret = ERROR_SUCCESS;
+
     if (!enable_gop_cache_) {
         return ret;
     }
@@ -76,6 +77,8 @@ int GopCache::Cache(SharedPtrMessage* shared_msg)
     }
 
     queue_.push_back(msg->Copy());
+
+    return ret;
 }
 
 int GopCache::Dump(Consumer* consumer, bool atc, JitterAlgorithm ag)

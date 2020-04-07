@@ -268,6 +268,6 @@
 #define ERROR_CODEC_AVC_WITHOUT_SH 30009
 
 #define ERROR_BIT_BUFFER_MANAGER_EMPTY 40000
-extern bool IsClientGracefullyClose(int32_t err_code);
-extern bool IsSystemControlError(int err_code);
+extern bool is_client_gracefully_close(int32_t err_code);
+extern bool is_system_control_error(int err_code);
 #endif
