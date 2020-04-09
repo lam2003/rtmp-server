@@ -4,6 +4,6 @@ before_install:
 - sudo apt-get install cmake
 script:
 - mkdir build && cd build
-- cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ ../ 
-- make
-- make rtmp_server
+- cmake ../ 
+- make -j4
+- make rtmp_server -j4

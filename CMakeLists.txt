@@ -4,8 +4,8 @@ project(rtmp-server)
 
 set(CMAKE_CXX_STANDARD 11)
 ############使用clang,可顯示更多warning############
-set(CMAKE_C_COMPILER  clang-9)
-SET(CMAKE_CXX_COMPILER clang++-9)
+#set(CMAKE_C_COMPILER  clang-9)
+#SET(CMAKE_CXX_COMPILER clang++-9)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
 
 find_package(Git)
