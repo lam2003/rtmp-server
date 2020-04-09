@@ -2,9 +2,8 @@ language: cpp
 os: linux
 before_install: 
 - sudo apt-get install cmake
-- sudo apt-get install clang
 script:
 - mkdir build && cd build
-- cmake ../
+- cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ ../ 
 - make
 - make rtmp_server
