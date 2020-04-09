@@ -4,3 +4,5 @@ build/
 .vscode/
 # Shell
 autobuild.sh
+# Binrary
+rtmp_server
