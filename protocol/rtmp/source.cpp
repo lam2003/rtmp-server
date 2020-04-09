@@ -33,6 +33,7 @@ Source::Source()
     cache_metadata_            = nullptr;
     cache_sh_video_            = nullptr;
     cache_sh_audio_            = nullptr;
+    ag_                        = JitterAlgorithm::FULL;
     mix_queue_                 = new MixQueue<SharedPtrMessage>;
     dvr_                       = new Dvr;
     gop_cache_                 = new GopCache;

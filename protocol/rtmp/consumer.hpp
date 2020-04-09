@@ -9,7 +9,6 @@
 #include <common/connection.hpp>
 #include <common/core.hpp>
 
-
 namespace rtmp {
 
 enum class JitterAlgorithm;

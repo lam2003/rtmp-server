@@ -97,11 +97,12 @@ void FastVector<T>::Clear()
 template <typename T>
 void FastVector<T>::Erase(int begin, int end)
 {
-    for (int i = begin; i < end; i++)
-    {
-        T msg = msgs_[i];
-        rs_freep(msg);
-    }
+    //不应该在这里释放？
+    // for (int i = begin; i < end; i++)
+    // {
+    //     T msg = msgs_[i];
+    //     rs_freep(msg);
+    // }
 
     for (int i = 0; i < count_ - end; i++)
     {
