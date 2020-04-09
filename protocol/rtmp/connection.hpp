@@ -33,7 +33,8 @@ class Connection : virtual public IConnection {
     virtual ~Connection();
 
   public:
-    virtual void Dispose();
+    // IConnection
+    virtual void Dispose() override;
     // IKbpsDelta
     virtual void    Resample() override;
     virtual int64_t GetSendBytesDelta() override;

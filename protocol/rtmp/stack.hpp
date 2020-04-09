@@ -7,6 +7,8 @@
 #include <common/io.hpp>
 #include <common/log.hpp>
 #include <common/utils.hpp>
+#include <protocol/rtmp/message.hpp>
+#include <protocol/rtmp/packet.hpp>
 #include <protocol/rtmp/defines.hpp>
 
 #include <map>
@@ -17,11 +19,6 @@ class AMF0Object;
 namespace rtmp {
 
 class HandshakeBytes;
-class Packet;
-class CommonMessage;
-class ChunkStream;
-class MessageHeader;
-class SharedPtrMessage;
 
 enum class ConnType {
     UNKNOW        = 0,

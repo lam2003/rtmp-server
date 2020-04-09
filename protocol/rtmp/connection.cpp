@@ -47,6 +47,7 @@ Connection::~Connection()
 
 void Connection::Dispose()
 {
+    ::IConnection::Dispose();
     if (wakeable_) {
         wakeable_->WakeUp();
     }

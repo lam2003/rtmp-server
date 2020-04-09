@@ -464,15 +464,15 @@ int Codec::DecodeSequenceHeader(BufferManager *manager)
     manager->Read1Bytes();
     level = (avc::Level)manager->Read1Bytes();
 
-    int8_t length_size_minus_one = manager->Read1Bytes();
-    length_size_minus_one &= 0x03;
+    int8_t len_size_minus_one = manager->Read1Bytes();
+    len_size_minus_one &= 0x03;
 
     // lengthSizeMinusOne indicates the length in bytes of the NALUnitLength field in an AVC video
     // sample or AVC parameter set sample of the associated stream minus one. For example, a size of one
     // byte is indicated with a value of 0. The value of this field shall be one of 0, 1, or 3 corresponding to a
     // length encoded with 1, 2, or 4 bytes, respectively.
 
-    length_size_minus_one = length_size_minus_one;
+    length_size_minus_one = len_size_minus_one;
     if (length_size_minus_one == 2)
     {
         ret = ERROR_CODEC_DECODE_AVC_FAILED;

@@ -2,8 +2,6 @@
 #include <protocol/amf/amf0.hpp>
 #include <protocol/rtmp/gop_cache.hpp>
 #include <protocol/rtmp/handshake.hpp>
-#include <protocol/rtmp/message.hpp>
-#include <protocol/rtmp/packet.hpp>
 #include <protocol/rtmp/stack.hpp>
 
 namespace rtmp {

@@ -71,12 +71,12 @@ class PublishRecvThread : virtual public IMessageHandler,
     virtual int     Wait(int timeout_ms);
     virtual int     Start();
     virtual void    Stop();
-    virtual bool    CanHandle();
     virtual int     GetCID();
     virtual void    SetCID(int cid);
     virtual int     ErrorCode();
     virtual int64_t GetMsgNum();
     // IMessageHandler
+    virtual bool CanHandle() override;
     virtual void OnThreadStart() override;
     virtual void OnThreadStop() override;
     virtual void OnRead(ssize_t nread) override;
@@ -118,8 +118,8 @@ class QueueRecvThread : public IMessageHandler {
     virtual int            Size();
     virtual CommonMessage* Pump();
     virtual int            ErrorCode();
-    virtual bool           CanHandle();
     // IMessageHandler
+    virtual bool CanHandle() override;
     virtual void OnThreadStart() override;
     virtual void OnThreadStop() override;
     virtual int  Handle(CommonMessage* msg) override;
