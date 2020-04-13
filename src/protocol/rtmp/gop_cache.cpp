@@ -21,7 +21,10 @@ GopCache::GopCache()
     audio_after_last_video_count_ = 0;
 }
 
-GopCache::~GopCache() {}
+GopCache::~GopCache()
+{
+    Clear();
+}
 
 void GopCache::Set(bool enabled)
 {

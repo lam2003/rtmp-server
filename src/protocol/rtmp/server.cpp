@@ -1,27 +1,29 @@
-#include <app/rtmp_server.hpp>
 #include <common/error.hpp>
 #include <common/utils.hpp>
 #include <protocol/amf/amf0.hpp>
 #include <protocol/rtmp/defines.hpp>
+#include <protocol/rtmp/server.hpp>
 #include <protocol/rtmp/stack.hpp>
 
-RTMPServer::RTMPServer(IProtocolReaderWriter* rw) : rw_(rw)
+namespace rtmp {
+
+Server::Server(IProtocolReaderWriter* rw) : rw_(rw)
 {
-    handshake_bytes_ = new rtmp::HandshakeBytes;
-    protocol_        = new rtmp::Protocol(rw);
+    handshake_bytes_ = new HandshakeBytes;
+    protocol_        = new Protocol(rw);
 }
 
-RTMPServer::~RTMPServer()
+Server::~Server()
 {
     rs_freep(protocol_);
     rs_freep(handshake_bytes_);
 }
 
-int32_t RTMPServer::Handshake()
+int32_t Server::Handshake()
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::SimpleHandshake simple_handshake;
+    SimpleHandshake simple_handshake;
     if ((ret = simple_handshake.HandshakeWithClient(handshake_bytes_, rw_)) !=
         ERROR_SUCCESS) {
         return ret;
@@ -32,30 +34,30 @@ int32_t RTMPServer::Handshake()
     return ret;
 }
 
-void RTMPServer::SetSendTimeout(int64_t timeout_us)
+void Server::SetSendTimeout(int64_t timeout_us)
 {
     protocol_->SetSendTimeout(timeout_us);
 }
 
-void RTMPServer::SetRecvTimeout(int64_t timeout_us)
+void Server::SetRecvTimeout(int64_t timeout_us)
 {
     protocol_->SetRecvTimeout(timeout_us);
 }
 
-int RTMPServer::ConnectApp(rtmp::Request* req)
+int Server::ConnectApp(Request* req)
 {
-    int                     ret = ERROR_SUCCESS;
-    rtmp::CommonMessage*    msg = nullptr;
-    rtmp::ConnectAppPacket* pkt = nullptr;
+    int               ret = ERROR_SUCCESS;
+    CommonMessage*    msg = nullptr;
+    ConnectAppPacket* pkt = nullptr;
 
-    if ((ret = protocol_->ExpectMessage<rtmp::ConnectAppPacket>(&msg, &pkt)) !=
+    if ((ret = protocol_->ExpectMessage<ConnectAppPacket>(&msg, &pkt)) !=
         ERROR_SUCCESS) {
         rs_error("expect connect app message failed,ret=%d", ret);
         return ret;
     }
 
-    rs_auto_free(rtmp::CommonMessage, msg);
-    rs_auto_free(rtmp::ConnectAppPacket, pkt);
+    rs_auto_free(CommonMessage, msg);
+    rs_auto_free(ConnectAppPacket, pkt);
 
     AMF0Any* p = nullptr;
 
@@ -85,19 +87,19 @@ int RTMPServer::ConnectApp(rtmp::Request* req)
         req->args = pkt->args->Copy()->ToObject();
     }
 
-    rtmp::DiscoveryTcUrl(req->tc_url, req->schema, req->host, req->vhost,
-                         req->app, req->stream, req->port, req->param);
+    DiscoveryTcUrl(req->tc_url, req->schema, req->host, req->vhost, req->app,
+                   req->stream, req->port, req->param);
     req->Strip();
 
     return ret;
 }
 
-int RTMPServer::SetWindowAckSize(int ackowledgement_window_size)
+int Server::SetWindowAckSize(int ackowledgement_window_size)
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::SetWindowAckSizePacket* pkt = new rtmp::SetWindowAckSizePacket;
-    pkt->ackowledgement_window_size   = ackowledgement_window_size;
+    SetWindowAckSizePacket* pkt     = new SetWindowAckSizePacket;
+    pkt->ackowledgement_window_size = ackowledgement_window_size;
     if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS) {
         rs_error("send set_ackowledgement_window_size packet failed,ret=%d",
                  ret);
@@ -107,13 +109,13 @@ int RTMPServer::SetWindowAckSize(int ackowledgement_window_size)
     return ret;
 }
 
-int RTMPServer::SetPeerBandwidth(int bandwidth, int type)
+int Server::SetPeerBandwidth(int bandwidth, int type)
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::SetPeerBandwidthPacket* pkt = new rtmp::SetPeerBandwidthPacket;
-    pkt->bandwidth                    = bandwidth;
-    pkt->type                         = type;
+    SetPeerBandwidthPacket* pkt = new SetPeerBandwidthPacket;
+    pkt->bandwidth              = bandwidth;
+    pkt->type                   = type;
     if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS) {
         rs_error("send set_peer_bandwidth packet failed,ret=%d", ret);
         return ret;
@@ -122,12 +124,12 @@ int RTMPServer::SetPeerBandwidth(int bandwidth, int type)
     return ret;
 }
 
-int RTMPServer::SetChunkSize(int chunk_size)
+int Server::SetChunkSize(int chunk_size)
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::SetChunkSizePacket* pkt = new rtmp::SetChunkSizePacket;
-    pkt->chunk_size               = chunk_size;
+    SetChunkSizePacket* pkt = new SetChunkSizePacket;
+    pkt->chunk_size         = chunk_size;
     if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS) {
         rs_error("send set_chunk_size_packet failed,ret=%d", ret);
         return ret;
@@ -136,12 +138,11 @@ int RTMPServer::SetChunkSize(int chunk_size)
     return ret;
 }
 
-int RTMPServer::ResponseConnectApp(rtmp::Request*     req,
-                                   const std::string& local_ip)
+int Server::ResponseConnectApp(Request* req, const std::string& local_ip)
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::ConnectAppResPacket* pkt = new rtmp::ConnectAppResPacket;
+    ConnectAppResPacket* pkt = new ConnectAppResPacket;
 
     pkt->props->Set("fmsVer", AMF0Any::String("FMS/3,5,3,888"));
     pkt->props->Set("capabilities", AMF0Any::Number(127));
@@ -164,17 +165,16 @@ int RTMPServer::ResponseConnectApp(rtmp::Request*     req,
     return ret;
 }
 
-int RTMPServer::identify_fmle_publish_client(rtmp::FMLEStartPacket* pkt,
-                                             rtmp::ConnType&        type,
-                                             std::string&           stream_name)
+int Server::identify_fmle_publish_client(FMLEStartPacket* pkt,
+                                         ConnType&        type,
+                                         std::string&     stream_name)
 {
     int ret = ERROR_SUCCESS;
 
-    type        = rtmp::ConnType::FMLE_PUBLISH;
+    type        = ConnType::FMLE_PUBLISH;
     stream_name = pkt->stream_name;
 
-    rtmp::FMLEStartResPacket* res_pkt =
-        new rtmp::FMLEStartResPacket(pkt->transaction_id);
+    FMLEStartResPacket* res_pkt = new FMLEStartResPacket(pkt->transaction_id);
     if ((ret = protocol_->SendAndFreePacket(res_pkt, 0)) != ERROR_SUCCESS) {
         rs_error("send release stream response message failed,ret=%d", ret);
         return ret;
@@ -183,14 +183,14 @@ int RTMPServer::identify_fmle_publish_client(rtmp::FMLEStartPacket* pkt,
     return ret;
 }
 
-int RTMPServer::identify_play_client(rtmp::PlayPacket* pkt,
-                                     rtmp::ConnType&   type,
-                                     std::string&      stream_name,
-                                     double&           duration)
+int Server::identify_play_client(PlayPacket*  pkt,
+                                 ConnType&    type,
+                                 std::string& stream_name,
+                                 double&      duration)
 {
     int ret = ERROR_SUCCESS;
 
-    type        = rtmp::ConnType::PLAY;
+    type        = ConnType::PLAY;
     stream_name = pkt->stream_name;
     duration    = pkt->duration;
 
@@ -200,23 +200,23 @@ int RTMPServer::identify_play_client(rtmp::PlayPacket* pkt,
     return ret;
 }
 
-int RTMPServer::identify_create_stream_client(rtmp::CreateStreamPacket* pkt,
-                                              int             stream_id,
-                                              rtmp::ConnType& type,
-                                              std::string&    stream_name,
-                                              double&         duration)
+int Server::identify_create_stream_client(CreateStreamPacket* pkt,
+                                          int                 stream_id,
+                                          ConnType&           type,
+                                          std::string&        stream_name,
+                                          double&             duration)
 {
     int ret = ERROR_SUCCESS;
 
-    rtmp::CreateStreamResPacket* res_pkt =
-        new rtmp::CreateStreamResPacket(pkt->transaction_id, stream_id);
+    CreateStreamResPacket* res_pkt =
+        new CreateStreamResPacket(pkt->transaction_id, stream_id);
     if ((ret = protocol_->SendAndFreePacket(res_pkt, 0)) != ERROR_SUCCESS) {
         rs_error("send createStream response message failed. ret=%d", ret);
         return ret;
     }
 
     while (true) {
-        rtmp::CommonMessage* msg = nullptr;
+        CommonMessage* msg = nullptr;
         if ((ret = protocol_->RecvMessage(&msg)) != ERROR_SUCCESS) {
             if (!is_client_gracefully_close(ret)) {
                 rs_error("recv identify client message failed. ret=%d", ret);
@@ -224,40 +224,40 @@ int RTMPServer::identify_create_stream_client(rtmp::CreateStreamPacket* pkt,
             return ret;
         }
 
-        rs_auto_free(rtmp::CommonMessage, msg);
-        rtmp::MessageHeader& h = msg->header;
+        rs_auto_free(CommonMessage, msg);
+        MessageHeader& h = msg->header;
 
         if (!h.IsAMF0Command() && !h.IsAMF3Command()) {
             continue;
         }
 
-        rtmp::Packet* packet = nullptr;
+        Packet* packet = nullptr;
         if ((ret = protocol_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS) {
             rs_error("decodec identify client message failed. ret=%d", ret);
             return ret;
         }
 
-        rs_auto_free(rtmp::Packet, packet);
+        rs_auto_free(Packet, packet);
 
-        if (dynamic_cast<rtmp::PlayPacket*>(packet)) {
-            return identify_play_client(dynamic_cast<rtmp::PlayPacket*>(packet),
-                                        type, stream_name, duration);
+        if (dynamic_cast<PlayPacket*>(packet)) {
+            return identify_play_client(dynamic_cast<PlayPacket*>(packet), type,
+                                        stream_name, duration);
         }
     }
 
     return ret;
 }
 
-int RTMPServer::IdentifyClient(int             stream_id,
-                               rtmp::ConnType& type,
-                               std::string&    stream_name,
-                               double&         duration)
+int Server::IdentifyClient(int          stream_id,
+                           ConnType&    type,
+                           std::string& stream_name,
+                           double&      duration)
 {
     int ret = ERROR_SUCCESS;
-    type    = rtmp::ConnType::UNKNOW;
+    type    = ConnType::UNKNOW;
 
     while (true) {
-        rtmp::CommonMessage* msg = nullptr;
+        CommonMessage* msg = nullptr;
         if ((ret = protocol_->RecvMessage(&msg)) != ERROR_SUCCESS) {
             if (!is_client_gracefully_close(ret)) {
                 rs_error("recv identify client message failed,ret=%d", ret);
@@ -265,29 +265,28 @@ int RTMPServer::IdentifyClient(int             stream_id,
             return ret;
         }
 
-        rs_auto_free(rtmp::CommonMessage, msg);
-        rtmp::MessageHeader& h = msg->header;
+        rs_auto_free(CommonMessage, msg);
+        MessageHeader& h = msg->header;
 
         if (!h.IsAMF0Command() && !h.IsAMF3Command()) {
             continue;
         }
 
-        rtmp::Packet* packet = nullptr;
+        Packet* packet = nullptr;
         if ((ret = protocol_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS) {
             rs_error("identify decode message failed,ret=%d", ret);
             return ret;
         }
 
-        rs_auto_free(rtmp::Packet, packet);
-        if (dynamic_cast<rtmp::FMLEStartPacket*>(packet)) {
+        rs_auto_free(Packet, packet);
+        if (dynamic_cast<FMLEStartPacket*>(packet)) {
             return identify_fmle_publish_client(
-                dynamic_cast<rtmp::FMLEStartPacket*>(packet), type,
-                stream_name);
+                dynamic_cast<FMLEStartPacket*>(packet), type, stream_name);
         }
-        else if (dynamic_cast<rtmp::CreateStreamPacket*>(packet)) {
+        else if (dynamic_cast<CreateStreamPacket*>(packet)) {
             return identify_create_stream_client(
-                dynamic_cast<rtmp::CreateStreamPacket*>(packet), stream_id,
-                type, stream_name, duration);
+                dynamic_cast<CreateStreamPacket*>(packet), stream_id, type,
+                stream_name, duration);
         }
         else {
             rs_assert(0);
@@ -297,29 +296,28 @@ int RTMPServer::IdentifyClient(int             stream_id,
     return ret;
 }
 
-int RTMPServer::StartFmlePublish(int stream_id)
+int Server::StartFmlePublish(int stream_id)
 {
     int ret = ERROR_SUCCESS;
 
     double fc_publish_tid = 0;
     {
-        rtmp::CommonMessage*   msg = nullptr;
-        rtmp::FMLEStartPacket* pkt = nullptr;
+        CommonMessage*   msg = nullptr;
+        FMLEStartPacket* pkt = nullptr;
 
-        if ((ret = protocol_->ExpectMessage<rtmp::FMLEStartPacket>(
-                 &msg, &pkt)) != ERROR_SUCCESS) {
+        if ((ret = protocol_->ExpectMessage<FMLEStartPacket>(&msg, &pkt)) !=
+            ERROR_SUCCESS) {
             rs_error("recv FCPublish message failed,ret=%d", ret);
             return ret;
         }
 
-        rs_auto_free(rtmp::CommonMessage, msg);
-        rs_auto_free(rtmp::FMLEStartPacket, pkt);
+        rs_auto_free(CommonMessage, msg);
+        rs_auto_free(FMLEStartPacket, pkt);
 
         fc_publish_tid = pkt->transaction_id;
     }
     {
-        rtmp::FMLEStartResPacket* pkt =
-            new rtmp::FMLEStartResPacket(fc_publish_tid);
+        FMLEStartResPacket* pkt = new FMLEStartResPacket(fc_publish_tid);
 
         if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS) {
             rs_error("send FCPublish response message failed,ret=%d", ret);
@@ -329,23 +327,23 @@ int RTMPServer::StartFmlePublish(int stream_id)
 
     double create_stream_id = 0;
     {
-        rtmp::CommonMessage*      msg = nullptr;
-        rtmp::CreateStreamPacket* pkt = nullptr;
+        CommonMessage*      msg = nullptr;
+        CreateStreamPacket* pkt = nullptr;
 
-        if ((ret = protocol_->ExpectMessage<rtmp::CreateStreamPacket>(
-                 &msg, &pkt)) != ERROR_SUCCESS) {
+        if ((ret = protocol_->ExpectMessage<CreateStreamPacket>(&msg, &pkt)) !=
+            ERROR_SUCCESS) {
             rs_error("recv createStream message failed,ret=%d", ret);
             return ret;
         }
-        rs_auto_free(rtmp::CommonMessage, msg);
-        rs_auto_free(rtmp::CreateStreamPacket, pkt);
+        rs_auto_free(CommonMessage, msg);
+        rs_auto_free(CreateStreamPacket, pkt);
 
         create_stream_id = pkt->transaction_id;
     }
 
     {
-        rtmp::CreateStreamResPacket* pkt =
-            new rtmp::CreateStreamResPacket(create_stream_id, stream_id);
+        CreateStreamResPacket* pkt =
+            new CreateStreamResPacket(create_stream_id, stream_id);
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
             ERROR_SUCCESS) {
             rs_error("send createStream response message failed,ret=%d", ret);
@@ -354,10 +352,10 @@ int RTMPServer::StartFmlePublish(int stream_id)
     }
 
     {
-        rtmp::CommonMessage* msg;
-        rtmp::PublishPacket* pkt;
+        CommonMessage* msg;
+        PublishPacket* pkt;
 
-        if ((ret = protocol_->ExpectMessage<rtmp::PublishPacket>(&msg, &pkt)) !=
+        if ((ret = protocol_->ExpectMessage<PublishPacket>(&msg, &pkt)) !=
             ERROR_SUCCESS) {
             rs_error("recv publish message failed,ret=%d", ret);
             return ret;
@@ -366,12 +364,12 @@ int RTMPServer::StartFmlePublish(int stream_id)
         rs_info("recv publish request message success,stream_name:%s,type=%s",
                 pkt->stream_name.c_str(), pkt->type.c_str());
 
-        rs_auto_free(rtmp::CommonMessage, msg);
-        rs_auto_free(rtmp::PublishPacket, pkt);
+        rs_auto_free(CommonMessage, msg);
+        rs_auto_free(PublishPacket, pkt);
     }
     {
-        rtmp::OnStatusCallPacket* pkt = new rtmp::OnStatusCallPacket;
-        pkt->command_name             = RTMP_AMF0_COMMAND_ON_FC_PUBLISH;
+        OnStatusCallPacket* pkt = new OnStatusCallPacket;
+        pkt->command_name       = RTMP_AMF0_COMMAND_ON_FC_PUBLISH;
         pkt->data->Set("code", AMF0Any::String("NetStream.Publish.Start"));
         pkt->data->Set("description",
                        AMF0Any::String("Started publishing stream"));
@@ -386,7 +384,7 @@ int RTMPServer::StartFmlePublish(int stream_id)
         rs_info("send onFCPublish(NetStream.Publish.Start) message success");
     }
     {
-        rtmp::OnStatusCallPacket* pkt = new rtmp::OnStatusCallPacket;
+        OnStatusCallPacket* pkt = new OnStatusCallPacket;
         pkt->data->Set("level", AMF0Any::String("status"));
         pkt->data->Set("code", AMF0Any::String("NetStream.Publish.Start"));
         pkt->data->Set("description",
@@ -405,38 +403,39 @@ int RTMPServer::StartFmlePublish(int stream_id)
     return ret;
 }
 
-int RTMPServer::RecvMessage(rtmp::CommonMessage** pmsg)
+int Server::RecvMessage(CommonMessage** pmsg)
 {
     return protocol_->RecvMessage(pmsg);
 }
 
-void RTMPServer::SetRecvBuffer(int buffer_size)
+void Server::SetRecvBuffer(int buffer_size)
 {
     protocol_->SetRecvBuffer(buffer_size);
 }
 
-void RTMPServer::SetMargeRead(bool v, IMergeReadHandler* handler)
+void Server::SetMargeRead(bool v, IMergeReadHandler* handler)
 {
     protocol_->SetMargeRead(v, handler);
 }
 
-int RTMPServer::DecodeMessage(rtmp::CommonMessage* msg, rtmp::Packet** ppacket)
+int Server::DecodeMessage(CommonMessage* msg, Packet** ppacket)
 {
     return protocol_->DecodeMessage(msg, ppacket);
 }
 
-int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
+int Server::FMLEUnPublish(int stream_id, double unpublish_tid)
 {
     int ret = ERROR_SUCCESS;
     {
-        rtmp::OnStatusCallPacket* pkt = new rtmp::OnStatusCallPacket;
-        pkt->command_name             = RTMP_AMF0_COMMAND_ON_FC_UNPUBLISH;
+        OnStatusCallPacket* pkt = new OnStatusCallPacket;
+        pkt->command_name       = RTMP_AMF0_COMMAND_ON_FC_UNPUBLISH;
         pkt->data->Set("code", AMF0Any::String("NetStream.Unpublish.Success"));
         pkt->data->Set("description",
                        AMF0Any::String("Stop publishing stream"));
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
             ERROR_SUCCESS) {
-            if (!is_system_control_error(ret) && !is_client_gracefully_close(ret)) {
+            if (!is_system_control_error(ret) &&
+                !is_client_gracefully_close(ret)) {
                 rs_error("send onFCUnpublish(NetStream.Unpublish.Success) "
                          "message failed. ret=%d",
                          ret);
@@ -448,11 +447,11 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
             "send onFCUnpublish(NetStream.Unpublish.Success) message success.");
     }
     {
-        rtmp::FMLEStartResPacket* pkt =
-            new rtmp::FMLEStartResPacket(unpublish_tid);
+        FMLEStartResPacket* pkt = new FMLEStartResPacket(unpublish_tid);
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
             ERROR_SUCCESS) {
-            if (!is_system_control_error(ret) && !is_client_gracefully_close(ret)) {
+            if (!is_system_control_error(ret) &&
+                !is_client_gracefully_close(ret)) {
                 rs_error("send FCUnpublish response messsage failed. ret=%d",
                          ret);
             }
@@ -460,7 +459,7 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
         }
     }
     {
-        rtmp::OnStatusCallPacket* pkt = new rtmp::OnStatusCallPacket;
+        OnStatusCallPacket* pkt = new OnStatusCallPacket;
         pkt->data->Set("level", AMF0Any::String("status"));
         pkt->data->Set("code", AMF0Any::String("NetStream.Unpublish.Success"));
         pkt->data->Set("description",
@@ -469,7 +468,8 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
 
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
             ERROR_SUCCESS) {
-            if (!is_system_control_error(ret) && !is_client_gracefully_close(ret)) {
+            if (!is_system_control_error(ret) &&
+                !is_client_gracefully_close(ret)) {
                 rs_error("send onStatus(NetStream.Unpublish.Success) message "
                          "failed. ret=%d",
                          ret);
@@ -485,13 +485,13 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
     return ret;
 }
 
-int RTMPServer::StartPlay(int stream_id)
+int Server::StartPlay(int stream_id)
 {
     int ret = ERROR_SUCCESS;
     {
-        rtmp::UserControlPacket* pkt = new rtmp::UserControlPacket;
-        pkt->event_type = (int16_t)rtmp::UserEventType::STREAM_BEGIN;
-        pkt->event_data = stream_id;
+        UserControlPacket* pkt = new UserControlPacket;
+        pkt->event_type        = (int16_t)UserEventType::STREAM_BEGIN;
+        pkt->event_data        = stream_id;
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
             ERROR_SUCCESS) {
             rs_error("send StreamBegin failed. ret=%d", ret);
@@ -501,7 +501,7 @@ int RTMPServer::StartPlay(int stream_id)
         rs_trace("send StreamBegin success");
     }
     {
-        rtmp::OnStatusCallPacket* pkt = new rtmp::OnStatusCallPacket;
+        OnStatusCallPacket* pkt = new OnStatusCallPacket;
         pkt->data->Set("level", AMF0Any::String("status"));
         pkt->data->Set("code", AMF0Any::String("NetStream.Play.Reset"));
         pkt->data->Set("description",
@@ -519,7 +519,7 @@ int RTMPServer::StartPlay(int stream_id)
         rs_trace("send onStatus(NetStream.Play.Reset) success");
     }
     {
-        rtmp::OnStatusCallPacket* pkt = new rtmp::OnStatusCallPacket;
+        OnStatusCallPacket* pkt = new OnStatusCallPacket;
         pkt->data->Set("level", AMF0Any::String("status"));
         pkt->data->Set("code", AMF0Any::String("NetStream.Play.Start"));
         pkt->data->Set("description", AMF0Any::String("Stream is now playing"));
@@ -536,7 +536,7 @@ int RTMPServer::StartPlay(int stream_id)
         rs_trace("send onStatus(NetStream.Play.Start) success");
     }
     {
-        rtmp::OnStatusDataPacket* pkt = new rtmp::OnStatusDataPacket;
+        OnStatusDataPacket* pkt = new OnStatusDataPacket;
         pkt->data->Set("code", AMF0Any::String("NetStream.Data.Start"));
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
             ERROR_SUCCESS) {
@@ -553,14 +553,16 @@ int RTMPServer::StartPlay(int stream_id)
     return ret;
 }
 
-void RTMPServer::SetAutoResponse(bool v)
+void Server::SetAutoResponse(bool v)
 {
     protocol_->SetAutoResponse(v);
 }
 
-int RTMPServer::SendAndFreeMessages(rtmp::SharedPtrMessage** msgs,
-                                    int                      nb_msgs,
-                                    int                      stream_id)
+int Server::SendAndFreeMessages(SharedPtrMessage** msgs,
+                                int                nb_msgs,
+                                int                stream_id)
 {
     return protocol_->SendAndFreeMessages(msgs, nb_msgs, stream_id);
 }
+
+}  // namespace rtmp

@@ -17,11 +17,11 @@ enum class ListenerType {
     RTMP = 0,
 };
 
-class Server;
+class StreamServer;
 
 class IServerListener {
   public:
-    IServerListener(Server* server, ListenerType type);
+    IServerListener(StreamServer* server, ListenerType type);
     virtual ~IServerListener();
 
   public:
@@ -29,16 +29,16 @@ class IServerListener {
     virtual ListenerType GetType();
 
   protected:
-    Server*      server_;
-    ListenerType type_;
-    std::string  ip_;
-    int32_t      port_;
+    StreamServer* server_;
+    ListenerType  type_;
+    std::string   ip_;
+    int32_t       port_;
 };
 
 class RTMPStreamListener : virtual public IServerListener,
                            virtual public ITCPClientHandler {
   public:
-    RTMPStreamListener(Server* server, ListenerType type);
+    RTMPStreamListener(StreamServer* server, ListenerType type);
     virtual ~RTMPStreamListener();
 
   public:
@@ -51,11 +51,11 @@ class RTMPStreamListener : virtual public IServerListener,
     TCPListener* listener_;
 };
 
-class Server : virtual public IConnectionManager,
-               virtual public rtmp::ISourceHandler {
+class StreamServer : virtual public IConnectionManager,
+                     virtual public rtmp::ISourceHandler {
   public:
-    Server();
-    virtual ~Server();
+    StreamServer();
+    virtual ~StreamServer();
 
   public:
     virtual int32_t Initilaize();

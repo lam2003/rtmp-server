@@ -13,7 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-IServerListener::IServerListener(Server* server, ListenerType type)
+IServerListener::IServerListener(StreamServer* server, ListenerType type)
     : server_(server), type_(type), ip_(""), port_(-1)
 {
 }
@@ -25,7 +25,7 @@ ListenerType IServerListener::GetType()
     return type_;
 }
 
-RTMPStreamListener::RTMPStreamListener(Server* server, ListenerType type)
+RTMPStreamListener::RTMPStreamListener(StreamServer* server, ListenerType type)
     : IServerListener(server, type), listener_(nullptr)
 {
 }
@@ -66,11 +66,11 @@ int32_t RTMPStreamListener::OnTCPClient(st_netfd_t stfd)
     return ret;
 }
 
-Server::Server() {}
+StreamServer::StreamServer() {}
 
-Server::~Server() {}
+StreamServer::~StreamServer() {}
 
-int32_t Server::InitializeST()
+int32_t StreamServer::InitializeST()
 {
     int32_t ret = ERROR_SUCCESS;
 
@@ -86,12 +86,12 @@ int32_t Server::InitializeST()
     return ret;
 }
 
-int32_t Server::Initilaize()
+int32_t StreamServer::Initilaize()
 {
     return 0;
 }
 
-int32_t Server::AcceptClient(ListenerType type, st_netfd_t stfd)
+int32_t StreamServer::AcceptClient(ListenerType type, st_netfd_t stfd)
 {
     int32_t ret = ERROR_SUCCESS;
 
@@ -122,7 +122,7 @@ int32_t Server::AcceptClient(ListenerType type, st_netfd_t stfd)
     return ret;
 }
 
-int32_t Server::Listen()
+int32_t StreamServer::Listen()
 {
     int ret = ERROR_SUCCESS;
 
@@ -133,21 +133,21 @@ int32_t Server::Listen()
     return ret;
 }
 
-int32_t Server::listen_rtmp()
+int32_t StreamServer::listen_rtmp()
 {
     int ret = ERROR_SUCCESS;
     return ret;
 }
 
-void Server::OnRemove(IConnection* conn) {}
+void StreamServer::OnRemove(IConnection* conn) {}
 
-int Server::OnPublish(rtmp::Source* s, rtmp::Request* r)
+int StreamServer::OnPublish(rtmp::Source* s, rtmp::Request* r)
 {
     int ret = ERROR_SUCCESS;
     return ret;
 }
 
-int Server::OnUnPublish(rtmp::Source* s, rtmp::Request* r)
+int StreamServer::OnUnPublish(rtmp::Source* s, rtmp::Request* r)
 {
     int ret = ERROR_SUCCESS;
     return ret;

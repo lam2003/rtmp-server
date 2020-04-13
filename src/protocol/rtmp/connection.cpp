@@ -4,7 +4,6 @@
  * @LastEditTime: 2020-04-07 13:05:37
  */
 
-#include <app/rtmp_server.hpp>
 #include <app/server.hpp>
 #include <common/config.hpp>
 #include <common/error.hpp>
@@ -15,6 +14,7 @@
 #include <protocol/rtmp/defines.hpp>
 #include <protocol/rtmp/message.hpp>
 #include <protocol/rtmp/recv_thread.hpp>
+#include <protocol/rtmp/server.hpp>
 #include <protocol/rtmp/source.hpp>
 
 #include <netinet/in.h>
@@ -23,12 +23,12 @@
 
 namespace rtmp {
 
-Connection::Connection(Server* server, st_netfd_t stfd)
+Connection::Connection(StreamServer* server, st_netfd_t stfd)
     : IConnection(server, stfd)
 {
     server_      = server;
     socket_      = new StSocket(stfd);
-    rtmp_        = new RTMPServer(socket_);
+    rtmp_        = new Server(socket_);
     request_     = new Request;
     response_    = new Response;
     type_        = ConnType::UNKNOW;
@@ -136,6 +136,16 @@ int32_t Connection::StreamServiceCycle()
     return ret;
 }
 
+void Connection::release_publish(Source* source, bool is_edge)
+{
+    if (is_edge) {
+        // TODO
+    }
+    else {
+        source->OnUnpublish();
+    }
+}
+
 int32_t Connection::Publishing(Source* source)
 {
     int ret = ERROR_SUCCESS;
@@ -150,6 +160,8 @@ int32_t Connection::Publishing(Source* source)
 
         recv_thread.Stop();
     }
+
+    release_publish(source, vhost_is_edge);
 
     return ret;
 }

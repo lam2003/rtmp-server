@@ -40,7 +40,7 @@ class Consumer : public IWakeable {
     virtual int  DumpPackets(MessageArray* msg_arr, int& count);
     virtual void Wait(int nb_msgs, int duration);
     virtual int  OnPlayClientPause(bool is_pause);
-    virtual void UpdateSourceId();
+    virtual void UpdateSourceID();
     // IWakeable
     virtual void WakeUp() override;
 

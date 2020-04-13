@@ -10,12 +10,12 @@
 #include <common/core.hpp>
 #include <common/socket.hpp>
 
-class Server;
-class RTMPServer;
+class StreamServer;
 
 namespace rtmp {
 
 enum class ConnType;
+class Server;
 class PublishRecvThread;
 class QueueRecvThread;
 class Source;
@@ -29,7 +29,7 @@ class Connection : virtual public IConnection {
     friend class PublishRecvThread;
 
   public:
-    Connection(Server* server, st_netfd_t stfd);
+    Connection(StreamServer* server, st_netfd_t stfd);
     virtual ~Connection();
 
   public:
@@ -62,17 +62,18 @@ class Connection : virtual public IConnection {
     int  do_playing(Source*          source,
                     Consumer*        consumer,
                     QueueRecvThread* recv_thread);
+    void release_publish(Source* source, bool is_edge);
 
   private:
-    Server*     server_;
-    StSocket*   socket_;
-    RTMPServer* rtmp_;
-    Request*    request_;
-    Response*   response_;
-    ConnType    type_;
-    bool        tcp_nodelay_;
-    int         mw_sleep_;
-    IWakeable*  wakeable_;
+    StreamServer* server_;
+    StSocket*     socket_;
+    Server*       rtmp_;
+    Request*      request_;
+    Response*     response_;
+    ConnType      type_;
+    bool          tcp_nodelay_;
+    int           mw_sleep_;
+    IWakeable*    wakeable_;
 
     int publish_first_pkt_timeout_;
     int publish_normal_pkt_timeout_;

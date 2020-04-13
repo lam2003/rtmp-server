@@ -10,10 +10,11 @@
 #include <common/core.hpp>
 #include <common/thread.hpp>
 
-class RTMPServer;
+#include <vector>
 
 namespace rtmp {
-
+  
+class Server;
 class Connection;
 class Source;
 
@@ -32,7 +33,9 @@ class IMessageHandler {
 
 class RecvThread : virtual public internal::IThreadHandler {
   public:
-    RecvThread(IMessageHandler* handler, RTMPServer* rtmp, int32_t timeout_ms);
+    RecvThread(IMessageHandler* handler,
+               rtmp::Server*    rtmp,
+               int32_t          timeout_ms);
     virtual ~RecvThread();
 
   public:
@@ -49,7 +52,7 @@ class RecvThread : virtual public internal::IThreadHandler {
   private:
     internal::Thread* thread_;
     IMessageHandler*  handler_;
-    RTMPServer*       rtmp_;
+    rtmp::Server*     rtmp_;
     int32_t           timeout_;
 };
 
@@ -57,14 +60,14 @@ class PublishRecvThread : virtual public IMessageHandler,
                           virtual public IMergeReadHandler,
                           virtual public IReloadHandler {
   public:
-    PublishRecvThread(RTMPServer* rtmp,
-                      Request*    request,
-                      int         mr_socket_fd,
-                      int         timeout_ms,
-                      Connection* conn,
-                      Source*     source,
-                      bool        is_fmle,
-                      bool        is_edge);
+    PublishRecvThread(rtmp::Server* rtmp,
+                      Request*      request,
+                      int           mr_socket_fd,
+                      int           timeout_ms,
+                      Connection*   conn,
+                      Source*       source,
+                      bool          is_fmle,
+                      bool          is_edge);
     virtual ~PublishRecvThread();
 
   public:
@@ -87,28 +90,28 @@ class PublishRecvThread : virtual public IMessageHandler,
     void set_socket_buffer(int sleep_ms);
 
   private:
-    RecvThread* thread_;
-    RTMPServer* rtmp_;
-    Request*    request_;
-    int64_t     nb_msgs_;
-    uint64_t    video_frames_;
-    bool        mr_;
-    int         mr_fd_;
-    int         mr_sleep_;
-    bool        real_time_;
-    int         recv_error_code_;
-    Connection* conn_;
-    Source*     source_;
-    bool        is_fmle_;
-    bool        is_edge_;
-    st_cond_t   error_;
-    int         cid;
-    int         ncid;
+    RecvThread*   thread_;
+    rtmp::Server* rtmp_;
+    Request*      request_;
+    int64_t       nb_msgs_;
+    uint64_t      video_frames_;
+    bool          mr_;
+    int           mr_fd_;
+    int           mr_sleep_;
+    bool          real_time_;
+    int           recv_error_code_;
+    Connection*   conn_;
+    Source*       source_;
+    bool          is_fmle_;
+    bool          is_edge_;
+    st_cond_t     error_;
+    int           cid;
+    int           ncid;
 };
 
 class QueueRecvThread : public IMessageHandler {
   public:
-    QueueRecvThread(Consumer* consumer, RTMPServer* rtmp, int timeout_ms);
+    QueueRecvThread(Consumer* consumer, rtmp::Server* rtmp, int timeout_ms);
     ~QueueRecvThread();
 
   public:
@@ -127,7 +130,7 @@ class QueueRecvThread : public IMessageHandler {
 
   private:
     Consumer*                   consumer_;
-    RTMPServer*                 rtmp_;
+    rtmp::Server*               rtmp_;
     RecvThread*                 thread_;
     int                         recv_error_code_;
     std::vector<CommonMessage*> queue_;

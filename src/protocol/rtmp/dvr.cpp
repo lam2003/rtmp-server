@@ -36,6 +36,7 @@ FlvSegment::FlvSegment(DvrPlan* plan)
 
 FlvSegment::~FlvSegment()
 {
+    Close();
     rs_freep(writer_);
     rs_freep(jitter_);
     rs_freep(muxer_);
@@ -558,7 +559,11 @@ int DvrSegmentPlan::OnPublish()
     return ret;
 }
 
-void DvrSegmentPlan::OnUnpublish() {}
+void DvrSegmentPlan::OnUnpublish()
+{
+    // publisher结束时,也关闭FlvSegment
+    segment_->Close();
+}
 
 int DvrSegmentPlan::OnMetadata(SharedPtrMessage* shared_metadata)
 {

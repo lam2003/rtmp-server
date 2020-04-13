@@ -12,6 +12,7 @@ add_library(protocol
     rtmp/dvr.cpp
     rtmp/consumer.cpp
     rtmp/gop_cache.cpp
+    rtmp/server.cpp
 )
 
 add_dependencies(protocol

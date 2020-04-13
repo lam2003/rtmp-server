@@ -1,4 +1,3 @@
-#include <app/rtmp_server.hpp>
 #include <common/config.hpp>
 #include <common/error.hpp>
 #include <common/utils.hpp>
@@ -7,6 +6,7 @@
 #include <protocol/rtmp/defines.hpp>
 #include <protocol/rtmp/message.hpp>
 #include <protocol/rtmp/recv_thread.hpp>
+#include <protocol/rtmp/server.hpp>
 
 namespace rtmp {
 
@@ -15,7 +15,7 @@ IMessageHandler::IMessageHandler() {}
 IMessageHandler::~IMessageHandler() {}
 
 RecvThread::RecvThread(IMessageHandler* handler,
-                       RTMPServer*      rtmp,
+                       rtmp::Server*      rtmp,
                        int32_t          timeout_ms)
 {
     thread_  = new internal::Thread("recv", this, 0, true);
@@ -68,7 +68,8 @@ int32_t RecvThread::Cycle()
         }
 
         if (ret != ERROR_SUCCESS) {
-            if (!is_client_gracefully_close(ret) && !is_system_control_error(ret)) {
+            if (!is_client_gracefully_close(ret) &&
+                !is_system_control_error(ret)) {
                 rs_error("thread process message failed. ret=%d", ret);
             }
 
@@ -95,7 +96,7 @@ void RecvThread::OnThreadStart()
     handler_->OnThreadStart();
 }
 
-PublishRecvThread::PublishRecvThread(RTMPServer* rtmp,
+PublishRecvThread::PublishRecvThread(rtmp::Server* rtmp,
                                      Request*    request,
                                      int         mr_socket_fd,
                                      int         timeout_ms,
@@ -269,7 +270,7 @@ int64_t PublishRecvThread::GetMsgNum()
 }
 
 QueueRecvThread::QueueRecvThread(Consumer*   consumer,
-                                 RTMPServer* rtmp,
+                                 rtmp::Server* rtmp,
                                  int         timeout_ms)
 {
     consumer_        = consumer;

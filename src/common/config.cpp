@@ -53,7 +53,7 @@ bool Config::GetReduceSequenceHeader(const std::string& vhost)
 
 bool Config::GetVhostIsEdge(const std::string& vhost)
 {
-    return true;
+    return false;
 }
 
 int Config::GetPublishFirstPktTimeout(const std::string& vhost)

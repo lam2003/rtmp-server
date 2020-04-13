@@ -1,7 +1,6 @@
 add_executable(rtmp_server EXCLUDE_FROM_ALL
     main.cpp
     server.cpp
-    rtmp_server.cpp
 )
 
 add_dependencies(rtmp_server
@@ -16,4 +15,6 @@ target_link_libraries(rtmp_server
     protocol
     codec
     muxer
+    tcmalloc
+    profiler
 )

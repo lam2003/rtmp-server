@@ -1,8 +1,8 @@
 #include <common/error.hpp>
 #include <protocol/rtmp/consumer.hpp>
+#include <protocol/rtmp/jitter.hpp>
 #include <protocol/rtmp/message.hpp>
 #include <protocol/rtmp/source.hpp>
-#include <protocol/rtmp/jitter.hpp>
 
 namespace rtmp {
 
@@ -147,7 +147,7 @@ int Consumer::OnPlayClientPause(bool is_pause)
     return ret;
 }
 
-void Consumer::UpdateSourceId()
+void Consumer::UpdateSourceID()
 {
     should_update_source_id_ = true;
 }

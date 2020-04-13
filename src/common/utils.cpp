@@ -1,11 +1,11 @@
-#include <common/utils.hpp>
 #include <common/config.hpp>
 #include <common/error.hpp>
 #include <common/log.hpp>
+#include <common/utils.hpp>
 
-#include <sys/time.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include <string.h>
 
@@ -19,18 +19,17 @@ std::string Utils::GetPeerIP(int32_t fd)
     std::string ip = "";
 
     sockaddr_in addr;
-    socklen_t addrlen = sizeof(addr);
+    socklen_t   addrlen = sizeof(addr);
 
-    if (getpeername(fd, (sockaddr *)&addr, &addrlen) == -1)
-    {
+    if (getpeername(fd, (sockaddr*)&addr, &addrlen) == -1) {
         return ip;
     }
 
     char buf[INET6_ADDRSTRLEN];
     memset(buf, 0, sizeof(buf));
 
-    if (inet_ntop(addr.sin_family, &addr.sin_addr, buf, sizeof(buf)) == nullptr)
-    {
+    if (inet_ntop(addr.sin_family, &addr.sin_addr, buf, sizeof(buf)) ==
+        nullptr) {
         return ip;
     }
 
@@ -43,18 +42,17 @@ std::string Utils::GetLocalIP(int32_t fd)
     std::string ip = "";
 
     sockaddr_in addr;
-    socklen_t addrlen = sizeof(addr);
+    socklen_t   addrlen = sizeof(addr);
 
-    if (getsockname(fd, (sockaddr *)&addr, &addrlen) == -1)
-    {
+    if (getsockname(fd, (sockaddr*)&addr, &addrlen) == -1) {
         return ip;
     }
 
     char buf[INET6_ADDRSTRLEN];
     memset(buf, 0, sizeof(buf));
 
-    if (inet_ntop(addr.sin_family, &addr.sin_addr, buf, sizeof(buf)) == nullptr)
-    {
+    if (inet_ntop(addr.sin_family, &addr.sin_addr, buf, sizeof(buf)) ==
+        nullptr) {
         return ip;
     }
 
@@ -65,97 +63,92 @@ std::string Utils::GetLocalIP(int32_t fd)
 int Utils::GetLocalPort(int32_t fd)
 {
     sockaddr_in addr;
-    socklen_t addrlen = sizeof(addr);
+    socklen_t   addrlen = sizeof(addr);
 
-    if (getsockname(fd, (sockaddr *)&addr, &addrlen) == -1)
-    {
+    if (getsockname(fd, (sockaddr*)&addr, &addrlen) == -1) {
         return 0;
     }
 
     return ntohs(addr.sin_port);
 }
 
-void Utils::RandomGenerate(char *bytes, int32_t size)
+void Utils::RandomGenerate(char* bytes, int32_t size)
 {
     static bool rand_initialized = false;
-    if (!rand_initialized)
-    {
+    if (!rand_initialized) {
         rand_initialized = true;
         srand(time(nullptr));
     }
 
-    for (int32_t i = 0; i < size; i++)
-    {
-        //the common value in [0x0f, 0xf0]
+    for (int32_t i = 0; i < size; i++) {
+        // the common value in [0x0f, 0xf0]
         bytes[i] = 0x0f + (rand() % (0xff - 0x0f - 0x0f));
     }
 }
 
-std::string Utils::StringReplace(const std::string &str, const std::string &oldstr, const std::string &newstr)
+std::string Utils::StringReplace(const std::string& str,
+                                 const std::string& oldstr,
+                                 const std::string& newstr)
 {
     std::string retstr = str;
 
-    if (oldstr == newstr)
-    {
+    if (oldstr == newstr) {
         return retstr;
     }
 
     size_t pos = 0;
 
-    while ((pos = retstr.find(oldstr, pos)) != std::string::npos)
-    {
+    while ((pos = retstr.find(oldstr, pos)) != std::string::npos) {
         retstr = retstr.replace(pos, oldstr.length(), newstr);
     }
 
     return retstr;
 }
 
-bool Utils::StringEndsWith(const std::string &str, const std::string &flag)
+bool Utils::StringEndsWith(const std::string& str, const std::string& flag)
 {
     return str.rfind(flag) == (str.length() - flag.length());
 }
 
-std::string Utils::StringEraseLastSubstr(const std::string &str, const std::string &erase_str)
+std::string Utils::StringEraseLastSubstr(const std::string& str,
+                                         const std::string& erase_str)
 {
     std::string retstr = str;
 
     size_t pos = retstr.rfind(erase_str);
-    if (pos != std::string::npos)
-    {
+    if (pos != std::string::npos) {
         retstr = retstr.substr(0, pos);
     }
 
     return retstr;
 }
 
-std::string Utils::StringTrimStart(const std::string &str, const std::string &trim_chars)
+std::string Utils::StringTrimStart(const std::string& str,
+                                   const std::string& trim_chars)
 {
     std::string retstr = str;
 
-    for (int i = 0; i < (int)trim_chars.length(); i++)
-    {
+    for (int i = 0; i < (int)trim_chars.length(); i++) {
         char ch = trim_chars.at(i);
-        while (!retstr.empty() && retstr.at(0) == ch)
-        {
+        while (!retstr.empty() && retstr.at(0) == ch) {
             retstr.erase(retstr.begin());
-            //reset
+            // reset
             i = -1;
         }
     }
     return retstr;
 }
 
-std::string Utils::StringTrimEnd(const std::string &str, const std::string &trim_chars)
+std::string Utils::StringTrimEnd(const std::string& str,
+                                 const std::string& trim_chars)
 {
     std::string retstr = str;
 
-    for (int i = 0; i < (int)trim_chars.length(); i++)
-    {
+    for (int i = 0; i < (int)trim_chars.length(); i++) {
         char ch = trim_chars.at(i);
-        while (!retstr.empty() && retstr.at(retstr.length() - 1) == ch)
-        {
+        while (!retstr.empty() && retstr.at(retstr.length() - 1) == ch) {
             retstr.erase(retstr.end() - 1);
-            //reset
+            // reset
             i = -1;
         }
     }
@@ -163,21 +156,18 @@ std::string Utils::StringTrimEnd(const std::string &str, const std::string &trim
     return retstr;
 }
 
-std::string Utils::StringRemove(const std::string &str, const std::string &remove_chars)
+std::string Utils::StringRemove(const std::string& str,
+                                const std::string& remove_chars)
 {
     std::string retstr = str;
 
-    for (int i = 0; i < (int)remove_chars.length(); i++)
-    {
+    for (int i = 0; i < (int)remove_chars.length(); i++) {
         char ch = remove_chars.at(i);
-        for (std::string::iterator it = retstr.begin(); it != retstr.end();)
-        {
-            if (*it == ch)
-            {
+        for (std::string::iterator it = retstr.begin(); it != retstr.end();) {
+            if (*it == ch) {
                 it = retstr.erase(it);
             }
-            else
-            {
+            else {
                 it++;
             }
         }
@@ -207,86 +197,86 @@ int64_t Utils::GetSteadyMilliSeconds()
     return duration_cast<milliseconds>(now.time_since_epoch()).count();
 }
 
-bool Utils::BytesEquals(void *pa, void *pb, int size)
+std::string Utils::GetSystemTime(const std::string& format)
 {
-    uint8_t *a = (uint8_t *)pa;
-    uint8_t *b = (uint8_t *)pb;
+    timeval tv;
+    if (gettimeofday(&tv, nullptr) < 0) {
+        return "";
+    }
 
-    if (!a && !b)
-    {
+    struct tm* tm;
+    if (_config->GetUTCTime()) {
+        if ((tm = gmtime(&tv.tv_sec)) == nullptr) {
+            return "";
+        }
+    }
+    else {
+        if ((tm = localtime(&tv.tv_sec)) == nullptr) {
+            return "";
+        }
+    }
+
+    char temp_buf[TIME_FORMAT_BUFLEN];
+    strftime(temp_buf, sizeof(temp_buf), format.c_str(), tm);
+    return temp_buf;
+}
+
+bool Utils::BytesEquals(void* pa, void* pb, int size)
+{
+    uint8_t* a = (uint8_t*)pa;
+    uint8_t* b = (uint8_t*)pb;
+
+    if (!a && !b) {
         return true;
     }
 
-    if (!a || !b)
-    {
+    if (!a || !b) {
         return false;
     }
 
-    for (int i = 0; i < size; i++)
-    {
-        if (a[i] != b[i])
-        {
+    for (int i = 0; i < size; i++) {
+        if (a[i] != b[i]) {
             return false;
         }
     }
     return true;
 }
 
-std::string Utils::BuildStreamPath(const std::string &template_path,
-                                   const std::string &vhost,
-                                   const std::string &app,
-                                   const std::string &stream)
+std::string Utils::BuildStreamPath(const std::string& template_path,
+                                   const std::string& vhost,
+                                   const std::string& app,
+                                   const std::string& stream)
 {
     std::string path = template_path;
-    path = StringReplace(path, "[vhost]", vhost);
-    path = StringReplace(path, "[app]", app);
-    path = StringReplace(path, "[stream]", stream);
+    path             = StringReplace(path, "[vhost]", vhost);
+    path             = StringReplace(path, "[app]", app);
+    path             = StringReplace(path, "[stream]", stream);
     return path;
 }
 
-std::string Utils::BuildIndexPath(const std::string &template_path)
+std::string Utils::BuildIndexPath(const std::string& template_path)
 {
-    static int index = 0;
+    static int         index = 0;
     std::ostringstream oss;
     oss << index++;
     return StringReplace(template_path, "[timestamp]", oss.str());
 }
 
-std::string Utils::BuildTimestampPath(const std::string &template_path, const std::string &format)
+std::string Utils::BuildTimestampPath(const std::string& template_path,
+                                      const std::string& format)
 {
-    timeval tv;
-    if (gettimeofday(&tv, nullptr) < 0)
-    {
-        return BuildIndexPath(template_path);
+    std::string str;
+    if ((str = GetSystemTime(format)) == "") {
+        str = BuildIndexPath(template_path);
     }
-
-    struct tm *tm;
-    if (_config->GetUTCTime())
-    {
-        if ((tm = gmtime(&tv.tv_sec)) == nullptr)
-        {
-            return BuildIndexPath(template_path);
-        }
-    }
-    else
-    {
-        if ((tm = localtime(&tv.tv_sec)) == nullptr)
-        {
-            return BuildIndexPath(template_path);
-        }
-    }
-
-    char temp_buf[TIME_FORMAT_BUFLEN];
-    strftime(temp_buf, sizeof(temp_buf), format.c_str(), tm);
-
-    return StringReplace(template_path, "[timestamp]", temp_buf);
+    return StringReplace(template_path, "[timestamp]", str);
 }
 
-std::string Utils::BuildIndexSuffixPath(const std::string &template_path, int index)
+std::string Utils::BuildIndexSuffixPath(const std::string& template_path,
+                                        int                index)
 {
     size_t pos;
-    if ((pos = template_path.find_last_of(".flv")) == std::string::npos)
-    {
+    if ((pos = template_path.find_last_of(".flv")) == std::string::npos) {
         return template_path;
     }
 
@@ -299,43 +289,38 @@ std::string Utils::BuildIndexSuffixPath(const std::string &template_path, int in
     return oss.str();
 }
 
-bool Utils::IsFileExist(const std::string &path)
+bool Utils::IsFileExist(const std::string& path)
 {
     struct stat s;
-    if (stat(path.c_str(), &s) != 0)
-    {
+    if (stat(path.c_str(), &s) != 0) {
         return false;
     }
     return true;
 }
 
-static int do_create_dir_recursively(const std::string &dir)
+static int do_create_dir_recursively(const std::string& dir)
 {
     int ret = ERROR_SUCCESS;
 
-    if (Utils::IsFileExist(dir))
-    {
+    if (Utils::IsFileExist(dir)) {
         return ERROR_SYSTEM_DIR_EXISTS;
     }
 
     size_t pos;
-    if ((pos = dir.rfind("/")) != std::string::npos)
-    {
+    if ((pos = dir.rfind("/")) != std::string::npos) {
         std::string parent = dir.substr(0, pos);
-        ret = do_create_dir_recursively(parent);
-        if (ret != ERROR_SUCCESS && ret != ERROR_SYSTEM_DIR_EXISTS)
-        {
+        ret                = do_create_dir_recursively(parent);
+        if (ret != ERROR_SUCCESS && ret != ERROR_SYSTEM_DIR_EXISTS) {
             return ret;
         }
 
         ret = ERROR_SUCCESS;
     }
 
-    mode_t mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH;
-    if (::mkdir(dir.c_str(), mode) < 0)
-    {
-        if (errno == EEXIST)
-        {
+    mode_t mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP |
+                  S_IROTH | S_IXOTH;
+    if (::mkdir(dir.c_str(), mode) < 0) {
+        if (errno == EEXIST) {
             return ERROR_SYSTEM_DIR_EXISTS;
         }
 
@@ -347,24 +332,22 @@ static int do_create_dir_recursively(const std::string &dir)
     return ret;
 }
 
-int Utils::CreateDirRecursively(const std::string &dir)
+int Utils::CreateDirRecursively(const std::string& dir)
 {
     int ret = ERROR_SUCCESS;
-    ret = do_create_dir_recursively(dir);
-    if (ret == ERROR_SYSTEM_DIR_EXISTS)
-    {
+    ret     = do_create_dir_recursively(dir);
+    if (ret == ERROR_SYSTEM_DIR_EXISTS) {
         ret = ERROR_SUCCESS;
     }
 
     return ret;
 }
 
-int Utils::ReadBit(BitBufferManager *manager, int8_t &v)
+int Utils::ReadBit(BitBufferManager* manager, int8_t& v)
 {
     int ret = ERROR_SUCCESS;
 
-    if (manager->Empty())
-    {
+    if (manager->Empty()) {
         return ERROR_BIT_BUFFER_MANAGER_EMPTY;
     }
 
@@ -373,30 +356,26 @@ int Utils::ReadBit(BitBufferManager *manager, int8_t &v)
     return ret;
 }
 
-int Utils::ReadUEV(BitBufferManager *manager, int32_t &v)
+int Utils::ReadUEV(BitBufferManager* manager, int32_t& v)
 {
     int ret = ERROR_SUCCESS;
 
-    if (manager->Empty())
-    {
+    if (manager->Empty()) {
         return ERROR_BIT_BUFFER_MANAGER_EMPTY;
     }
 
     int leading_zero_bits = -1;
-    for (int8_t b = 0; !b && !manager->Empty(); leading_zero_bits++)
-    {
+    for (int8_t b = 0; !b && !manager->Empty(); leading_zero_bits++) {
         b = manager->ReadBit();
     }
 
-    if (leading_zero_bits >= 31)
-    {
+    if (leading_zero_bits >= 31) {
         return ERROR_BIT_BUFFER_MANAGER_EMPTY;
     }
 
     v = (1 << leading_zero_bits) - 1;
 
-    for (int i = 0; i < leading_zero_bits; i++)
-    {
+    for (int i = 0; i < leading_zero_bits; i++) {
         int32_t b = manager->ReadBit();
         v += b << (leading_zero_bits - i - 1);
     }

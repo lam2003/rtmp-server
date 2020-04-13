@@ -48,6 +48,7 @@ class Source {
 
   public:
     static int   FetchOrCreate(Request* r, ISourceHandler* h, Source** pps);
+    static int   CycleAll();
     virtual int  Initialize(Request* r, ISourceHandler* h);
     virtual bool CanPublish(bool is_edge);
     virtual void OnConsumerDestroy(Consumer* consumer);
@@ -58,6 +59,11 @@ class Source {
     virtual int  OnPublish();
     virtual void OnUnpublish();
     virtual int  SourceId();
+    virtual int  Cycle();
+    virtual bool Expired();
+    virtual int  GetPrevSourceID();
+    virtual int  GetSouceID();
+    virtual void OnSourceIDChange(int id);
     virtual int  CreateConsumer(Connection* conn,
                                 Consumer*&  consumer,
                                 bool        ds = true,
@@ -65,11 +71,12 @@ class Source {
                                 bool        dg = true);
 
   protected:
-    static Source* Fetch(Request* r);
+    static Source* fetch(Request* r);
 
   private:
-    int on_audio_impl(SharedPtrMessage* msg);
-    int on_video_impl(SharedPtrMessage* msg);
+    int        on_audio_impl(SharedPtrMessage* msg);
+    int        on_video_impl(SharedPtrMessage* msg);
+    static int do_cycle_all();
 
   private:
     static std::map<std::string, Source*> pool_;
@@ -88,6 +95,9 @@ class Source {
     MixQueue<SharedPtrMessage>*           mix_queue_;
     Dvr*                                  dvr_;
     GopCache*                             gop_cache_;
+    int64_t                               die_at_;
+    int                                   source_id_;
+    int                                   prev_source_id_;
 };
 }  // namespace rtmp
 #endif

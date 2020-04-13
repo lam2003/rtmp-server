@@ -13,6 +13,8 @@
 
 #include <sstream>
 
+#define SOURCE_CLEAN_UP_MS 5000
+
 namespace rtmp {
 
 ISourceHandler::ISourceHandler() {}
@@ -37,17 +39,20 @@ Source::Source()
     mix_queue_                 = new MixQueue<SharedPtrMessage>;
     dvr_                       = new Dvr;
     gop_cache_                 = new GopCache;
+    die_at_                    = -1;
+    source_id_                 = -1;
+    prev_source_id_            = -1;
 }
 
 Source::~Source()
 {
+    rs_freep(gop_cache_);
     rs_freep(dvr_);
     rs_freep(mix_queue_);
     rs_freep(cache_sh_audio_);
     rs_freep(cache_sh_video_);
     rs_freep(cache_metadata_);
     rs_freep(request_);
-    rs_freep(gop_cache_);
 }
 
 int Source::FetchOrCreate(Request* r, ISourceHandler* h, Source** pps)
@@ -56,7 +61,7 @@ int Source::FetchOrCreate(Request* r, ISourceHandler* h, Source** pps)
 
     Source* source = nullptr;
 
-    if ((source = Fetch(r)) != nullptr) {
+    if ((source = fetch(r)) != nullptr) {
         *pps = source;
         return ret;
     }
@@ -81,7 +86,7 @@ int Source::FetchOrCreate(Request* r, ISourceHandler* h, Source** pps)
     return ret;
 }
 
-Source* Source::Fetch(Request* r)
+Source* Source::fetch(Request* r)
 {
     Source* source = nullptr;
 
@@ -413,6 +418,14 @@ int Source::OnDvrRequestSH()
 int Source::OnPublish()
 {
     int ret = ERROR_SUCCESS;
+
+    can_publish_ = false;
+
+    OnSourceIDChange(_context->GetID());
+
+    mix_queue_->Clear();
+    gop_cache_->Clear();
+
     if ((ret = dvr_->OnPublish(request_)) != ERROR_SUCCESS) {
         rs_error("start dvr failed. ret=%d", ret);
         return ret;
@@ -423,6 +436,12 @@ int Source::OnPublish()
 void Source::OnUnpublish()
 {
     dvr_->OnUnpubish();
+
+    if (consumers_.empty()) {
+        die_at_ = Utils::GetSteadyMilliSeconds();
+    }
+
+    can_publish_ = true;
 }
 
 int Source::SourceId()
@@ -487,6 +506,111 @@ int Source::CreateConsumer(Connection* conn,
     }
 
     rs_trace("create consumer. queue_size=%.2f, jitter=%d", queue_size, ag_);
+
+    return ret;
+}
+
+bool Source::Expired()
+{
+    if (die_at_ == -1) {
+        return false;
+    }
+
+    if (!can_publish_) {
+        return false;
+    }
+
+    if (!consumers_.empty()) {
+        return false;
+    }
+
+    uint64_t now = Utils::GetSteadyMilliSeconds();
+    if (now > die_at_ + SOURCE_CLEAN_UP_MS) {
+        return true;
+    }
+
+    return false;
+}
+
+int Source::GetSouceID()
+{
+    return source_id_;
+}
+
+int Source::GetPrevSourceID()
+{
+    return prev_source_id_;
+}
+
+void Source::OnSourceIDChange(int id)
+{
+    if (id == source_id_) {
+        return;
+    }
+
+    if (prev_source_id_ == -1) {
+        prev_source_id_ = id;
+    }
+    else if (prev_source_id_ != source_id_) {
+        prev_source_id_ = source_id_;
+    }
+
+    source_id_ = id;
+
+    std::vector<Consumer*>::iterator it;
+    for (it = consumers_.begin(); it != consumers_.end(); it++) {
+        (*it)->UpdateSourceID();
+    }
+}
+
+int Source::Cycle()
+{
+    int ret = ERROR_SUCCESS;
+    // TODO:do something
+    return ret;
+}
+
+int Source::do_cycle_all()
+{
+    int ret = ERROR_SUCCESS;
+
+    std::map<std::string, Source*>::iterator it;
+    for (it = pool_.begin(); it != pool_.end();) {
+        Source* source = it->second;
+
+        if ((ret = source->Cycle() != ERROR_SUCCESS)) {
+            return ret;
+        }
+
+        if (source->Expired()) {
+            int cid = source->GetSouceID();
+            if (cid == -1 || source->GetPrevSourceID() > 0) {
+                cid = source->GetPrevSourceID();
+            }
+            if (cid > 0) {
+                _context->SetID(cid);
+            }
+
+            rs_trace("clean die source[%s]. now total=%d", it->first.c_str(),
+                     (int)pool_.size());
+            rs_freep(source);
+            it = pool_.erase(it);
+        }
+        else {
+            it++;
+        }
+    }
+
+    return ret;
+}
+
+int Source::CycleAll()
+{
+    int ret = ERROR_SUCCESS;
+
+    int cid = _context->GetID();
+    ret     = do_cycle_all();
+    _context->SetID(cid);
 
     return ret;
 }
