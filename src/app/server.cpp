@@ -10,6 +10,8 @@
 #include <common/utils.hpp>
 #include <protocol/rtmp/connection.hpp>
 
+#include <algorithm>
+
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -115,6 +117,8 @@ int32_t StreamServer::AcceptClient(ListenerType type, st_netfd_t stfd)
         conn = new rtmp::Connection(this, stfd);
     }
 
+    conns_.push_back(conn);
+
     if ((ret = conn->Start()) != ERROR_SUCCESS) {
         return ret;
     }
@@ -139,7 +143,22 @@ int32_t StreamServer::listen_rtmp()
     return ret;
 }
 
-void StreamServer::OnRemove(IConnection* conn) {}
+void StreamServer::OnRemove(IConnection* conn)
+{
+    std::vector<IConnection*>::iterator it =
+        std::find(conns_.begin(), conns_.end(), conn);
+
+    if (it == conns_.end()) {
+        rs_warn("connection has been removed. ignore it");
+        return;
+    }
+
+    conns_.erase(it);
+
+    rs_info("connection removed. now total=%d", conns_.size());
+
+    rs_freep(conn);
+}
 
 int StreamServer::OnPublish(rtmp::Source* s, rtmp::Request* r)
 {

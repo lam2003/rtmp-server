@@ -251,6 +251,8 @@ std::string Utils::BuildStreamPath(const std::string& template_path,
     path             = StringReplace(path, "[vhost]", vhost);
     path             = StringReplace(path, "[app]", app);
     path             = StringReplace(path, "[stream]", stream);
+    path = StringReplace(path, "[day]", Utils::GetSystemTime("%Y-%m-%d"));
+
     return path;
 }
 

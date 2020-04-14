@@ -231,6 +231,8 @@ int32_t Connection::Playing(Source* source)
         return ret;
     }
 
+    rs_auto_free(Consumer, consumer);
+
     QueueRecvThread recv_thread(consumer, rtmp_, mw_sleep_);
     if ((ret = recv_thread.Start()) != ERROR_SUCCESS) {
         rs_error("start isolate recv thread failed. ret=%d", ret);
@@ -426,7 +428,7 @@ int Connection::acquire_publish(Source* source, bool is_edge)
     if (!source->CanPublish(is_edge)) {
         ret = ERROR_SYSTEM_STREAM_BUSY;
         rs_warn("stream %s is already publishing. ret=%d",
-                request_->GetStreamUrl().c_str());
+                request_->GetStreamUrl().c_str(), ret);
         return ret;
     }
 

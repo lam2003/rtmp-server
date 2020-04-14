@@ -22,6 +22,15 @@ IThreadContext* _context = new ThreadContext;
 StreamServer*   _server  = new StreamServer;
 Config*         _config  = new Config;
 
+void print_git_info()
+{
+    rs_info("##################################################");
+    rs_info("repo_version:%s", REPO_VERSION);
+    rs_info("repo_date:%s", REPO_DATE);
+    rs_info("repo_hash:%s", REPO_HASH);
+    rs_info("##################################################");
+}
+
 int32_t RunMaster()
 {
     int32_t ret = ERROR_SUCCESS;
@@ -43,14 +52,10 @@ void signal_handler(int signo)
 
 int32_t main(int32_t argc, char* argv[])
 {
-    rs_info("##################################################");
-    rs_info("repo_version:%s", REPO_VERSION);
-    rs_info("repo_date:%s", REPO_DATE);
-    rs_info("repo_hash:%s", REPO_HASH);
-    rs_info("##################################################");
-
     signal(SIGPIPE, signal_handler);
     signal(SIGINT, signal_handler);
+
+    print_git_info();
 
     ProfilerStart("gperf.srs.gcp");
 
@@ -60,8 +65,6 @@ int32_t main(int32_t argc, char* argv[])
 
     listener.Listen("0.0.0.0", 1935);
 
-    // while (1)
-    // st_usleep(100000000);
     while (true) {
         rtmp::Source::CycleAll();
         st_usleep(1000 * 1000);

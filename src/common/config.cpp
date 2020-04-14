@@ -78,7 +78,7 @@ int Config::GetDvrTimeJitter(const std::string& vhost)
 
 std::string Config::GetDvrPath(const std::string& vhost)
 {
-    return "/home/lam2003/flv_record";
+    return "/home/lam2003/flv_record/[app]/[stream]/[day]";
 }
 
 bool Config::GetUTCTime()

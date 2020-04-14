@@ -69,7 +69,7 @@
 #define ERROR_SYSTEM_KILL 1058
 #define ERROR_SYSTEM_DNS_RESOLVE 1059
 #define ERROR_SOCKET_SETKEEPALIVE 1060
-
+#define ERROR_SYSTEM_FILE_REMOVE 1061
 ///////////////////////////////////////////////////////
 // RTMP protocol error.
 ///////////////////////////////////////////////////////

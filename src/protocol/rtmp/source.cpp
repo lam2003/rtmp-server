@@ -11,6 +11,7 @@
 #include <protocol/rtmp/packet.hpp>
 #include <protocol/rtmp/source.hpp>
 
+#include <algorithm>
 #include <sstream>
 
 #define SOURCE_CLEAN_UP_MS 5000
@@ -125,7 +126,23 @@ bool Source::CanPublish(bool is_edge)
     return can_publish_;
 }
 
-void Source::OnConsumerDestroy(Consumer* consumer) {}
+void Source::OnConsumerDestroy(Consumer* consumer)
+{
+    std::vector<Consumer*>::iterator it =
+        std::find(consumers_.begin(), consumers_.end(), consumer);
+
+    if (it == consumers_.end()) {
+        rs_warn("consumer has been removed. ignore it");
+        return;
+    }
+
+    consumers_.erase(it);
+    rs_info("consumer removed");
+    if (consumers_.empty()) {
+        die_at_ = Utils::GetSteadyMilliSeconds();
+        rs_trace("there are not consumer subscribe %s now",request_->GetStreamUrl().c_str());
+    }
+}
 
 int Source::on_video_impl(SharedPtrMessage* msg)
 {
@@ -524,7 +541,7 @@ bool Source::Expired()
         return false;
     }
 
-    uint64_t now = Utils::GetSteadyMilliSeconds();
+    int64_t now = Utils::GetSteadyMilliSeconds();
     if (now > die_at_ + SOURCE_CLEAN_UP_MS) {
         return true;
     }
@@ -591,10 +608,11 @@ int Source::do_cycle_all()
                 _context->SetID(cid);
             }
 
-            rs_trace("clean die source[%s]. now total=%d", it->first.c_str(),
+            std::string url = it->first;
+            it              = pool_.erase(it);
+            rs_trace("clean die source[%s]. now total=%d", url.c_str(),
                      (int)pool_.size());
             rs_freep(source);
-            it = pool_.erase(it);
         }
         else {
             it++;

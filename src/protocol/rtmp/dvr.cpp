@@ -12,6 +12,8 @@
 #include <protocol/rtmp/message.hpp>
 #include <protocol/rtmp/source.hpp>
 
+#include <sstream>
+
 namespace rtmp {
 
 FlvSegment::FlvSegment(DvrPlan* plan)
@@ -24,7 +26,6 @@ FlvSegment::FlvSegment(DvrPlan* plan)
     writer_                   = new FileWriter;
     duration_offset_          = 0;
     filesize_offset_          = 0;
-    temp_flv_file_            = "";
     path_                     = "";
     has_keyframe_             = false;
     start_time_               = -1;
@@ -60,11 +61,10 @@ bool FlvSegment::IsOverflow(int64_t max_duration)
 
 std::string FlvSegment::generate_path()
 {
-    // path setting like "/data/[vhost]/[app]/[stream]/[timestamp].flv"
     std::string path_config = _config->GetDvrPath(request_->vhost);
 
     if (path_config.find(".flv") != path_config.length() - 4) {
-        path_config += "/[stream].[timestamp].flv";
+        path_config += "/[timestamp].flv";
     }
 
     std::string flv_path = path_config;
@@ -73,6 +73,15 @@ std::string FlvSegment::generate_path()
     flv_path = Utils::BuildTimestampPath(flv_path);
 
     return flv_path;
+}
+
+std::string FlvSegment::handle_duplicate_path(const std::string& path)
+{
+    std::ostringstream oss;
+    std::string        prefix = path.substr(0, path.find_last_of(".flv"));
+
+    oss << prefix << "_" << Utils::GetSteadyNanoSeconds() << ".flv";
+    return oss.str();
 }
 
 int FlvSegment::on_update_duration(SharedPtrMessage* msg)
@@ -96,34 +105,23 @@ int FlvSegment::on_update_duration(SharedPtrMessage* msg)
     return ret;
 }
 
-int FlvSegment::create_jitter(bool new_flv_file)
+int FlvSegment::create_jitter()
 {
     int ret = ERROR_SUCCESS;
 
-    if (new_flv_file) {
-        rs_freep(jitter_);
-        jitter_ = new Jitter;
+    rs_freep(jitter_);
 
-        start_time_               = -1;
-        stream_previous_pkt_time_ = -1;
-        stream_start_time_        = Utils::GetSteadyMilliSeconds();
-        stream_duration_          = 0;
-
-        has_keyframe_ = false;
-        duration_     = 0;
-        return ret;
-    }
-
-    if (jitter_) {
-        return ret;
-    }
-
-    jitter_ = new Jitter;
-
+    jitter_                   = new Jitter;
+    start_time_               = -1;
+    stream_previous_pkt_time_ = -1;
+    stream_start_time_        = Utils::GetSteadyMilliSeconds();
+    stream_duration_          = 0;
+    has_keyframe_             = false;
+    duration_                 = 0;
     return ret;
 }
 
-int FlvSegment::Open(bool use_temp_file)
+int FlvSegment::Open()
 {
     int ret = ERROR_SUCCESS;
 
@@ -131,8 +129,11 @@ int FlvSegment::Open(bool use_temp_file)
         return ret;
     }
 
-    path_             = generate_path();
-    bool new_flv_file = !Utils::IsFileExist(path_);
+    path_ = generate_path();
+
+    while (Utils::IsFileExist(path_)) {
+        handle_duplicate_path(path_);
+    }
 
     std::string dir = path_.substr(0, path_.rfind("/"));
     if ((ret = Utils::CreateDirRecursively(dir)) != ERROR_SUCCESS) {
@@ -140,46 +141,27 @@ int FlvSegment::Open(bool use_temp_file)
         return ret;
     }
 
-    if ((ret = create_jitter(new_flv_file)) != ERROR_SUCCESS) {
-        rs_error("create jitter failed. path=%s, new_flv_file=%d, ret=%d",
-                 path_.c_str(), new_flv_file, ret);
+    if ((ret = create_jitter()) != ERROR_SUCCESS) {
+        rs_error("create jitter failed. path=%s, ret=%d", path_.c_str(), ret);
         return ret;
     }
 
-    if (!new_flv_file || !use_temp_file) {
-        temp_flv_file_ = path_;
-    }
-    else {
-        temp_flv_file_ = path_ + ".tmp";
-    }
-
-    if (!new_flv_file) {
-        if ((ret = writer_->Open(temp_flv_file_, true)) != ERROR_SUCCESS) {
-            rs_error("append file stream for file %s failed. ret=%d",
-                     temp_flv_file_.c_str(), ret);
-            return ret;
-        }
-    }
-    else {
-        if ((ret = writer_->Open(temp_flv_file_)) != ERROR_SUCCESS) {
-            rs_error("open file stream for file %s failed. ret=%d",
-                     temp_flv_file_.c_str(), ret);
-            return ret;
-        }
+    if ((ret = writer_->Open(path_)) != ERROR_SUCCESS) {
+        rs_error("open file stream for file %s failed. ret=%d", path_.c_str(),
+                 ret);
+        return ret;
     }
 
     if ((ret = muxer_->Initialize(writer_)) != ERROR_SUCCESS) {
         rs_error("initialize enc by writer for file %s failed. ret=%d",
-                 temp_flv_file_.c_str(), ret);
+                 path_.c_str(), ret);
         return ret;
     }
 
-    if (new_flv_file) {
-        if ((ret = muxer_->WriteMuxerHeader()) != ERROR_SUCCESS) {
-            rs_error("write flv header for file %s failed. ret=%d",
-                     temp_flv_file_.c_str(), ret);
-            return ret;
-        }
+    if ((ret = muxer_->WriteMuxerHeader()) != ERROR_SUCCESS) {
+        rs_error("write flv header for file %s failed. ret=%d", path_.c_str(),
+                 ret);
+        return ret;
     }
 
     duration_offset_ = 0;
@@ -393,13 +375,13 @@ int FlvSegment::Close()
 
     writer_->Close();
 
-    if (temp_flv_file_ != path_) {
-        if (::rename(temp_flv_file_.c_str(), path_.c_str()) < 0) {
-            ret = ERROR_SYSTEM_FILE_RENAME;
-            rs_error("remove flv file failed. %s => %s. ret=%d",
-                     temp_flv_file_.c_str(), path_.c_str(), ret);
+    if (duration_ == 0) {
+        if (::remove(path_.c_str()) < 0) {
+            ret = ERROR_SYSTEM_FILE_REMOVE;
+            rs_error("remove %s failed. %d", path_.c_str(), ret);
             return ret;
         }
+        rs_trace("remove %s. duration=%d", path_.c_str(), duration_);
     }
 
     if ((ret = plan_->on_reap_segment()) != ERROR_SUCCESS) {
@@ -563,6 +545,7 @@ void DvrSegmentPlan::OnUnpublish()
 {
     // publisher结束时,也关闭FlvSegment
     segment_->Close();
+    dvr_enabled_ = false;
 }
 
 int DvrSegmentPlan::OnMetadata(SharedPtrMessage* shared_metadata)

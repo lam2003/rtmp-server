@@ -10,7 +10,6 @@
 #include <common/file.hpp>
 #include <common/queue.hpp>
 
-
 namespace flv {
 class Muxer;
 }
@@ -31,7 +30,7 @@ class FlvSegment {
   public:
     virtual int         Initialize(Request* request);
     virtual bool        IsOverflow(int64_t max_duration);
-    virtual int         Open(bool use_temp_file = true);
+    virtual int         Open();
     virtual int         Close();
     virtual int         WriteMetadata(SharedPtrMessage* shared_metadata);
     virtual int         WriteAudio(SharedPtrMessage* shared_audio);
@@ -41,7 +40,8 @@ class FlvSegment {
 
   private:
     std::string generate_path();
-    int         create_jitter(bool new_flv_file);
+    std::string handle_duplicate_path(const std::string& path);
+    int         create_jitter();
     int         on_update_duration(SharedPtrMessage* msg);
 
   private:

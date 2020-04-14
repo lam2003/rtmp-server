@@ -70,6 +70,9 @@ class StreamServer : virtual public IConnectionManager,
 
   protected:
     virtual int32_t listen_rtmp();
+
+  private:
+    std::vector<IConnection*> conns_;
 };
 
 #endif

@@ -51,8 +51,7 @@ class Utils {
     static int64_t     GetSteadyNanoSeconds();
     static int64_t     GetSteadyMicroSeconds();
     static int64_t     GetSteadyMilliSeconds();
-    static std::string
-    GetSystemTime(const std::string& format = "%Y-%m-%d_%H-%M-%S");
+    static std::string GetSystemTime(const std::string& format = "%H-%M-%S");
 
     static bool        BytesEquals(void* pa, void* pb, int size);
     static std::string BuildStreamPath(const std::string& template_path,
@@ -62,7 +61,7 @@ class Utils {
     static std::string BuildIndexPath(const std::string& template_path);
     static std::string
                        BuildTimestampPath(const std::string& template_path,
-                                          const std::string& format = "%Y-%m-%d_%H-%M-%S");
+                                          const std::string& format = "%H-%M-%S");
     static std::string BuildIndexSuffixPath(const std::string& template_path,
                                             int                index);
     static bool        IsFileExist(const std::string& path);
