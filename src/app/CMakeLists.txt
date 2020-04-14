@@ -15,6 +15,14 @@ target_link_libraries(rtmp_server
     protocol
     codec
     muxer
-    tcmalloc
-    profiler
 )
+
+#for memory leak check
+#target_link_libraries(rtmp_server
+#    common
+#    protocol
+#    codec
+#    muxer
+#    tcmalloc
+#    profiler
+#)

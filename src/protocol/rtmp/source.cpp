@@ -140,7 +140,8 @@ void Source::OnConsumerDestroy(Consumer* consumer)
     rs_info("consumer removed");
     if (consumers_.empty()) {
         die_at_ = Utils::GetSteadyMilliSeconds();
-        rs_trace("there are not consumer subscribe %s now",request_->GetStreamUrl().c_str());
+        rs_trace("there are not consumer subscribing %s now",
+                 request_->GetStreamUrl().c_str());
     }
 }
 
@@ -148,11 +149,11 @@ int Source::on_video_impl(SharedPtrMessage* msg)
 {
     int ret = ERROR_SUCCESS;
 
-    bool is_sequence_hander =
+    bool is_sequence_header =
         flv::Demuxer::IsAVCSequenceHeader(msg->payload, msg->size);
     bool drop_for_reduce = false;
 
-    if (is_sequence_hander && cache_sh_video_ &&
+    if (is_sequence_header && cache_sh_video_ &&
         _config->GetReduceSequenceHeader(request_->host)) {
         if (cache_sh_video_->size == msg->size) {
             drop_for_reduce = Utils::BytesEquals(cache_sh_video_->payload,
@@ -161,7 +162,7 @@ int Source::on_video_impl(SharedPtrMessage* msg)
         }
     }
 
-    if (is_sequence_hander) {
+    if (is_sequence_header) {
         rs_freep(cache_sh_video_);
         cache_sh_video_ = msg->Copy();
 
@@ -189,6 +190,22 @@ int Source::on_video_impl(SharedPtrMessage* msg)
                 rs_error("dispatch video failed. ret=%d", ret);
                 return ret;
             }
+        }
+    }
+
+    if (is_sequence_header) {
+        return ret;
+    }
+
+    gop_cache_->Cache(msg);
+
+    if (atc_) {
+        if (cache_sh_audio_) {
+            cache_sh_audio_->timestamp = msg->timestamp;
+        }
+
+        if (cache_sh_video_) {
+            cache_sh_video_->timestamp = msg->timestamp;
         }
     }
 
@@ -238,6 +255,27 @@ int Source::on_audio_impl(SharedPtrMessage* msg)
                 rs_error("dispatch audio failed. ret=%d", ret);
                 return ret;
             }
+        }
+    }
+
+    if (is_sequence_header || !cache_sh_audio_) {
+        rs_freep(cache_sh_audio_);
+        cache_sh_audio_ = msg->Copy();
+    }
+
+    if (is_sequence_header) {
+        return ret;
+    }
+
+    gop_cache_->Cache(msg);
+
+    if (atc_) {
+        if (cache_sh_audio_) {
+            cache_sh_audio_->timestamp = msg->timestamp;
+        }
+
+        if (cache_sh_video_) {
+            cache_sh_video_->timestamp = msg->timestamp;
         }
     }
     return ret;

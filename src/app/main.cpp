@@ -13,7 +13,8 @@
 #include <protocol/rtmp/source.hpp>
 #include <repo_version.h>
 
-#include <gperftools/profiler.h>
+// for memory leak test
+// #include <gperftools/profiler.h>
 
 #include <signal.h>
 
@@ -52,12 +53,13 @@ void signal_handler(int signo)
 
 int32_t main(int32_t argc, char* argv[])
 {
+    // for memory leak test
+    // ProfilerStart("gperf.srs.gcp");
+
     signal(SIGPIPE, signal_handler);
     signal(SIGINT, signal_handler);
 
     print_git_info();
-
-    ProfilerStart("gperf.srs.gcp");
 
     RunMaster();
 
