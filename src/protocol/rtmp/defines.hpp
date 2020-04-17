@@ -83,6 +83,7 @@
 #define RTMP_AMF0_COMMAND_ON_METADATA "onMetaData"
 #define RTMP_AMF0_COMMAND_SET_DATAFRAME "@setDataFrame"
 #define RTMP_AMF0_COMMAND_PLAY "play"
+#define RTMP_AMF0_COMMAND_ON_BW_DONE "onBWDone"
 
 // 48kHz/1024=46.875fps
 // 46.875fps*10s=468.75

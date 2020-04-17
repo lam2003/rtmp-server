@@ -29,11 +29,13 @@ class Server {
     virtual int     SetPeerBandwidth(int bandwidth, int type);
     virtual int     SetChunkSize(int chunk_size);
     virtual int  ResponseConnectApp(Request* req, const std::string& local_ip);
+    virtual int  OnBWDone();
     virtual int  IdentifyClient(int          stream_id,
                                 ConnType&    type,
                                 std::string& stream_name,
                                 double&      duration);
     virtual int  StartFmlePublish(int stream_id);
+    virtual int  StartHivisionPublish(int stream_id);
     virtual int  RecvMessage(CommonMessage** pmsg);
     virtual void SetRecvBuffer(int buffer_size);
     virtual void SetMargeRead(bool v, IMergeReadHandler* handler);
@@ -57,6 +59,12 @@ class Server {
                              ConnType&    type,
                              std::string& stream_name,
                              double&      duration);
+    int identify_haivisioin_publish_client(FMLEStartPacket* pkt,
+                                           ConnType&        type,
+                                           std::string&     stream_name);
+    int identify_flash_publish_client(PublishPacket* pkt,
+                                      ConnType&      type,
+                                      std::string&   stream_name);
 
   private:
     IProtocolReaderWriter* rw_;

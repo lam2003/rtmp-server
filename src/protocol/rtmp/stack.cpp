@@ -671,7 +671,7 @@ int Protocol::DoDecodeMessage(MessageHeader& header,
         }
         else {
             rs_trace("drop the amf0 command message, command_name=%s",
-                    command.c_str());
+                     command.c_str());
             *ppacket = packet = new Packet;
             return packet->Decode(manager);
         }
@@ -683,6 +683,13 @@ int Protocol::DoDecodeMessage(MessageHeader& header,
     else if (header.IsUserControlMessage()) {
         *ppacket = packet = new UserControlPacket;
         return packet->Decode(manager);
+    }
+    else if (header.IsWindowAckledgementSize()) {
+        *ppacket = packet = new SetWindowAckSizePacket;
+        return packet->Decode(manager);
+    }
+    else {
+        rs_warn("unknow message type: %d", header.message_type);
     }
 
     return ret;

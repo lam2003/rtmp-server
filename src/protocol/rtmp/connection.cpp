@@ -130,6 +130,13 @@ int32_t Connection::StreamServiceCycle()
                 return ret;
             }
             return Playing(source);
+        case ConnType::HIVISION_PUBLISH:
+            if ((ret = rtmp_->StartHivisionPublish(response_->stream_id)) !=
+                ERROR_SUCCESS) {
+                rs_error("start to hivision publish stream failed. ret=%d",
+                         ret);
+            }
+            return Publishing(source);
         default: break;
     }
 
@@ -278,9 +285,14 @@ int32_t Connection::ServiceCycle()
 
     if ((ret = rtmp_->ResponseConnectApp(request_, local_ip)) !=
         ERROR_SUCCESS) {
-        rs_error("response connect app failed. ret=%d");
+        rs_error("response connect app failed. ret=%d", ret);
         return ret;
     }
+
+    // if ((ret = rtmp_->OnBWDone()) != ERROR_SUCCESS) {
+    //     rs_error("on bandwidth done failed. ret=%d",ret);
+    //     return ret;
+    // }
 
     while (!disposed_) {
         ret = StreamServiceCycle();

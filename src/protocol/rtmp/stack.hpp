@@ -7,9 +7,9 @@
 #include <common/io.hpp>
 #include <common/log.hpp>
 #include <common/utils.hpp>
+#include <protocol/rtmp/defines.hpp>
 #include <protocol/rtmp/message.hpp>
 #include <protocol/rtmp/packet.hpp>
-#include <protocol/rtmp/defines.hpp>
 
 #include <map>
 #include <vector>
@@ -21,10 +21,11 @@ namespace rtmp {
 class HandshakeBytes;
 
 enum class ConnType {
-    UNKNOW        = 0,
-    PLAY          = 1,
-    FMLE_PUBLISH  = 2,
-    FLASH_PUBLISH = 3,
+    UNKNOW           = 0,
+    PLAY             = 1,
+    FMLE_PUBLISH     = 2,
+    FLASH_PUBLISH    = 3,
+    HIVISION_PUBLISH = 4
 };
 
 enum class UserEventType {

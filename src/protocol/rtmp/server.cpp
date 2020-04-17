@@ -147,18 +147,33 @@ int Server::ResponseConnectApp(Request* req, const std::string& local_ip)
     pkt->props->Set("fmsVer", AMF0Any::String("FMS/3,5,3,888"));
     pkt->props->Set("capabilities", AMF0Any::Number(127));
     pkt->props->Set("mode", AMF0Any::Number(1));
-    pkt->props->Set("level", AMF0Any::String("status"));
-    pkt->props->Set("code", AMF0Any::String("NetConnection.Connect.Success"));
-    pkt->props->Set("description", AMF0Any::String("IConnection succeeded"));
-    pkt->props->Set("objectEncoding", AMF0Any::Number(req->object_encoding));
+
+    pkt->info->Set("level", AMF0Any::String("status"));
+    pkt->info->Set("code", AMF0Any::String("NetConnection.Connect.Success"));
+    pkt->info->Set("description", AMF0Any::String("Connection succeeded"));
+    pkt->info->Set("objectEncoding", AMF0Any::Number(req->object_encoding));
 
     AMF0EcmaArray* ecma_array = AMF0Any::EcmaArray();
-    pkt->props->Set("data", ecma_array);
+    pkt->info->Set("data", ecma_array);
 
     ecma_array->Set("version", AMF0Any::String("3,5,3,888"));
 
     if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS) {
         rs_error("send connect app response message failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int Server::OnBWDone()
+{
+    int ret = ERROR_SUCCESS;
+
+    OnBWDonePacket* pkt = new OnBWDonePacket();
+
+    if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS) {
+        rs_error("send on bandwidth done message failed. ret=%d", ret);
         return ret;
     }
 
@@ -176,7 +191,7 @@ int Server::identify_fmle_publish_client(FMLEStartPacket* pkt,
 
     FMLEStartResPacket* res_pkt = new FMLEStartResPacket(pkt->transaction_id);
     if ((ret = protocol_->SendAndFreePacket(res_pkt, 0)) != ERROR_SUCCESS) {
-        rs_error("send release stream response message failed,ret=%d", ret);
+        rs_error("send release stream response message failed. ret=%d", ret);
         return ret;
     }
 
@@ -196,6 +211,36 @@ int Server::identify_play_client(PlayPacket*  pkt,
 
     rs_info("identity client type=play, stream_name=%s, duration=%.2f",
             stream_name.c_str(), duration);
+
+    return ret;
+}
+
+int Server::identify_haivisioin_publish_client(FMLEStartPacket* pkt,
+                                               ConnType&        type,
+                                               std::string&     stream_name)
+{
+    int ret = ERROR_SUCCESS;
+
+    type        = ConnType::HIVISION_PUBLISH;
+    stream_name = pkt->stream_name;
+
+    FMLEStartResPacket* res_pkt = new FMLEStartResPacket(pkt->transaction_id);
+    if ((ret = protocol_->SendAndFreePacket(res_pkt, 0)) != ERROR_SUCCESS) {
+        rs_error("send release stream response message failed. ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int Server::identify_flash_publish_client(PublishPacket* pkt,
+                                          ConnType&      type,
+                                          std::string&   stream_name)
+{
+    int ret = ERROR_SUCCESS;
+
+    type        = ConnType::FLASH_PUBLISH;
+    stream_name = pkt->stream_name;
 
     return ret;
 }
@@ -242,6 +287,17 @@ int Server::identify_create_stream_client(CreateStreamPacket* pkt,
         if (dynamic_cast<PlayPacket*>(packet)) {
             return identify_play_client(dynamic_cast<PlayPacket*>(packet), type,
                                         stream_name, duration);
+        }
+        else if (dynamic_cast<FMLEStartPacket*>(packet)) {
+            return identify_haivisioin_publish_client(
+                dynamic_cast<FMLEStartPacket*>(packet), type, stream_name);
+        }
+        else if (dynamic_cast<PublishPacket*>(packet)) {
+            return identify_flash_publish_client(
+                dynamic_cast<PublishPacket*>(packet), type, stream_name);
+        }
+        else {
+            rs_warn("####################");
         }
     }
 
@@ -367,6 +423,60 @@ int Server::StartFmlePublish(int stream_id)
         rs_auto_free(CommonMessage, msg);
         rs_auto_free(PublishPacket, pkt);
     }
+    {
+        OnStatusCallPacket* pkt = new OnStatusCallPacket;
+        pkt->command_name       = RTMP_AMF0_COMMAND_ON_FC_PUBLISH;
+        pkt->data->Set("code", AMF0Any::String("NetStream.Publish.Start"));
+        pkt->data->Set("description",
+                       AMF0Any::String("Started publishing stream"));
+
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
+            ERROR_SUCCESS) {
+            rs_error("send onFCPublish(NetStream.Publish.Start) message "
+                     "failed,ret=%d",
+                     ret);
+            return ret;
+        }
+        rs_info("send onFCPublish(NetStream.Publish.Start) message success");
+    }
+    {
+        OnStatusCallPacket* pkt = new OnStatusCallPacket;
+        pkt->data->Set("level", AMF0Any::String("status"));
+        pkt->data->Set("code", AMF0Any::String("NetStream.Publish.Start"));
+        pkt->data->Set("description",
+                       AMF0Any::String("Started publishing stream"));
+        pkt->data->Set("clientid", AMF0Any::String("ASAICiss"));
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) !=
+            ERROR_SUCCESS) {
+            rs_error(
+                "send onStatus(NetStream.Publish.Start) message failed,ret=%d",
+                ret);
+            return ret;
+        }
+        rs_info("send onStatus(NetStream.Publish.Start) message success");
+    }
+
+    return ret;
+}
+
+int Server::StartHivisionPublish(int stream_id)
+{
+    int ret = ERROR_SUCCESS;
+
+    {
+        CommonMessage* msg = nullptr;
+        PublishPacket* pkt = nullptr;
+
+        if ((ret = protocol_->ExpectMessage<PublishPacket>(&msg, &pkt)) !=
+            ERROR_SUCCESS) {
+            rs_error("recv publish message failed,ret=%d", ret);
+            return ret;
+        }
+
+        rs_auto_free(CommonMessage, msg);
+        rs_auto_free(PublishPacket, pkt);
+    }
+
     {
         OnStatusCallPacket* pkt = new OnStatusCallPacket;
         pkt->command_name       = RTMP_AMF0_COMMAND_ON_FC_PUBLISH;

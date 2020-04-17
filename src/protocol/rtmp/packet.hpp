@@ -6,388 +6,392 @@
 #ifndef RS_RTMP_PACKET_HPP
 #define RS_RTMP_PACKET_HPP
 
-#include <common/core.hpp>
 #include <common/buffer.hpp>
+#include <common/core.hpp>
 
 class AMF0Any;
 class AMF0Object;
 
-namespace rtmp
-{
+namespace rtmp {
 
-enum class PeerBandwidthType
-{
-    HARD = 0,
-    SOTF = 1,
+enum class PeerBandwidthType {
+    HARD    = 0,
+    SOTF    = 1,
     DYNAMIC = 2,
 };
 
-class Packet
-{
-public:
+class Packet {
+  public:
     Packet();
     virtual ~Packet();
 
-public:
+  public:
     virtual int GetPreferCID();
     virtual int GetMessageType();
-    virtual int Encode(int &size, char *&payload);
-    virtual int Decode(BufferManager *manager);
+    virtual int Encode(int& size, char*& payload);
+    virtual int Decode(BufferManager* manager);
 
-protected:
+  protected:
     virtual int GetSize();
-    virtual int EncodePacket(BufferManager *manager);
+    virtual int EncodePacket(BufferManager* manager);
 };
 
-class SetChunkSizePacket : public Packet
-{
-public:
+class SetChunkSizePacket : public Packet {
+  public:
     SetChunkSizePacket();
     virtual ~SetChunkSizePacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     int32_t chunk_size;
 };
 
-class ConnectAppPacket : public Packet
-{
-public:
+class ConnectAppPacket : public Packet {
+  public:
     ConnectAppPacket();
     virtual ~ConnectAppPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    double transaction_id;
-    AMF0Object *command_object;
-    AMF0Object *args;
+    double      transaction_id;
+    AMF0Object* command_object;
+    AMF0Object* args;
 };
 
-class ConnectAppResPacket : public Packet
-{
-public:
+class ConnectAppResPacket : public Packet {
+  public:
     ConnectAppResPacket();
     virtual ~ConnectAppResPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    double transaction_id;
-    AMF0Object *props;
-    AMF0Object *info;
+    double      transaction_id;
+    AMF0Object* props;
+    AMF0Object* info;
 };
 
-class SetWindowAckSizePacket : public Packet
-{
-public:
+class SetWindowAckSizePacket : public Packet {
+  public:
     SetWindowAckSizePacket();
     virtual ~SetWindowAckSizePacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     int32_t ackowledgement_window_size;
 };
 
-class SetPeerBandwidthPacket : public Packet
-{
-public:
+class SetPeerBandwidthPacket : public Packet {
+  public:
     SetPeerBandwidthPacket();
     virtual ~SetPeerBandwidthPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     int32_t bandwidth;
-    int8_t type;
+    int8_t  type;
 };
 
-class FMLEStartPacket : public Packet
-{
-public:
+class FMLEStartPacket : public Packet {
+  public:
     FMLEStartPacket();
     virtual ~FMLEStartPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    double transaction_id;
-    AMF0Any *command_object;
+    double      transaction_id;
+    AMF0Any*    command_object;
     std::string stream_name;
 };
 
-class FMLEStartResPacket : public Packet
-{
-public:
+class FMLEStartResPacket : public Packet {
+  public:
     FMLEStartResPacket(double trans_id);
     virtual ~FMLEStartResPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    double transaction_id;
-    AMF0Any *command_object;
-    AMF0Any *args;
+    double      transaction_id;
+    AMF0Any*    command_object;
+    AMF0Any*    args;
 };
 
-class CreateStreamPacket : public Packet
-{
-public:
+class CreateStreamPacket : public Packet {
+  public:
     CreateStreamPacket();
     virtual ~CreateStreamPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    double transaction_id;
-    AMF0Any *command_object;
+    double      transaction_id;
+    AMF0Any*    command_object;
 };
 
-class CreateStreamResPacket : public Packet
-{
-public:
+class CreateStreamResPacket : public Packet {
+  public:
     CreateStreamResPacket(double trans_id, int sid);
     virtual ~CreateStreamResPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    double transaction_id;
-    AMF0Any *command_object;
-    double stream_id;
+    double      transaction_id;
+    AMF0Any*    command_object;
+    double      stream_id;
 };
 
-class PublishPacket : public Packet
-{
-public:
+class PublishPacket : public Packet {
+  public:
     PublishPacket();
     virtual ~PublishPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    double transaction_id;
-    AMF0Any *command_object;
+    double      transaction_id;
+    AMF0Any*    command_object;
     std::string stream_name;
     std::string type;
 };
 
-class OnStatusCallPacket : public Packet
-{
-public:
+class OnStatusCallPacket : public Packet {
+  public:
     OnStatusCallPacket();
     virtual ~OnStatusCallPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    double transaction_id;
-    AMF0Any *args;
-    AMF0Object *data;
+    double      transaction_id;
+    AMF0Any*    args;
+    AMF0Object* data;
 };
 
-class OnMetadataPacket : public Packet
-{
-public:
+class OnMetadataPacket : public Packet {
+  public:
     OnMetadataPacket();
     virtual ~OnMetadataPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string name;
-    AMF0Object *metadata;
+    AMF0Object* metadata;
 };
 
-class PlayPacket : public Packet
-{
-public:
+class PlayPacket : public Packet {
+  public:
     PlayPacket();
     virtual ~PlayPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    double transaction_id;
-    AMF0Any *command_obj;
+    double      transaction_id;
+    AMF0Any*    command_obj;
     std::string stream_name;
-    double start;
-    double duration;
-    bool reset;
+    double      start;
+    double      duration;
+    bool        reset;
 };
 
-class UserControlPacket : public Packet
-{
-public:
+class UserControlPacket : public Packet {
+  public:
     UserControlPacket();
     virtual ~UserControlPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     int16_t event_type;
     int32_t event_data;
     int32_t extra_data;
 };
 
-class OnStatusDataPacket : public Packet
-{
-public:
+class OnStatusDataPacket : public Packet {
+  public:
     OnStatusDataPacket();
     virtual ~OnStatusDataPacket();
 
-public:
-    //Packet
+  public:
+    // Packet
     virtual int GetPreferCID() override;
     virtual int GetMessageType() override;
-    virtual int Decode(BufferManager *manager) override;
+    virtual int Decode(BufferManager* manager) override;
 
-protected:
-    //Packet
+  protected:
+    // Packet
     virtual int GetSize() override;
-    virtual int EncodePacket(BufferManager *manager) override;
+    virtual int EncodePacket(BufferManager* manager) override;
 
-public:
+  public:
     std::string command_name;
-    AMF0Object *data;
+    AMF0Object* data;
 };
 
-} // namespace rtmp
+class OnBWDonePacket : public Packet {
+  public:
+    OnBWDonePacket();
+    virtual ~OnBWDonePacket();
+
+  public:
+    // Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager* manager) override;
+
+  protected:
+    // Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager* manager) override;
+
+  public:
+    std::string command_name;
+    double      transaction_id;
+    AMF0Any*    args;
+};
+
+}  // namespace rtmp
 #endif
