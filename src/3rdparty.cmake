@@ -12,7 +12,7 @@ execute_process(COMMAND mkdir ./lib ./include -p
 
 ExternalProject_Add(st
     EXCLUDE_FROM_ALL true
-    URL https://github.com/lam2003/thirdparty/raw/master/st-1.9.tar.gz
+    URL https://gitee.com/linmin3/thirdparty/raw/master/st-1.9.tar.gz
     DOWNLOAD_NAME st-1.9.tar.gz
     SOURCE_DIR st-1.9
     CONFIGURE_COMMAND ""
