@@ -98,8 +98,7 @@ std::string Config::GetDvrPlan(const std::string& vhost)
 
 int Config::GetDrvDuration(const std::string& vhost)
 {
-    // seconds
-    return 10;
+    return 3600;  // seconds
 }
 
 bool Config::GetDvrEnbaled(const std::string& vhost)
