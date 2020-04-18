@@ -168,7 +168,9 @@ int32_t Connection::Publishing(Source* source)
         recv_thread.Stop();
     }
 
-    release_publish(source, vhost_is_edge);
+    if (ret != ERROR_SYSTEM_STREAM_BUSY) {
+        release_publish(source, vhost_is_edge);
+    }
 
     return ret;
 }
